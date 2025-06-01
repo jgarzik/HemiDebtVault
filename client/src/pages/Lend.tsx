@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +38,19 @@ export function Lend() {
   // Get pool position data from contract
   const { tokenBalances, totalDeposited, availableForLending, currentlyLent, totalInterestEarned, invalidatePoolData } = usePoolPosition();
 
+  // Listen for transaction success events to refresh data
+  useEffect(() => {
+    const handleTransactionSuccess = () => {
+      console.log('Transaction success detected, refreshing data...');
+      invalidatePoolData();
+      refetchBalance();
+      refetchWithdrawBalance();
+    };
+
+    window.addEventListener('transactionSuccess', handleTransactionSuccess);
+    return () => window.removeEventListener('transactionSuccess', handleTransactionSuccess);
+  }, [invalidatePoolData, refetchBalance, refetchWithdrawBalance]);
+
   const handleDeposit = async () => {
     if (!depositAmount || !address || !selectedToken) return '';
     
@@ -45,13 +58,6 @@ export function Lend() {
       const amount = parseUnits(depositAmount, selectedToken.decimals);
       const hash = await deposit(selectedToken.address, amount);
       setDepositAmount('');
-      
-      // Refresh balances and pool data after successful transaction
-      setTimeout(() => {
-        invalidatePoolData();
-        refetchBalance();
-      }, 2000);
-      
       return hash;
     } catch (error) {
       console.error('Deposit failed:', error);
@@ -66,13 +72,6 @@ export function Lend() {
       const amount = parseUnits(withdrawAmount, selectedWithdrawToken.decimals);
       const hash = await withdraw(selectedWithdrawToken.address, amount);
       setWithdrawAmount('');
-      
-      // Refresh balances and pool data after successful transaction
-      setTimeout(() => {
-        invalidatePoolData();
-        refetchWithdrawBalance();
-      }, 2000);
-      
       return hash;
     } catch (error) {
       console.error('Withdraw failed:', error);

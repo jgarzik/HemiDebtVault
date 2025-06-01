@@ -155,6 +155,11 @@ export function useTransactionFlow({
           ? `Successfully processed ${transactionAmount}`
           : `${actionLabel || 'Transaction'} completed successfully`,
       });
+      
+      // Trigger data refresh after successful transaction
+      window.dispatchEvent(new CustomEvent('transactionSuccess', { 
+        detail: { txHash: execution.txHash, actionLabel } 
+      }));
     }
   }, [execution.isConfirmed, execution.txHash, execution.isExecuting, toast, actionLabel, transactionAmount]);
 
