@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TransactionModal } from '@/components/TransactionModal';
 import { TokenSelector } from '@/components/TokenSelector';
 import { TransactionButton } from '@/components/TransactionButton';
+import { CreditLineModal } from '@/components/CreditLineModal';
 import { useToast } from '@/hooks/use-toast';
 
 import { useDebtVault } from '@/hooks/useDebtVault';
@@ -27,6 +28,7 @@ export function Lend() {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [activeTab, setActiveTab] = useState('deposit');
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showCreditLineModal, setShowCreditLineModal] = useState(false);
   const [transactionData, setTransactionData] = useState<any>(null);
   
   const { toast } = useToast();
@@ -105,7 +107,10 @@ export function Lend() {
           <h1 className="text-3xl font-bold">Lend</h1>
           <p className="text-slate-400 mt-1">Manage your lending positions and credit lines</p>
         </div>
-        <Button className="mt-4 sm:mt-0 bg-blue-600 hover:bg-blue-700">
+        <Button 
+          className="mt-4 sm:mt-0 bg-blue-600 hover:bg-blue-700"
+          onClick={() => setShowCreditLineModal(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add Credit Line
         </Button>
@@ -267,7 +272,10 @@ export function Lend() {
             <TrendingUp className="w-8 h-8 text-slate-600 mx-auto mb-2" />
             <p className="text-slate-400">No credit lines yet</p>
             <p className="text-sm text-slate-500 mt-1">Set up credit lines with borrowers to start earning interest</p>
-            <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
+            <Button 
+              className="mt-4 bg-blue-600 hover:bg-blue-700"
+              onClick={() => setShowCreditLineModal(true)}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Create First Credit Line
             </Button>
@@ -300,6 +308,12 @@ export function Lend() {
         amount={transactionData?.amount}
         gasEstimate={transactionData?.gasEstimate}
         isLoading={isDepositLoading}
+      />
+
+      {/* Credit Line Modal */}
+      <CreditLineModal
+        isOpen={showCreditLineModal}
+        onClose={() => setShowCreditLineModal(false)}
       />
     </div>
   );

@@ -57,7 +57,7 @@ export function useDebtVault() {
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'deposit',
-      args: [token, amount],
+      args: [token as `0x${string}`, amount],
     });
     console.log('Deposit transaction hash:', hash);
     return hash;
@@ -69,37 +69,42 @@ export function useDebtVault() {
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'withdraw',
-      args: [token, amount],
+      args: [token as `0x${string}`, amount],
     });
     console.log('Withdraw transaction hash:', hash);
     return hash;
   };
 
-  const borrow = (lender: string, token: string, amount: bigint) => {
-    writeContract({
+  const borrow = async (lender: string, token: string, amount: bigint) => {
+    const hash = await writeContractAsync({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'borrow',
-      args: [lender, token, amount],
+      args: [lender as `0x${string}`, token as `0x${string}`, amount],
     });
+    return hash;
   };
 
-  const repay = (loanId: bigint, amount: bigint) => {
-    writeContract({
+  const repay = async (loanId: bigint, amount: bigint) => {
+    const hash = await writeContractAsync({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'repay',
       args: [loanId, amount],
     });
+    return hash;
   };
 
-  const updateCreditLine = (borrower: string, token: string, creditLimit: bigint, minAPR: bigint, maxAPR: bigint) => {
-    writeContract({
+  const updateCreditLine = async (borrower: string, token: string, creditLimit: bigint, minAPR: bigint, maxAPR: bigint) => {
+    console.log('Creating credit line:', { borrower, token, creditLimit, minAPR, maxAPR });
+    const hash = await writeContractAsync({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'updateCreditLine',
-      args: [borrower, token, creditLimit, minAPR, maxAPR],
+      args: [borrower as `0x${string}`, token as `0x${string}`, creditLimit, minAPR, maxAPR],
     });
+    console.log('Credit line transaction hash:', hash);
+    return hash;
   };
 
   // Get loan details by ID
