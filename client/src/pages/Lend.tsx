@@ -20,13 +20,16 @@ export function Lend() {
   const { deposit, withdraw, updateCreditLine, isDepositLoading, isUpdateCreditLoading } = useDebtVault();
   
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
+  const [selectedWithdrawToken, setSelectedWithdrawToken] = useState<Token | null>(null);
   const [depositAmount, setDepositAmount] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
   const [activeTab, setActiveTab] = useState('deposit');
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [transactionData, setTransactionData] = useState<any>(null);
   
   // Get real token balance from blockchain
   const { balance, formattedBalance, isLoading: isBalanceLoading } = useTokenBalance(selectedToken || undefined);
+  const { balance: withdrawBalance, formattedBalance: formattedWithdrawBalance, isLoading: isWithdrawBalanceLoading } = useTokenBalance(selectedWithdrawToken || undefined);
 
   const handleDeposit = async () => {
     if (!depositAmount || !address || !selectedToken) return;
@@ -38,6 +41,19 @@ export function Lend() {
     } catch (error) {
       console.error('Deposit failed:', error);
       throw error; // Let TransactionButton handle the error display
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (!withdrawAmount || !address || !selectedWithdrawToken) return;
+    
+    try {
+      const amount = parseUnits(withdrawAmount, selectedWithdrawToken.decimals);
+      await withdraw(selectedWithdrawToken.address, amount);
+      setWithdrawAmount('');
+    } catch (error) {
+      console.error('Withdraw failed:', error);
+      throw error;
     }
   };
 
@@ -138,7 +154,52 @@ export function Lend() {
                 </TabsContent>
                 
                 <TabsContent value="withdraw" className="space-y-4">
-                  <p className="text-slate-400 text-sm">Withdraw functionality will be implemented with contract integration</p>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Token</label>
+                    <TokenSelector 
+                      selectedToken={selectedWithdrawToken?.symbol}
+                      onTokenSelect={(token) => setSelectedWithdrawToken(token)}
+                      className="mb-4"
+                    />
+                  </div>
+                  
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      placeholder="0.0"
+                      value={withdrawAmount}
+                      onChange={(e) => setWithdrawAmount(e.target.value)}
+                      className="bg-slate-900 border-slate-600 text-lg font-mono pr-16"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (selectedWithdrawToken && formattedWithdrawBalance) {
+                          setWithdrawAmount(formattedWithdrawBalance);
+                        }
+                      }}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 h-7 px-3 bg-red-500/20 text-red-400 border-red-500/20"
+                    >
+                      MAX
+                    </Button>
+                  </div>
+                  
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Available to Withdraw:</span>
+                    <span className="font-mono text-slate-300">
+                      {isWithdrawBalanceLoading ? 'Loading...' : selectedWithdrawToken ? `${Number(formattedWithdrawBalance).toFixed(4)} ${selectedWithdrawToken.symbol}` : '0.0000'}
+                    </span>
+                  </div>
+                  
+                  <TransactionButton
+                    onExecute={handleWithdraw}
+                    className="w-full bg-red-500 hover:bg-red-600"
+                    disabled={!withdrawAmount || !selectedWithdrawToken}
+                    actionLabel="Withdraw"
+                  >
+                    Withdraw Tokens
+                  </TransactionButton>
                 </TabsContent>
               </Tabs>
             </div>
