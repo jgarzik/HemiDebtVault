@@ -48,26 +48,30 @@ export function useDebtVault() {
   });
 
   // Contract write hook
-  const { writeContract, isPending: isWritePending } = useWriteContract();
+  const { writeContractAsync, isPending: isWritePending } = useWriteContract();
 
   // Helper functions for contract interactions
   const deposit = async (token: string, amount: bigint) => {
-    const hash = await writeContract({
+    console.log('Depositing:', { token, amount });
+    const hash = await writeContractAsync({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'deposit',
       args: [token, amount],
     });
+    console.log('Deposit transaction hash:', hash);
     return hash;
   };
 
   const withdraw = async (token: string, amount: bigint) => {
-    const hash = await writeContract({
+    console.log('Withdrawing:', { token, amount });
+    const hash = await writeContractAsync({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'withdraw',
       args: [token, amount],
     });
+    console.log('Withdraw transaction hash:', hash);
     return hash;
   };
 
