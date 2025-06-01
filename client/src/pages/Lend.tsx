@@ -179,6 +179,7 @@ export function Lend() {
                       spenderAddress: DEBT_VAULT_ADDRESS
                     } : undefined}
                     actionLabel="Deposit"
+                    transactionAmount={selectedToken && depositAmount ? `${depositAmount} ${selectedToken.symbol}` : undefined}
                   >
                     Deposit Tokens
                   </TransactionButton>
@@ -231,6 +232,7 @@ export function Lend() {
                     className="w-full bg-red-500 hover:bg-red-600"
                     disabled={!withdrawAmount || !selectedWithdrawToken}
                     actionLabel="Withdraw"
+                    transactionAmount={selectedWithdrawToken && withdrawAmount ? `${withdrawAmount} ${selectedWithdrawToken.symbol}` : undefined}
                   >
                     Withdraw Tokens
                   </TransactionButton>

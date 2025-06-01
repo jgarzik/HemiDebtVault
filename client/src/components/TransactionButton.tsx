@@ -104,7 +104,7 @@ export function TransactionButton({
       title: `Confirm ${actionLabel || children}`,
       description: `Execute ${actionLabel || children} transaction`,
       action: actionLabel || children as string,
-      amount: requiresApproval ? `${requiresApproval.amount} ${requiresApproval.token.symbol}` : '',
+      amount: transactionAmount || (requiresApproval ? `${requiresApproval.amount} ${requiresApproval.token.symbol}` : ''),
       gasEstimate: '~$2.50',
     });
     setShowModal(true);
