@@ -11,42 +11,8 @@ export function useDebtVault() {
   const { toast } = useToast();
   const [portfolioStats, setPortfolioStats] = useState<PortfolioStats | null>(null);
 
-  // Listen to contract events
-  useWatchContractEvent({
-    address: DEBT_VAULT_ADDRESS,
-    abi: DEBT_VAULT_ABI,
-    eventName: 'LoanCreated',
-    onLogs(logs) {
-      toast({
-        title: "Loan Created",
-        description: `New loan created successfully`,
-      });
-    },
-  });
-
-  useWatchContractEvent({
-    address: DEBT_VAULT_ADDRESS,
-    abi: DEBT_VAULT_ABI,
-    eventName: 'LoanRepaid',
-    onLogs(logs) {
-      toast({
-        title: "Payment Received",
-        description: `Loan payment processed`,
-      });
-    },
-  });
-
-  useWatchContractEvent({
-    address: DEBT_VAULT_ADDRESS,
-    abi: DEBT_VAULT_ABI,
-    eventName: 'CreditLineUpdated',
-    onLogs(logs) {
-      toast({
-        title: "Credit Line Updated",
-        description: `Credit line has been modified`,
-      });
-    },
-  });
+  // Event watching disabled to avoid Hemi RPC filter errors
+  // Toast notifications will be handled by transaction success states instead
 
   // Contract write hook
   const { writeContractAsync, isPending: isWritePending } = useWriteContract();

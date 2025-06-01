@@ -24,7 +24,7 @@ export function useLoans() {
   const { address } = useAccount();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { data: blockNumber } = useBlockNumber({ watch: true });
+  const { data: blockNumber } = useBlockNumber({ watch: false });
 
   const tokens = getAllTokens();
 
@@ -125,7 +125,7 @@ export function useBorrowerLoans() {
   const { address } = useAccount();
   const [borrowedLoans, setBorrowedLoans] = useState<Loan[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { data: blockNumber } = useBlockNumber({ watch: true });
+  const { data: blockNumber } = useBlockNumber({ watch: false });
 
   const tokens = getAllTokens();
 
@@ -167,7 +167,7 @@ export function useBorrowerLoans() {
             const nftOwner = await publicClient.readContract({
               address: DEBT_VAULT_ADDRESS,
               abi: DEBT_VAULT_ABI,
-              functionName: 'ownerOf',
+              functionName: 'ownerOf' as any,
               args: [loanId],
             });
             

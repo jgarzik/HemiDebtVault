@@ -6,8 +6,8 @@ export function useContractRead(functionName: string, args?: any[]) {
   return useReadContract({
     address: DEBT_VAULT_ADDRESS,
     abi: DEBT_VAULT_ABI,
-    functionName,
-    args,
+    functionName: functionName as any,
+    args: args as any,
   });
 }
 
