@@ -39,11 +39,11 @@ export function Lend() {
   const { tokenBalances, totalDeposited, availableForLending, currentlyLent, totalInterestEarned, invalidatePoolData } = usePoolPosition();
 
   const handleDeposit = async () => {
-    if (!depositAmount || !address || !selectedToken) return;
+    if (!depositAmount || !address || !selectedToken) return '';
     
     try {
       const amount = parseUnits(depositAmount, selectedToken.decimals);
-      await deposit(selectedToken.address, amount);
+      const hash = await deposit(selectedToken.address, amount);
       setDepositAmount('');
       
       // Refresh balances and pool data after successful transaction
@@ -51,6 +51,8 @@ export function Lend() {
         invalidatePoolData();
         refetchBalance();
       }, 2000);
+      
+      return hash;
     } catch (error) {
       console.error('Deposit failed:', error);
       throw error; // Let TransactionButton handle the error display
@@ -58,11 +60,11 @@ export function Lend() {
   };
 
   const handleWithdraw = async () => {
-    if (!withdrawAmount || !address || !selectedWithdrawToken) return;
+    if (!withdrawAmount || !address || !selectedWithdrawToken) return '';
     
     try {
       const amount = parseUnits(withdrawAmount, selectedWithdrawToken.decimals);
-      await withdraw(selectedWithdrawToken.address, amount);
+      const hash = await withdraw(selectedWithdrawToken.address, amount);
       setWithdrawAmount('');
       
       // Refresh balances and pool data after successful transaction
@@ -70,6 +72,8 @@ export function Lend() {
         invalidatePoolData();
         refetchWithdrawBalance();
       }, 2000);
+      
+      return hash;
     } catch (error) {
       console.error('Withdraw failed:', error);
       throw error;

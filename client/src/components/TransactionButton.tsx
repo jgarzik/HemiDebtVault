@@ -5,7 +5,7 @@ import { Token } from '@/lib/tokens';
 
 interface TransactionButtonProps {
   children: React.ReactNode;
-  onExecute: () => Promise<void>;
+  onExecute: () => Promise<string>;
   className?: string;
   disabled?: boolean;
   requiresApproval?: {

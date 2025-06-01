@@ -16,7 +16,7 @@ export type TransactionState =
   | 'error';
 
 interface TransactionFlowParams {
-  onExecute: () => Promise<void>;
+  onExecute: () => Promise<string>;
   requiresApproval?: {
     token: Token;
     amount: string;
@@ -125,14 +125,7 @@ export function useTransactionFlow({
       } else if (currentState === 'ready_to_execute') {
         await execution.execute(onExecute);
         setShowModal(false);
-        
-        // Show success toast
-        toast({
-          title: `${actionLabel || 'Transaction'} Successful`,
-          description: transactionAmount 
-            ? `Successfully processed ${transactionAmount}`
-            : `${actionLabel || 'Transaction'} completed successfully`,
-        });
+        // Note: Success toast will be shown when transaction is confirmed
       }
     } catch (error) {
       console.error('Transaction failed:', error);
@@ -145,6 +138,16 @@ export function useTransactionFlow({
       });
     }
   };
+
+  // Show success toast when transaction is confirmed
+  if (execution.isConfirmed && execution.txHash) {
+    toast({
+      title: `${actionLabel || 'Transaction'} Successful`,
+      description: transactionAmount 
+        ? `Successfully processed ${transactionAmount}`
+        : `${actionLabel || 'Transaction'} completed successfully`,
+    });
+  }
 
   return {
     currentState,
