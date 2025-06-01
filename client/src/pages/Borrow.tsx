@@ -219,7 +219,7 @@ export function Borrow() {
               <TransactionButton
                 onExecute={handleBorrow}
                 className="w-full bg-blue-600 hover:bg-blue-700"
-                disabled={!borrowAmount || !selectedLender || !selectedToken}
+                disabled={!borrowAmount || !selectedCredit}
               >
                 Create Loan
               </TransactionButton>
