@@ -141,7 +141,14 @@ export function useTransactionFlow({
 
   // Show success toast when transaction is confirmed
   useEffect(() => {
+    console.log('Transaction status:', { 
+      isConfirmed: execution.isConfirmed, 
+      txHash: execution.txHash,
+      isExecuting: execution.isExecuting 
+    });
+    
     if (execution.isConfirmed && execution.txHash) {
+      console.log('Showing success toast for transaction:', execution.txHash);
       toast({
         title: `${actionLabel || 'Transaction'} Successful`,
         description: transactionAmount 
@@ -149,7 +156,7 @@ export function useTransactionFlow({
           : `${actionLabel || 'Transaction'} completed successfully`,
       });
     }
-  }, [execution.isConfirmed, execution.txHash, toast, actionLabel, transactionAmount]);
+  }, [execution.isConfirmed, execution.txHash, execution.isExecuting, toast, actionLabel, transactionAmount]);
 
   return {
     currentState,
