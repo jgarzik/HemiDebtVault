@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TransactionModal } from '@/components/TransactionModal';
 import { TokenSelector } from '@/components/TokenSelector';
+import { NetworkTest } from '@/components/NetworkTest';
 import { useDebtVault } from '@/hooks/useDebtVault';
 import { useTokenBalance } from '@/hooks/useTokenBalance';
 import { Edit2, Eye, X, TrendingUp, Plus } from 'lucide-react';
@@ -69,6 +70,8 @@ export function Lend() {
           Add Credit Line
         </Button>
       </div>
+
+      <NetworkTest />
 
       {/* Deposit Section */}
       <Card className="bg-slate-800 border-slate-700">

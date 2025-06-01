@@ -16,6 +16,10 @@ export const hemiNetwork = defineChain({
   blockExplorers: {
     default: { name: 'Hemi Explorer', url: 'https://testnet.explorer.hemi.xyz' },
   },
+  // Add custom configuration to handle RPC limitations
+  fees: undefined,
+  formatters: undefined,
+  serializers: undefined,
 });
 
 export const DEBT_VAULT_ADDRESS = '0x72F6185DcBb9c8415f01003ACc872f08B44FC292' as const;
