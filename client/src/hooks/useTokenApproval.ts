@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { parseUnits } from 'viem';
 import { Token } from '@/lib/tokens';
@@ -83,14 +83,15 @@ export function useTokenApproval(params?: ApprovalParams) {
     }
   };
 
-  // Reset approval state when params change
-  if (params && approvalHash && isApprovalSuccess) {
-    setTimeout(() => {
+  // Handle approval success - refetch allowance and reset state
+  useEffect(() => {
+    if (isApprovalSuccess && approvalHash) {
+      console.log('Approval transaction confirmed, refetching allowance...');
+      refetchAllowance();
       setApprovalHash(null);
       setIsApproving(false);
-      refetchAllowance();
-    }, 1000);
-  }
+    }
+  }, [isApprovalSuccess, approvalHash, refetchAllowance]);
 
   return {
     needsApproval,
