@@ -28,17 +28,17 @@ export function Lend() {
   // Get real token balance from blockchain
   const { balance, formattedBalance, isLoading: isBalanceLoading } = useTokenBalance(selectedToken || undefined);
 
-  const handleDeposit = () => {
+  const handleDeposit = async () => {
     if (!depositAmount || !address || !selectedToken) return;
     
-    setTransactionData({
-      title: 'Confirm Deposit',
-      description: 'Add tokens to your lending pool',
-      action: 'Deposit',
-      amount: `${depositAmount} ${selectedToken.symbol}`,
-      gasEstimate: '~$2.50',
-    });
-    setShowTransactionModal(true);
+    try {
+      const amount = parseUnits(depositAmount, selectedToken.decimals);
+      await deposit(selectedToken.address, amount);
+      setDepositAmount('');
+    } catch (error) {
+      console.error('Deposit failed:', error);
+      throw error; // Let TransactionButton handle the error display
+    }
   };
 
   const confirmTransaction = async () => {
@@ -122,13 +122,18 @@ export function Lend() {
                     </span>
                   </div>
                   
-                  <Button 
+                  <TransactionButton
+                    onExecute={handleDeposit}
                     className="w-full bg-green-500 hover:bg-green-600"
-                    onClick={handleDeposit}
-                    disabled={!depositAmount || isDepositLoading}
+                    disabled={!depositAmount || !selectedToken}
+                    requiresApproval={selectedToken && depositAmount ? {
+                      token: selectedToken,
+                      amount: depositAmount,
+                      spenderAddress: DEBT_VAULT_ADDRESS
+                    } : undefined}
                   >
-                    {isDepositLoading ? 'Processing...' : 'Deposit Tokens'}
-                  </Button>
+                    Deposit Tokens
+                  </TransactionButton>
                 </TabsContent>
                 
                 <TabsContent value="withdraw" className="space-y-4">

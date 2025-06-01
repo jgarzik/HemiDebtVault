@@ -4,42 +4,33 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TransactionModal } from '@/components/TransactionModal';
+import { TransactionButton } from '@/components/TransactionButton';
 import { useDebtVault } from '@/hooks/useDebtVault';
+import { TokenSelector } from '@/components/TokenSelector';
+import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
+import { type Token, getAllTokens } from '@/lib/tokens';
 import { Search, Plus, Info } from 'lucide-react';
+import { parseUnits } from 'viem';
 
 export function Borrow() {
   const { address } = useAccount();
-  const { borrow, isBorrowLoading } = useDebtVault();
+  const { borrow } = useDebtVault();
   
   const [selectedLender, setSelectedLender] = useState('');
   const [borrowAmount, setBorrowAmount] = useState('');
-  const [showTransactionModal, setShowTransactionModal] = useState(false);
-  const [transactionData, setTransactionData] = useState<any>(null);
+  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
+  const allTokens = getAllTokens();
 
-  const handleBorrow = () => {
-    if (!borrowAmount || !selectedLender) return;
+  const handleBorrow = async () => {
+    if (!borrowAmount || !selectedLender || !selectedToken) return;
     
-    setTransactionData({
-      title: 'Confirm Loan',
-      description: 'Create a new loan position',
-      action: 'Create Loan',
-      amount: `${borrowAmount} USDC`,
-      gasEstimate: '~$3.20',
-    });
-    setShowTransactionModal(true);
-  };
-
-  const confirmTransaction = async () => {
     try {
-      if (borrow && borrowAmount) {
-        // This would call the actual contract function with real parameters
-        await borrow();
-      }
+      const amount = parseUnits(borrowAmount, selectedToken.decimals);
+      await borrow(selectedLender as `0x${string}`, selectedToken.address, amount);
+      setBorrowAmount('');
     } catch (error) {
-      console.error('Transaction failed:', error);
-    } finally {
-      setShowTransactionModal(false);
+      console.error('Borrow failed:', error);
+      throw error;
     }
   };
 
