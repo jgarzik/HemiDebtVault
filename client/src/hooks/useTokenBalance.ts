@@ -42,7 +42,15 @@ export function useTokenBalance(token?: Token) {
   }
 
   const formattedBalance = token && rawBalance 
-    ? formatUnits(rawBalance, token.decimals)
+    ? (() => {
+        const formatted = formatUnits(rawBalance, token.decimals);
+        const num = parseFloat(formatted);
+        // Show more decimals for very small amounts
+        if (num > 0 && num < 0.0001) {
+          return num.toFixed(12);
+        }
+        return formatted;
+      })()
     : '0';
 
   return {

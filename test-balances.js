@@ -1,9 +1,9 @@
 import { createPublicClient, http, formatUnits } from 'viem';
 
-// Hemi network configuration
+// Hemi mainnet configuration
 const hemiNetwork = {
   id: 43111,
-  name: 'Hemi Testnet',
+  name: 'Hemi Network',
   network: 'hemi',
   nativeCurrency: {
     decimals: 18,
@@ -11,11 +11,11 @@ const hemiNetwork = {
     symbol: 'ETH',
   },
   rpcUrls: {
-    default: { http: ['https://testnet.rpc.hemi.network/rpc'] },
-    public: { http: ['https://testnet.rpc.hemi.network/rpc'] },
+    default: { http: ['https://rpc.hemi.network/rpc'] },
+    public: { http: ['https://rpc.hemi.network/rpc'] },
   },
   blockExplorers: {
-    default: { name: 'Hemi Explorer', url: 'https://testnet.explorer.hemi.network' },
+    default: { name: 'Hemi Explorer', url: 'https://explorer.hemi.network' },
   },
 };
 
