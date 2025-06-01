@@ -24,12 +24,15 @@ export function Borrow() {
   const allTokens = getAllTokens();
 
   const handleBorrow = async () => {
-    if (!borrowAmount || !selectedLender || !selectedToken) return;
+    if (!borrowAmount || !selectedLender || !selectedToken) return '';
     
     try {
       const amount = parseUnits(borrowAmount, selectedToken.decimals);
-      await borrow(selectedLender as `0x${string}`, selectedToken.address, amount);
+      const txHash = await borrow(selectedLender as `0x${string}`, selectedToken.address, amount);
       setBorrowAmount('');
+      setSelectedLender('');
+      setSelectedToken(null);
+      return txHash;
     } catch (error) {
       console.error('Borrow failed:', error);
       throw error;
@@ -134,8 +137,11 @@ export function Borrow() {
                       size="sm" 
                       className="bg-blue-600 hover:bg-blue-700"
                       onClick={() => {
-                        // TODO: Auto-fill borrow form with this credit line
-                        console.log('Selected credit line:', credit);
+                        setSelectedLender(credit.lender);
+                        const token = allTokens.find(t => t.address.toLowerCase() === credit.token.toLowerCase());
+                        if (token) setSelectedToken(token);
+                        // Scroll to borrow form
+                        document.getElementById('borrow-form')?.scrollIntoView({ behavior: 'smooth' });
                       }}
                     >
                       Use This Credit
@@ -149,7 +155,7 @@ export function Borrow() {
       </Card>
 
       {/* Borrow Interface */}
-      <Card className="bg-slate-800 border-slate-700">
+      <Card id="borrow-form" className="bg-slate-800 border-slate-700">
         <CardHeader>
           <CardTitle>New Loan</CardTitle>
         </CardHeader>
@@ -164,7 +170,15 @@ export function Borrow() {
                     <SelectValue placeholder="Choose a lender..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none" disabled>No lenders available</SelectItem>
+                    {availableCredits.length === 0 ? (
+                      <SelectItem value="none" disabled>No lenders available</SelectItem>
+                    ) : (
+                      availableCredits.map((credit) => (
+                        <SelectItem key={credit.lender} value={credit.lender}>
+                          {credit.lender.slice(0, 6)}...{credit.lender.slice(-4)} ({credit.tokenSymbol})
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>

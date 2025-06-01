@@ -14,6 +14,7 @@ import { useDebtVault } from '@/hooks/useDebtVault';
 import { useTokenBalance } from '@/hooks/useTokenBalance';
 import { usePoolPosition } from '@/hooks/usePoolPosition';
 import { useCreditLines } from '@/hooks/useCreditLines';
+import { useLoans } from '@/hooks/useLoans';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { Edit2, Eye, X, TrendingUp, Plus } from 'lucide-react';
 import { parseUnits } from 'viem';
@@ -43,6 +44,9 @@ export function Lend() {
   
   // Get credit lines data
   const { creditLines, isLoading: isCreditLinesLoading, refetch: refetchCreditLines } = useCreditLines();
+  
+  // Get loans data
+  const { loans, isLoading: isLoansLoading } = useLoans();
 
   // Listen for transaction success events to refresh data
   useEffect(() => {
