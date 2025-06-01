@@ -33,11 +33,17 @@ const tokens = {
   }
 };
 
-// ERC-20 balanceOf ABI
-const balanceOfABI = [{
+// ERC-20 ABI with balanceOf and decimals
+const erc20ABI = [{
   inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
   name: 'balanceOf',
   outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+  stateMutability: 'view',
+  type: 'function'
+}, {
+  inputs: [],
+  name: 'decimals',
+  outputs: [{ internalType: 'uint8', name: '', type: 'uint8' }],
   stateMutability: 'view',
   type: 'function'
 }];
@@ -59,28 +65,38 @@ async function checkBalances() {
     const ethBalance = await client.getBalance({ address: walletAddress });
     console.log(`ETH Balance: ${formatUnits(ethBalance, 18)} ETH`);
 
-    // Check token balances
+    // Check token balances and get actual decimals
     for (const [symbol, token] of Object.entries(tokens)) {
       try {
-        console.log(`\n📊 Querying ${symbol} balance...`);
+        console.log(`\n📊 Querying ${symbol}...`);
         console.log(`   Token Address: ${token.address}`);
-        console.log(`   Decimals: ${token.decimals}`);
+        
+        // Get actual decimals from contract
+        const actualDecimals = await client.readContract({
+          address: token.address,
+          abi: erc20ABI,
+          functionName: 'decimals',
+        });
+        
+        console.log(`   Configured Decimals: ${token.decimals}`);
+        console.log(`   Actual Decimals: ${actualDecimals}`);
         
         const balance = await client.readContract({
           address: token.address,
-          abi: balanceOfABI,
+          abi: erc20ABI,
           functionName: 'balanceOf',
           args: [walletAddress],
         });
 
-        const formattedBalance = formatUnits(balance, token.decimals);
-        console.log(`   Raw Balance: ${balance.toString()}`);
-        console.log(`   Formatted: ${formattedBalance} ${symbol}`);
+        const formattedWithActual = formatUnits(balance, actualDecimals);
+        const formattedWithConfigured = formatUnits(balance, token.decimals);
         
-        if (balance === 0n) {
-          console.log(`   ❌ Zero balance detected for ${symbol}`);
-        } else {
-          console.log(`   ✅ ${symbol} balance found`);
+        console.log(`   Raw Balance: ${balance.toString()}`);
+        console.log(`   With Actual Decimals (${actualDecimals}): ${formattedWithActual} ${symbol}`);
+        console.log(`   With Configured Decimals (${token.decimals}): ${formattedWithConfigured} ${symbol}`);
+        
+        if (actualDecimals !== token.decimals) {
+          console.log(`   ⚠️  DECIMALS MISMATCH! Should be ${actualDecimals}, not ${token.decimals}`);
         }
         
       } catch (error) {

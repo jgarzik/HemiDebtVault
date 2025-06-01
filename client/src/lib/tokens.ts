@@ -29,7 +29,7 @@ export const WHITELISTED_TOKENS: Token[] = [
   {
     symbol: 'VCRED',
     address: '0x71881974e96152643C74A8e0214B877CfB2A0Aa1',
-    decimals: 18,
+    decimals: 6,
     name: 'VCRED',
   },
   {
