@@ -58,6 +58,7 @@ export function TransactionButton({
   const { openConnectModal } = useConnectModal();
   const { switchChain } = useSwitchChain();
   const { writeContract, data: hash, isPending: isWritePending } = useWriteContract();
+  const { toast } = useToast();
   
   const [isApproving, setIsApproving] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
