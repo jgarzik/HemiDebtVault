@@ -149,7 +149,9 @@ export function TransactionButton({
           args: [requiresApproval.spenderAddress, approvalAmount],
         });
         
-        setApprovalHash(txHash || null);
+        if (txHash) {
+          setApprovalHash(txHash);
+        }
       } catch (error) {
         console.error('Approval failed:', error);
         setIsApproving(false);

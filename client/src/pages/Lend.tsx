@@ -131,6 +131,7 @@ export function Lend() {
                       amount: depositAmount,
                       spenderAddress: DEBT_VAULT_ADDRESS
                     } : undefined}
+                    actionLabel="Deposit"
                   >
                     Deposit Tokens
                   </TransactionButton>
