@@ -87,9 +87,14 @@ export function useTokenApproval(params?: ApprovalParams) {
   useEffect(() => {
     if (isApprovalSuccess && approvalHash) {
       console.log('Approval transaction confirmed, refetching allowance...');
-      refetchAllowance();
-      setApprovalHash(null);
-      setIsApproving(false);
+      // Add a small delay to ensure the blockchain state has updated
+      setTimeout(() => {
+        refetchAllowance().then(() => {
+          console.log('Allowance refetched after approval');
+          setApprovalHash(null);
+          setIsApproving(false);
+        });
+      }, 1000);
     }
   }, [isApprovalSuccess, approvalHash, refetchAllowance]);
 
