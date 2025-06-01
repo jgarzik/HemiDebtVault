@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useSwitchChain, useReadContract } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { parseUnits } from 'viem';
 import { hemiNetwork } from '@/lib/hemi';
 import { Token } from '@/lib/tokens';
+import { TransactionModal } from './TransactionModal';
 
 const ERC20_ABI = [
   {
@@ -39,6 +40,7 @@ interface TransactionButtonProps {
     amount: string;
     spenderAddress: `0x${string}`;
   };
+  actionLabel?: string;
 }
 
 export function TransactionButton({ 
@@ -46,25 +48,34 @@ export function TransactionButton({
   onExecute, 
   className = '', 
   disabled = false,
-  requiresApproval 
+  requiresApproval,
+  actionLabel 
 }: TransactionButtonProps) {
   const { address, isConnected, chainId } = useAccount();
   const { openConnectModal } = useConnectModal();
   const { switchChain } = useSwitchChain();
-  const { writeContract } = useWriteContract();
+  const { writeContract, data: hash, isPending: isWritePending } = useWriteContract();
   
   const [isApproving, setIsApproving] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalData, setModalData] = useState<any>(null);
+  const [approvalHash, setApprovalHash] = useState<string | null>(null);
+
+  // Wait for approval transaction receipt
+  const { isLoading: isApprovalLoading, isSuccess: isApprovalSuccess } = useWaitForTransactionReceipt({
+    hash: approvalHash as `0x${string}` | undefined,
+  });
 
   // Check current allowance if approval is required
-  const { data: currentAllowance } = useReadContract({
+  const { data: currentAllowance, refetch: refetchAllowance } = useReadContract({
     address: requiresApproval?.token.address,
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: address && requiresApproval ? [address, requiresApproval.spenderAddress] : undefined,
     query: {
       enabled: !!(address && requiresApproval),
-      refetchInterval: false,
+      refetchInterval: 1000, // Poll every second to detect approval changes
     },
   });
 
@@ -72,6 +83,32 @@ export function TransactionButton({
   const needsApproval = requiresApproval && currentAllowance !== undefined
     ? currentAllowance < parseUnits(requiresApproval.amount, requiresApproval.token.decimals)
     : false;
+
+  // Auto-proceed to action after approval succeeds
+  useEffect(() => {
+    if (isApprovalSuccess && !needsApproval && !isExecuting) {
+      setIsApproving(false);
+      setApprovalHash(null);
+      // Auto-trigger the main action after approval
+      setTimeout(() => {
+        handleMainAction();
+      }, 1000);
+    }
+  }, [isApprovalSuccess, needsApproval, isExecuting]);
+
+  const handleMainAction = async () => {
+    if (!requiresApproval) return;
+    
+    setIsExecuting(true);
+    setModalData({
+      title: `Confirm ${actionLabel || children}`,
+      description: `Execute ${actionLabel || children} transaction`,
+      action: actionLabel || children as string,
+      amount: `${requiresApproval.amount} ${requiresApproval.token.symbol}`,
+      gasEstimate: '~$2.50',
+    });
+    setShowModal(true);
+  };
 
   const handleClick = async () => {
     // Step 1: Check wallet connection
@@ -93,31 +130,42 @@ export function TransactionButton({
     // Step 3: Handle approval if needed
     if (needsApproval && requiresApproval) {
       setIsApproving(true);
+      setModalData({
+        title: `Approve ${requiresApproval.token.symbol}`,
+        description: `Allow the contract to spend your ${requiresApproval.token.symbol} tokens`,
+        action: 'Approve',
+        amount: `${requiresApproval.amount} ${requiresApproval.token.symbol}`,
+        gasEstimate: '~$1.50',
+      });
+      setShowModal(true);
+      
       try {
         const approvalAmount = parseUnits(requiresApproval.amount, requiresApproval.token.decimals);
         
-        await writeContract({
+        const txHash = await writeContract({
           address: requiresApproval.token.address,
           abi: ERC20_ABI,
           functionName: 'approve',
           args: [requiresApproval.spenderAddress, approvalAmount],
         });
         
-        // Wait a moment for the approval to be processed
-        setTimeout(() => {
-          setIsApproving(false);
-        }, 2000);
+        setApprovalHash(txHash || null);
       } catch (error) {
         console.error('Approval failed:', error);
         setIsApproving(false);
+        setShowModal(false);
       }
       return;
     }
 
-    // Step 4: Execute the main action
-    setIsExecuting(true);
+    // Step 4: Execute the main action directly (no approval needed)
+    handleMainAction();
+  };
+
+  const confirmTransaction = async () => {
     try {
       await onExecute();
+      setShowModal(false);
     } catch (error) {
       console.error('Transaction failed:', error);
     } finally {
@@ -153,12 +201,27 @@ export function TransactionButton({
   const { label, loading } = getButtonState();
 
   return (
-    <Button
-      onClick={handleClick}
-      disabled={disabled || loading}
-      className={className}
-    >
-      {label}
-    </Button>
+    <>
+      <Button
+        onClick={handleClick}
+        disabled={disabled || loading}
+        className={className}
+      >
+        {label}
+      </Button>
+
+      {/* Transaction Modal */}
+      <TransactionModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onConfirm={confirmTransaction}
+        title={modalData?.title || ''}
+        description={modalData?.description || ''}
+        action={modalData?.action || ''}
+        amount={modalData?.amount}
+        gasEstimate={modalData?.gasEstimate}
+        isLoading={isApproving || isExecuting || isApprovalLoading}
+      />
+    </>
   );
 }
