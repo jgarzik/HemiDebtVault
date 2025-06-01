@@ -1,7 +1,7 @@
 import { defineChain } from 'viem';
 
 export const hemiNetwork = defineChain({
-  id: 743111,
+  id: 43111,
   name: 'Hemi Network',
   network: 'hemi',
   nativeCurrency: {
@@ -10,11 +10,11 @@ export const hemiNetwork = defineChain({
     symbol: 'ETH',
   },
   rpcUrls: {
-    public: { http: ['https://testnet.rpc.hemi.network/rpc'] },
-    default: { http: ['https://testnet.rpc.hemi.network/rpc'] },
+    public: { http: ['https://rpc.hemi.network/rpc'] },
+    default: { http: ['https://rpc.hemi.network/rpc'] },
   },
   blockExplorers: {
-    default: { name: 'Hemi Explorer', url: 'https://testnet.explorer.hemi.xyz' },
+    default: { name: 'Hemi Explorer', url: 'https://explorer.hemi.xyz' },
   },
   // Add custom configuration to handle RPC limitations
   fees: undefined,

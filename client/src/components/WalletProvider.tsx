@@ -13,7 +13,7 @@ const wagmiConfig = getDefaultConfig({
   projectId: import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID || 'default_project_id',
   chains: [hemiNetwork],
   transports: {
-    [hemiNetwork.id]: http('https://testnet.rpc.hemi.network/rpc', {
+    [hemiNetwork.id]: http('https://rpc.hemi.network/rpc', {
       batch: false,
       fetchOptions: {
         headers: {
