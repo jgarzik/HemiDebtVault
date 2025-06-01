@@ -27,6 +27,12 @@ export const WHITELISTED_TOKENS: Token[] = [
     name: 'USD Coin (Bridged)',
   },
   {
+    symbol: 'VCRED',
+    address: '0x71881974e96152643C74A8e0214B877CfB2A0Aa1',
+    decimals: 18,
+    name: 'VCRED',
+  },
+  {
     symbol: 'WETH',
     address: '0x4200000000000000000000000000000000000006',
     decimals: 18,
