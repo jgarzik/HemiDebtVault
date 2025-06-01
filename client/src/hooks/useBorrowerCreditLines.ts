@@ -129,10 +129,17 @@ export function useBorrowerCreditLines() {
     }
   };
 
-  // Fetch available credits when address changes or new blocks are mined
+  // Fetch available credits when address changes, but not on every block
   useEffect(() => {
     fetchAvailableCredits();
-  }, [address, blockNumber]);
+  }, [address]);
+  
+  // Only refetch on block changes if we have no data yet
+  useEffect(() => {
+    if (address && availableCredits.length === 0) {
+      fetchAvailableCredits();
+    }
+  }, [blockNumber]);
 
   return {
     availableCredits,

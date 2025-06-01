@@ -235,17 +235,31 @@ export function Borrow() {
                 </div>
               </div>
               
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Credit Limit:</span>
-                <span className="font-mono text-slate-300">$0.00</span>
-              </div>
+              {selectedCredit && (
+                <div className="flex justify-between text-sm mt-2">
+                  <span className="text-slate-400">Available Credit:</span>
+                  <span className="font-mono text-green-400">
+                    {parseFloat(selectedCredit.formattedAvailableCredit).toLocaleString()} {selectedCredit.tokenSymbol}
+                  </span>
+                </div>
+              )}
               
               <TransactionButton
                 onExecute={handleBorrow}
                 className="w-full bg-blue-600 hover:bg-blue-700"
                 disabled={!borrowAmount || !selectedCredit}
+                actionLabel="Create Loan"
+                transactionAmount={borrowAmount && selectedCredit ? `${borrowAmount} ${selectedCredit.tokenSymbol}` : undefined}
+                loanDetails={selectedCredit && borrowAmount ? {
+                  lender: selectedCredit.lender,
+                  token: selectedCredit.tokenSymbol,
+                  principal: borrowAmount,
+                  apr: currentAPR,
+                  utilization: ((parseFloat(borrowAmount) / parseFloat(selectedCredit.formattedAvailableCredit)) * 100).toFixed(1),
+                  dailyInterest: calculateDailyInterest(borrowAmount, currentAPR)
+                } : undefined}
               >
-                Create Loan
+                Borrow {borrowAmount && selectedCredit ? `${borrowAmount} ${selectedCredit.tokenSymbol}` : 'Funds'}
               </TransactionButton>
             </div>
             

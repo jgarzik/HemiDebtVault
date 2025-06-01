@@ -15,6 +15,14 @@ interface TransactionButtonProps {
   };
   actionLabel?: string;
   transactionAmount?: string;
+  loanDetails?: {
+    lender: string;
+    token: string;
+    principal: string;
+    apr: string;
+    utilization: string;
+    dailyInterest: string;
+  };
 }
 
 export function TransactionButton({ 
@@ -24,7 +32,8 @@ export function TransactionButton({
   disabled = false,
   requiresApproval,
   actionLabel,
-  transactionAmount
+  transactionAmount,
+  loanDetails
 }: TransactionButtonProps) {
   const {
     buttonLabel,
@@ -63,6 +72,7 @@ export function TransactionButton({
         amount={modalData?.amount}
         gasEstimate={modalData?.gasEstimate}
         isLoading={isLoading}
+        loanDetails={loanDetails}
       />
     </>
   );
