@@ -97,6 +97,15 @@ export function Borrow() {
               </div>
               
               <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Token</label>
+                <TokenSelector 
+                  selectedToken={selectedToken?.symbol}
+                  onTokenSelect={(token) => setSelectedToken(token)}
+                  className="mb-4"
+                />
+              </div>
+              
+              <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Amount</label>
                 <div className="relative">
                   <Input
@@ -107,7 +116,7 @@ export function Borrow() {
                     className="bg-slate-900 border-slate-600 text-lg font-mono pr-20"
                   />
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 font-mono">
-                    USDC
+                    {selectedToken?.symbol || 'Token'}
                   </div>
                 </div>
               </div>
@@ -117,13 +126,13 @@ export function Borrow() {
                 <span className="font-mono text-slate-300">$0.00</span>
               </div>
               
-              <Button 
+              <TransactionButton
+                onExecute={handleBorrow}
                 className="w-full bg-blue-600 hover:bg-blue-700"
-                onClick={handleBorrow}
-                disabled={!borrowAmount || !selectedLender || isBorrowLoading}
+                disabled={!borrowAmount || !selectedLender || !selectedToken}
               >
-                {isBorrowLoading ? 'Processing...' : 'Create Loan'}
-              </Button>
+                Create Loan
+              </TransactionButton>
             </div>
             
             {/* Loan Preview */}
@@ -181,18 +190,7 @@ export function Borrow() {
         </CardContent>
       </Card>
 
-      {/* Transaction Modal */}
-      <TransactionModal
-        isOpen={showTransactionModal}
-        onClose={() => setShowTransactionModal(false)}
-        onConfirm={confirmTransaction}
-        title={transactionData?.title || ''}
-        description={transactionData?.description || ''}
-        action={transactionData?.action || ''}
-        amount={transactionData?.amount}
-        gasEstimate={transactionData?.gasEstimate}
-        isLoading={isBorrowLoading}
-      />
+
     </div>
   );
 }
