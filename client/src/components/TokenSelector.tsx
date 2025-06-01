@@ -136,16 +136,16 @@ export function TokenSelector({ selectedToken, onTokenSelect, className }: Token
     <>
       <Select value={selectedToken} onValueChange={handleTokenSelect}>
         <SelectTrigger className={className}>
-          <SelectValue placeholder="Select token">
-            {selectedTokenObj && (
-              <div className="flex items-center space-x-2">
-                <span className="font-medium">{selectedTokenObj.symbol}</span>
-                {selectedTokenObj.isCustom && (
-                  <span className="text-xs text-slate-500 bg-slate-700 px-1 rounded">Custom</span>
-                )}
-              </div>
-            )}
-          </SelectValue>
+          {selectedTokenObj ? (
+            <div className="flex items-center space-x-2">
+              <span className="font-medium">{selectedTokenObj.symbol}</span>
+              {selectedTokenObj.isCustom && (
+                <span className="text-xs text-slate-500 bg-slate-700 px-1 rounded">Custom</span>
+              )}
+            </div>
+          ) : (
+            <SelectValue placeholder="Select token" />
+          )}
         </SelectTrigger>
         <SelectContent>
           {allTokens.map((token) => (

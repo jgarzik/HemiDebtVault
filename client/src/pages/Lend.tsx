@@ -183,8 +183,9 @@ export function Lend() {
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        if (selectedWithdrawToken && formattedWithdrawBalance) {
-                          setWithdrawAmount(formattedWithdrawBalance);
+                        if (selectedWithdrawToken) {
+                          const depositedBalance = tokenBalances.find((tb: any) => tb.token.address === selectedWithdrawToken.address)?.formattedBalance || '0';
+                          setWithdrawAmount(depositedBalance);
                         }
                       }}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 h-7 px-3 bg-red-500/20 text-red-400 border-red-500/20"

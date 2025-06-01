@@ -97,9 +97,7 @@ export function TransactionButton({
   }, [isApprovalSuccess, needsApproval, isExecuting]);
 
   const handleMainAction = async () => {
-    setIsExecuting(true);
-    
-    // Show confirmation modal for all transactions
+    // Show confirmation modal for all transactions and wait for user input
     setModalData({
       title: `Confirm ${actionLabel || children}`,
       description: `Execute ${actionLabel || children} transaction`,
@@ -108,26 +106,32 @@ export function TransactionButton({
       gasEstimate: '~$2.50',
     });
     setShowModal(true);
-    
-    // Execute the transaction after a brief delay
-    setTimeout(async () => {
-      try {
-        await onExecute();
-        // Keep modal open for a moment to show success
-        setTimeout(() => {
-          setShowModal(false);
-        }, 1500);
-      } catch (error) {
-        console.error('Transaction failed:', error);
-        setModalData(prev => ({
-          ...prev,
-          title: 'Transaction Failed',
-          description: 'Transaction was rejected or failed',
-        }));
-      } finally {
-        setIsExecuting(false);
-      }
-    }, 500);
+    // Don't auto-execute - wait for user confirmation
+  };
+
+  const executeTransaction = async () => {
+    setIsExecuting(true);
+    try {
+      await onExecute();
+      setModalData(prev => ({
+        ...prev,
+        title: 'Transaction Successful',
+        description: 'Your transaction has been completed successfully',
+      }));
+      // Keep modal open for success message
+      setTimeout(() => {
+        setShowModal(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Transaction failed:', error);
+      setModalData(prev => ({
+        ...prev,
+        title: 'Transaction Failed',
+        description: 'Transaction was rejected or failed',
+      }));
+    } finally {
+      setIsExecuting(false);
+    }
   };
 
   const handleClick = async () => {
@@ -236,7 +240,7 @@ export function TransactionButton({
       <TransactionModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        onConfirm={confirmTransaction}
+        onConfirm={executeTransaction}
         title={modalData?.title || ''}
         description={modalData?.description || ''}
         action={modalData?.action || ''}
