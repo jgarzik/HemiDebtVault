@@ -369,7 +369,7 @@ export function Borrow() {
                     <div>
                       <span className="text-slate-400">Accrued Interest:</span>
                       <p className="text-red-400 font-semibold mt-1">
-                        {parseFloat(loan.formattedAccruedInterest).toFixed(6)} {loan.tokenSymbol}
+                        {loan.formattedAccruedInterest} {loan.tokenSymbol}
                       </p>
                     </div>
                     
@@ -440,7 +440,7 @@ export function Borrow() {
             tokenSymbol: selectedLoanForRepay.tokenSymbol,
             currentPrincipal: selectedLoanForRepay.formattedPrincipal,
             currentInterest: selectedLoanForRepay.formattedAccruedInterest,
-            totalOwed: (parseFloat(selectedLoanForRepay.formattedPrincipal) + parseFloat(selectedLoanForRepay.formattedAccruedInterest)).toFixed(6)
+            totalOwed: (parseFloat(selectedLoanForRepay.formattedPrincipal) + parseFloat(selectedLoanForRepay.formattedAccruedInterest)).toString()
           }}
           isLoading={false}
         />

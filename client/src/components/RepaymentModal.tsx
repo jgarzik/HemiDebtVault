@@ -91,18 +91,30 @@ export function RepaymentModal({
     const remainingPrincipal = principal - principalPaid;
     const isFullPayoff = remainingInterest === 0 && remainingPrincipal === 0;
     
+    // Use token decimals for precision, fallback to 6 if token not found
+    const decimals = tokenInfo?.decimals || 6;
+    
     return {
-      paymentAmount: payment.toFixed(6),
-      interestPaid: interestPaid.toFixed(6),
-      principalPaid: principalPaid.toFixed(6),
-      remainingInterest: remainingInterest.toFixed(6),
-      remainingPrincipal: remainingPrincipal.toFixed(6),
+      paymentAmount: payment.toFixed(decimals),
+      interestPaid: interestPaid.toFixed(decimals),
+      principalPaid: principalPaid.toFixed(decimals),
+      remainingInterest: remainingInterest.toFixed(decimals),
+      remainingPrincipal: remainingPrincipal.toFixed(decimals),
       isFullPayoff
     };
   }, [paymentAmount, repaymentDetails]);
   
   const handleMaxPayment = () => {
-    setPaymentAmount(repaymentDetails.totalOwed);
+    if (!tokenInfo || !formattedWalletBalance) {
+      setPaymentAmount(repaymentDetails.totalOwed);
+      return;
+    }
+    
+    const walletBalanceNum = parseFloat(formattedWalletBalance);
+    const totalOwedNum = parseFloat(repaymentDetails.totalOwed);
+    const maxPayable = Math.min(walletBalanceNum, totalOwedNum);
+    
+    setPaymentAmount(maxPayable.toString());
   };
   
   const handleConfirm = () => {
@@ -128,16 +140,16 @@ export function RepaymentModal({
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-400">Accrued Interest:</span>
-                <span className="font-mono text-orange-400">{parseFloat(repaymentDetails.currentInterest).toFixed(6)} {repaymentDetails.tokenSymbol}</span>
+                <span className="font-mono text-orange-400">{repaymentDetails.currentInterest} {repaymentDetails.tokenSymbol}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Outstanding Principal:</span>
-                <span className="font-mono text-blue-400">{parseFloat(repaymentDetails.currentPrincipal).toFixed(6)} {repaymentDetails.tokenSymbol}</span>
+                <span className="font-mono text-blue-400">{repaymentDetails.currentPrincipal} {repaymentDetails.tokenSymbol}</span>
               </div>
               <div className="border-t border-slate-700 pt-2 mt-2">
                 <div className="flex justify-between font-semibold">
                   <span className="text-slate-300">Total Owed:</span>
-                  <span className="font-mono text-red-400">{parseFloat(repaymentDetails.totalOwed).toFixed(6)} {repaymentDetails.tokenSymbol}</span>
+                  <span className="font-mono text-red-400">{repaymentDetails.totalOwed} {repaymentDetails.tokenSymbol}</span>
                 </div>
               </div>
             </div>
@@ -167,7 +179,7 @@ export function RepaymentModal({
                 </Button>
               </div>
               <div className="text-xs text-slate-400">
-                Wallet Balance: {formattedWalletBalance || '0.000000'} {repaymentDetails.tokenSymbol}
+                Wallet Balance: {formattedWalletBalance || (tokenInfo ? '0'.padEnd(tokenInfo.decimals + 2, '0') : '0.000000')} {repaymentDetails.tokenSymbol}
               </div>
             </div>
           </div>
