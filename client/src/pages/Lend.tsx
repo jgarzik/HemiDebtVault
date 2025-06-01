@@ -46,13 +46,7 @@ export function Lend() {
       await deposit(selectedToken.address, amount);
       setDepositAmount('');
       
-      // Show success toast
-      toast({
-        title: "Deposit Successful",
-        description: `Successfully deposited ${depositAmount} ${selectedToken.symbol}`,
-      });
-      
-      // Refresh balances and pool data
+      // Refresh balances and pool data after successful transaction
       setTimeout(() => {
         invalidatePoolData();
         refetchBalance();
@@ -71,13 +65,7 @@ export function Lend() {
       await withdraw(selectedWithdrawToken.address, amount);
       setWithdrawAmount('');
       
-      // Show success toast
-      toast({
-        title: "Withdrawal Successful", 
-        description: `Successfully withdrew ${withdrawAmount} ${selectedWithdrawToken.symbol}`,
-      });
-      
-      // Refresh balances and pool data
+      // Refresh balances and pool data after successful transaction
       setTimeout(() => {
         invalidatePoolData();
         refetchWithdrawBalance();
@@ -186,14 +174,11 @@ export function Lend() {
                 </TabsContent>
                 
                 <TabsContent value="withdraw" className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Token</label>
-                    <TokenSelector 
-                      selectedToken={selectedWithdrawToken?.symbol}
-                      onTokenSelect={(token) => setSelectedWithdrawToken(token)}
-                      className="mb-4"
-                    />
-                  </div>
+                  <TokenSelector 
+                    selectedToken={selectedWithdrawToken?.address}
+                    onTokenSelect={(token) => setSelectedWithdrawToken(token)}
+                    className="bg-slate-900 border-slate-600"
+                  />
                   
                   <div className="relative">
                     <Input

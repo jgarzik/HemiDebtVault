@@ -6,6 +6,7 @@ import { parseUnits } from 'viem';
 import { hemiNetwork } from '@/lib/hemi';
 import { Token } from '@/lib/tokens';
 import { TransactionModal } from './TransactionModal';
+import { useToast } from '@/hooks/use-toast';
 
 const ERC20_ABI = [
   {
@@ -187,8 +188,21 @@ export function TransactionButton({
     try {
       await onExecute();
       setShowModal(false);
+      
+      // Show success toast after blockchain confirmation
+      toast({
+        title: `${actionLabel || 'Transaction'} Successful`,
+        description: transactionAmount ? 
+          `Successfully processed ${transactionAmount}` : 
+          `${actionLabel || 'Transaction'} completed successfully`,
+      });
     } catch (error) {
       console.error('Transaction failed:', error);
+      toast({
+        title: `${actionLabel || 'Transaction'} Failed`,
+        description: 'Transaction was rejected or failed. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setIsExecuting(false);
     }
