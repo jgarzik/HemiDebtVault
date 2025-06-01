@@ -106,21 +106,54 @@ export const DEBT_VAULT_ABI = [
   },
   {
     "inputs": [
-      {"internalType": "uint256", "name": "loanId", "type": "uint256"}
+      {"internalType": "address", "name": "", "type": "address"},
+      {"internalType": "address", "name": "", "type": "address"},
+      {"internalType": "address", "name": "", "type": "address"}
     ],
-    "name": "getOutstandingBalance",
+    "name": "creditLines",
+    "outputs": [
+      {"internalType": "uint256", "name": "creditLimit", "type": "uint256"},
+      {"internalType": "uint256", "name": "minAPR", "type": "uint256"},
+      {"internalType": "uint256", "name": "maxAPR", "type": "uint256"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "", "type": "uint256"}
+    ],
+    "name": "loanById",
+    "outputs": [
+      {"internalType": "address", "name": "borrower", "type": "address"},
+      {"internalType": "address", "name": "lender", "type": "address"},
+      {"internalType": "address", "name": "token", "type": "address"},
+      {"internalType": "uint256", "name": "principal", "type": "uint256"},
+      {"internalType": "uint256", "name": "repaidPrincipal", "type": "uint256"},
+      {"internalType": "uint256", "name": "forgivenPrincipal", "type": "uint256"},
+      {"internalType": "uint256", "name": "apr", "type": "uint256"},
+      {"internalType": "uint64", "name": "startTimestamp", "type": "uint64"},
+      {"internalType": "uint64", "name": "lastPaymentTimestamp", "type": "uint64"},
+      {"internalType": "bool", "name": "closed", "type": "bool"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "", "type": "address"}
+    ],
+    "name": "userLoanCount",
     "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {"internalType": "address", "name": "borrower", "type": "address"},
-      {"internalType": "address", "name": "lender", "type": "address"},
-      {"internalType": "address", "name": "token", "type": "address"}
+      {"internalType": "uint256", "name": "", "type": "uint256"}
     ],
-    "name": "getAvailableCredit",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "name": "originalBorrower",
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
     "stateMutability": "view",
     "type": "function"
   },

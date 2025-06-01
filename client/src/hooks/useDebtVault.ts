@@ -96,23 +96,33 @@ export function useDebtVault() {
     });
   };
 
-  // Get outstanding balance
-  const getOutstandingBalance = (loanId: string) => {
+  // Get loan details by ID
+  const getLoanById = (loanId: string) => {
     return useReadContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
-      functionName: 'getOutstandingBalance',
+      functionName: 'loanById',
       args: [BigInt(loanId)],
     });
   };
 
-  // Get available credit
-  const getAvailableCredit = (borrower: string, lender: string, token: string) => {
+  // Get credit line configuration
+  const getCreditLine = (lender: string, borrower: string, token: string) => {
     return useReadContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
-      functionName: 'getAvailableCredit',
-      args: [borrower as `0x${string}`, lender as `0x${string}`, token as `0x${string}`],
+      functionName: 'creditLines',
+      args: [lender as `0x${string}`, borrower as `0x${string}`, token as `0x${string}`],
+    });
+  };
+
+  // Get user's loan count
+  const getUserLoanCount = (user: string) => {
+    return useReadContract({
+      address: DEBT_VAULT_ADDRESS,
+      abi: DEBT_VAULT_ABI,
+      functionName: 'userLoanCount',
+      args: [user as `0x${string}`],
     });
   };
 
@@ -132,8 +142,9 @@ export function useDebtVault() {
     isUpdateCreditLoading: isWritePending,
     
     // Read functions
-    getOutstandingBalance,
-    getAvailableCredit,
+    getLoanById,
+    getCreditLine,
+    getUserLoanCount,
     
     // State
     portfolioStats,
