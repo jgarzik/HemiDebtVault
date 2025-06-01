@@ -172,7 +172,11 @@ export function useBorrowerLoans() {
             args: [loanId],
           });
 
-          const [loanLender, borrower, loanToken, loanPrincipal, loanInterestRate, createdAt, lastPayment, , , isActive] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
+          console.log('Raw loan data for loan', loanId, ':', loanData);
+          
+          // The contract returns a struct with these fields:
+          // borrower, lender, token, principal, repaidPrincipal, forgivenPrincipal, apr, startTimestamp, lastPaymentTimestamp, closed
+          const [borrower, loanLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAt, lastPayment, isClosed] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
           
           // Skip if loan is not active
           if (!isActive) continue;
@@ -201,7 +205,7 @@ export function useBorrowerLoans() {
         }
       }
 
-      console.log('Active borrowed loans:', activeLoans);
+      console.log('Final active borrowed loans:', activeLoans);
       setBorrowedLoans(activeLoans);
     } catch (error) {
       console.error('Error fetching borrowed loans:', error);
@@ -210,10 +214,17 @@ export function useBorrowerLoans() {
     }
   };
 
-  // Fetch borrowed loans when address changes or new blocks are mined
+  // Fetch borrowed loans when address changes, but not on every block to avoid constant reloading
   useEffect(() => {
     fetchBorrowedLoans();
-  }, [address, blockNumber]);
+  }, [address]);
+  
+  // Only refetch on block changes if we have no data yet
+  useEffect(() => {
+    if (address && borrowedLoans.length === 0) {
+      fetchBorrowedLoans();
+    }
+  }, [blockNumber]);
 
   return {
     borrowedLoans,
