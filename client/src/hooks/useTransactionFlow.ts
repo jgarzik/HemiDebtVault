@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWalletConnection } from './useWalletConnection';
 import { useNetworkSwitching } from './useNetworkSwitching';
 import { useTokenApproval } from './useTokenApproval';
@@ -140,14 +140,16 @@ export function useTransactionFlow({
   };
 
   // Show success toast when transaction is confirmed
-  if (execution.isConfirmed && execution.txHash) {
-    toast({
-      title: `${actionLabel || 'Transaction'} Successful`,
-      description: transactionAmount 
-        ? `Successfully processed ${transactionAmount}`
-        : `${actionLabel || 'Transaction'} completed successfully`,
-    });
-  }
+  useEffect(() => {
+    if (execution.isConfirmed && execution.txHash) {
+      toast({
+        title: `${actionLabel || 'Transaction'} Successful`,
+        description: transactionAmount 
+          ? `Successfully processed ${transactionAmount}`
+          : `${actionLabel || 'Transaction'} completed successfully`,
+      });
+    }
+  }, [execution.isConfirmed, execution.txHash, toast, actionLabel, transactionAmount]);
 
   return {
     currentState,
