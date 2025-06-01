@@ -97,9 +97,21 @@ export function TransactionButton({
   }, [isApprovalSuccess, needsApproval, isExecuting]);
 
   const handleMainAction = async () => {
-    if (!requiresApproval) return;
-    
     setIsExecuting(true);
+    
+    // If no approval required, execute directly
+    if (!requiresApproval) {
+      try {
+        await onExecute();
+      } catch (error) {
+        console.error('Transaction failed:', error);
+      } finally {
+        setIsExecuting(false);
+      }
+      return;
+    }
+    
+    // If approval was required, show confirmation modal and execute automatically
     setModalData({
       title: `Confirm ${actionLabel || children}`,
       description: `Execute ${actionLabel || children} transaction`,
@@ -108,6 +120,18 @@ export function TransactionButton({
       gasEstimate: '~$2.50',
     });
     setShowModal(true);
+    
+    // Auto-execute the transaction after a brief delay
+    setTimeout(async () => {
+      try {
+        await onExecute();
+        setShowModal(false);
+      } catch (error) {
+        console.error('Transaction failed:', error);
+      } finally {
+        setIsExecuting(false);
+      }
+    }, 500);
   };
 
   const handleClick = async () => {
