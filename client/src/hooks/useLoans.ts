@@ -146,11 +146,14 @@ export function useBorrowerLoans() {
       // This will work for the current loan and can be expanded later
       const activeLoans: Loan[] = [];
       
-      // Get ALL LoanCreated events and check contract data to determine actual borrower
-      // The event structure might not match the contract borrower field
+      // Get LoanCreated events where the current user is the borrower
+      // Fixed event signature to match actual contract: (loanId, borrower, lender, ...)
       const logs = await publicClient.getLogs({
         address: DEBT_VAULT_ADDRESS,
-        event: parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed lender, address indexed borrower, address token, uint256 principal, uint256 interestRate)'),
+        event: parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed borrower, address indexed lender, address token, uint256 amount, uint256 apr)'),
+        args: {
+          borrower: address,
+        },
         fromBlock: 'earliest',
         toBlock: 'latest',
       });
@@ -160,7 +163,7 @@ export function useBorrowerLoans() {
       // Process each loan
       for (const log of logs) {
         try {
-          const { loanId, lender, token, principal, interestRate } = log.args;
+          const { loanId, borrower, lender, token, amount, apr } = log.args;
           
           if (!loanId) continue;
           
@@ -184,9 +187,9 @@ export function useBorrowerLoans() {
             continue;
           }
 
-          // Only include loans where the user is the borrower according to contract data
+          // Since we filtered by borrower in the event query, verify contract data matches
           if (contractBorrower.toLowerCase() !== address.toLowerCase()) {
-            console.log('Skipping loan', loanId, '- user is not the borrower');
+            console.log('Warning: event/contract borrower mismatch for loan', loanId);
             continue;
           }
           
