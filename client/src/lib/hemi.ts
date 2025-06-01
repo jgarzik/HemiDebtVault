@@ -1,7 +1,7 @@
 import { defineChain } from 'viem';
 
 export const hemiNetwork = defineChain({
-  id: 43111,
+  id: 743111,
   name: 'Hemi Network',
   network: 'hemi',
   nativeCurrency: {
