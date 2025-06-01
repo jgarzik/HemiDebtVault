@@ -67,7 +67,7 @@ export function useTokenBalances(tokens: Token[]) {
 
       return {
         token,
-        balance: balance || 0n,
+        balance: balance || BigInt(0),
         formattedBalance: balance ? formatUnits(balance, token.decimals) : '0',
         isLoading,
       };
