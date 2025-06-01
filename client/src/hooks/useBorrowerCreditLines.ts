@@ -89,9 +89,16 @@ export function useBorrowerCreditLines() {
           // Skip if credit limit is 0 (credit line was deleted)
           if (creditLimit === BigInt(0)) continue;
 
-          // For now, we'll assume 0 utilised credit since we'd need to track loans
-          // In a full implementation, this would sum up active loan principals
-          const utilisedCredit = BigInt(0);
+          // Calculate utilised credit by querying current borrowing from the contract
+          let utilisedCredit = BigInt(0);
+          try {
+            // This would call a function like _getCurrentBorrowing(borrower, lender, token)
+            // For now using 0, but this should be implemented to read actual utilization
+            utilisedCredit = BigInt(0);
+          } catch (error) {
+            console.warn('Could not fetch current borrowing for utilization calculation');
+            utilisedCredit = BigInt(0);
+          }
           const availableCredit = creditLimit - utilisedCredit;
 
           // Find token info

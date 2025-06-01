@@ -2,6 +2,7 @@ import { useAccount, useWatchContractEvent, useReadContract, useWriteContract } 
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { useToast } from '@/hooks/use-toast';
+import { useRef } from 'react';
 import { useState, useEffect } from 'react';
 import type { CreditLine, Loan, PortfolioStats } from '@/types';
 

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TransactionButton } from '@/components/TransactionButton';
 import { useDebtVault } from '@/hooks/useDebtVault';
 import { useBorrowerCreditLines } from '@/hooks/useBorrowerCreditLines';
+import { useBorrowerLoans } from '@/hooks/useLoans';
 import { TokenSelector } from '@/components/TokenSelector';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { type Token, getAllTokens } from '@/lib/tokens';
@@ -16,7 +17,8 @@ import { parseUnits } from 'viem';
 export function Borrow() {
   const { address } = useAccount();
   const { borrow } = useDebtVault();
-  const { availableCredits, isLoading: isCreditsLoading } = useBorrowerCreditLines();
+  const { availableCredits, isLoading: isCreditsLoading, refetch: refetchCredits } = useBorrowerCreditLines();
+  const { borrowedLoans, isLoading: isLoansLoading } = useBorrowerLoans();
   
   const [selectedCreditLine, setSelectedCreditLine] = useState<string>('');
   const [borrowAmount, setBorrowAmount] = useState('');
@@ -39,6 +41,12 @@ export function Borrow() {
       const txHash = await borrow(selectedCredit.lender as `0x${string}`, selectedCredit.token as `0x${string}`, amount);
       setBorrowAmount('');
       setSelectedCreditLine('');
+      
+      // Refresh data after successful transaction
+      setTimeout(() => {
+        refetchCredits();
+      }, 2000);
+      
       return txHash;
     } catch (error) {
       console.error('Borrow failed:', error);
@@ -307,14 +315,81 @@ export function Borrow() {
       {/* My Loans */}
       <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
-          <CardTitle>My Loans</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>My Loans</CardTitle>
+            <span className="text-sm text-slate-400">{borrowedLoans.length} active</span>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <Search className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-            <p className="text-slate-400">No active loans</p>
-            <p className="text-sm text-slate-500 mt-1">Your borrowing activity will appear here</p>
-          </div>
+          {isLoansLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p className="text-slate-400">Loading loans...</p>
+            </div>
+          ) : borrowedLoans.length === 0 ? (
+            <div className="text-center py-8">
+              <Search className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+              <p className="text-slate-400">No active loans</p>
+              <p className="text-sm text-slate-500 mt-1">Your borrowed funds will appear here</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {borrowedLoans.map((loan) => (
+                <div key={loan.loanId.toString()} className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      <span className="font-medium text-slate-200">
+                        Loan #{loan.loanId.toString()} - {loan.tokenSymbol}
+                      </span>
+                    </div>
+                    <span className="text-xs bg-orange-900 text-orange-300 px-2 py-1 rounded">
+                      Borrowed
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-slate-400">Lender:</span>
+                      <p className="font-mono text-slate-200 mt-1">
+                        {loan.lender.slice(0, 6)}...{loan.lender.slice(-4)}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">Principal:</span>
+                      <p className="text-orange-400 font-semibold mt-1">
+                        {parseFloat(loan.formattedPrincipal).toLocaleString()} {loan.tokenSymbol}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">Interest Rate:</span>
+                      <p className="text-yellow-400 font-semibold mt-1">
+                        {loan.interestRatePercent}% APR
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">Created:</span>
+                      <p className="text-slate-300 mt-1">
+                        {loan.createdAtDate}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end mt-4 gap-2">
+                    <Button 
+                      size="sm" 
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      Repay Loan
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
