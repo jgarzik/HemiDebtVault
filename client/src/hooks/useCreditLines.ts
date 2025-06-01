@@ -31,10 +31,9 @@ export function useCreditLines() {
   const fetchCreditLines = async (): Promise<CreditLine[]> => {
     if (!address) return [];
     
-    setIsLoading(true);
+    console.log('Fetching credit lines for lender:', address);
+    
     try {
-      console.log('Fetching credit lines for lender:', address);
-      
       // Get CreditLineUpdated events where the current user is the lender
       const logs = await publicClient.getLogs({
         address: DEBT_VAULT_ADDRESS,
@@ -78,48 +77,52 @@ export function useCreditLines() {
 
           const [creditLimit, minAPR, maxAPR] = creditLineData as [bigint, bigint, bigint];
           
-          // Skip if credit limit is 0 (credit line was deleted)
+          // Skip inactive credit lines (creditLimit = 0)
           if (creditLimit === BigInt(0)) continue;
 
-          // Find token info
+          // Get token info
           const tokenInfo = tokens.find(t => t.address.toLowerCase() === eventData.token.toLowerCase());
-          
+          if (!tokenInfo) continue;
+
           const creditLine: CreditLine = {
             borrower: eventData.borrower,
             token: eventData.token,
-            tokenSymbol: tokenInfo?.symbol || 'Unknown',
+            tokenSymbol: tokenInfo.symbol,
             creditLimit,
-            formattedCreditLimit: tokenInfo ? formatUnits(creditLimit, tokenInfo.decimals) : creditLimit.toString(),
+            formattedCreditLimit: formatUnits(creditLimit, tokenInfo.decimals),
             minAPR,
             maxAPR,
             minAPRPercent: (Number(minAPR) / 100).toFixed(2),
             maxAPRPercent: (Number(maxAPR) / 100).toFixed(2),
-            isActive: creditLimit > BigInt(0),
+            isActive: true,
           };
 
           activeCreditLines.push(creditLine);
         } catch (error) {
-          console.error('Error fetching credit line data for', key, error);
+          console.error('Error fetching credit line data:', error);
         }
       }
 
-      console.log('Active credit lines:', activeCreditLines);
-      setCreditLines(activeCreditLines);
+      console.log('Processed credit lines:', activeCreditLines);
+      return activeCreditLines;
     } catch (error) {
       console.error('Error fetching credit lines:', error);
-    } finally {
-      setIsLoading(false);
+      return [];
     }
   };
 
-  // Fetch credit lines when address changes or new blocks are mined
-  useEffect(() => {
-    fetchCreditLines();
-  }, [address, blockNumber]);
+  const { data: creditLines = [], isLoading, refetch } = useQuery({
+    queryKey: ['creditLines', address],
+    queryFn: fetchCreditLines,
+    enabled: !!address,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 300000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false,
+  });
 
   return {
     creditLines,
     isLoading,
-    refetch: fetchCreditLines,
+    refetch,
   };
 }

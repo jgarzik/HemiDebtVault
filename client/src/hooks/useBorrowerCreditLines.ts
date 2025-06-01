@@ -1,5 +1,5 @@
-import { useAccount, useBlockNumber } from 'wagmi';
-import { useState, useEffect } from 'react';
+import { useAccount } from 'wagmi';
+import { useQuery } from '@tanstack/react-query';
 import { createPublicClient, http, parseAbiItem, formatUnits } from 'viem';
 import { DEBT_VAULT_ADDRESS, hemiNetwork } from '@/lib/hemi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
@@ -24,10 +24,6 @@ interface AvailableCredit {
 
 export function useBorrowerCreditLines() {
   const { address } = useAccount();
-  const [availableCredits, setAvailableCredits] = useState<AvailableCredit[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { data: blockNumber } = useBlockNumber({ watch: false });
-
   const tokens = getAllTokens();
 
   // Create public client for event fetching
@@ -36,13 +32,12 @@ export function useBorrowerCreditLines() {
     transport: http(),
   });
 
-  const fetchAvailableCredits = async () => {
-    if (!address) return;
+  const fetchAvailableCredits = async (): Promise<AvailableCredit[]> => {
+    if (!address) return [];
     
-    setIsLoading(true);
+    console.log('Fetching available credits for borrower:', address);
+    
     try {
-      console.log('Fetching available credits for borrower:', address);
-      
       // Get CreditLineUpdated events where the current user is the borrower
       const logs = await publicClient.getLogs({
         address: DEBT_VAULT_ADDRESS,
@@ -86,71 +81,67 @@ export function useBorrowerCreditLines() {
 
           const [creditLimit, minAPR, maxAPR] = creditLineData as [bigint, bigint, bigint];
           
-          // Skip if credit limit is 0 (credit line was deleted)
+          // Skip inactive credit lines (creditLimit = 0)
           if (creditLimit === BigInt(0)) continue;
 
-          // Calculate utilised credit by querying current borrowing from the contract
-          let utilisedCredit = BigInt(0);
-          try {
-            // This would call a function like _getCurrentBorrowing(borrower, lender, token)
-            // For now using 0, but this should be implemented to read actual utilization
-            utilisedCredit = BigInt(0);
-          } catch (error) {
-            console.warn('Could not fetch current borrowing for utilization calculation');
-            utilisedCredit = BigInt(0);
-          }
+          // Get utilised credit for this lender-borrower-token combination
+          const utilisedCredit = await publicClient.readContract({
+            address: DEBT_VAULT_ADDRESS,
+            abi: DEBT_VAULT_ABI,
+            functionName: 'borrowedAmounts',
+            args: [eventData.lender, address, eventData.token],
+          }) as bigint;
+
+          // Calculate available credit
           const availableCredit = creditLimit - utilisedCredit;
 
-          // Find token info
+          // Get token info
           const tokenInfo = tokens.find(t => t.address.toLowerCase() === eventData.token.toLowerCase());
-          
+          if (!tokenInfo) continue;
+
           const credit: AvailableCredit = {
             lender: eventData.lender,
             token: eventData.token,
-            tokenSymbol: tokenInfo?.symbol || 'Unknown',
+            tokenSymbol: tokenInfo.symbol,
             creditLimit,
-            formattedCreditLimit: tokenInfo ? formatUnits(creditLimit, tokenInfo.decimals) : creditLimit.toString(),
+            formattedCreditLimit: formatUnits(creditLimit, tokenInfo.decimals),
             utilisedCredit,
-            formattedUtilisedCredit: tokenInfo ? formatUnits(utilisedCredit, tokenInfo.decimals) : utilisedCredit.toString(),
+            formattedUtilisedCredit: formatUnits(utilisedCredit, tokenInfo.decimals),
             availableCredit,
-            formattedAvailableCredit: tokenInfo ? formatUnits(availableCredit, tokenInfo.decimals) : availableCredit.toString(),
+            formattedAvailableCredit: formatUnits(availableCredit, tokenInfo.decimals),
             minAPR,
             maxAPR,
             minAPRPercent: (Number(minAPR) / 100).toFixed(2),
             maxAPRPercent: (Number(maxAPR) / 100).toFixed(2),
-            isActive: creditLimit > BigInt(0),
+            isActive: true,
           };
 
           activeCredits.push(credit);
         } catch (error) {
-          console.error('Error fetching credit data for', key, error);
+          console.error('Error fetching available credit data:', error);
         }
       }
 
-      console.log('Available credits:', activeCredits);
-      setAvailableCredits(activeCredits);
+      console.log('Processed available credits:', activeCredits);
+      return activeCredits;
     } catch (error) {
       console.error('Error fetching available credits:', error);
-    } finally {
-      setIsLoading(false);
+      return [];
     }
   };
 
-  // Fetch available credits when address changes, but not on every block
-  useEffect(() => {
-    fetchAvailableCredits();
-  }, [address]);
-  
-  // Only refetch on block changes if we have no data yet
-  useEffect(() => {
-    if (address && availableCredits.length === 0) {
-      fetchAvailableCredits();
-    }
-  }, [blockNumber]);
+  const { data: availableCredits = [], isLoading, refetch } = useQuery({
+    queryKey: ['borrowerCreditLines', address],
+    queryFn: fetchAvailableCredits,
+    enabled: !!address,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 300000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false,
+  });
 
   return {
     availableCredits,
     isLoading,
-    refetch: fetchAvailableCredits,
+    refetch,
   };
 }
