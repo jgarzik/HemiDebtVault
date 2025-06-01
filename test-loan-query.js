@@ -25,8 +25,7 @@ const hemiNetwork = {
 };
 
 const DEBT_VAULT_ADDRESS = '0x72F6185DcBb9c8415f01003ACc872f08B44FC292';
-const TEST_ADDRESS = '0x8cFafEEc879Ec0Cef5821Aa5340F5D5ab022ACe8'; // This is the lender
-const BORROWER_ADDRESS = '0x29Aa2eD8712072e918632259780E587698Ef58df'; // This is the borrower
+const ACTUAL_BORROWER = '0x8cFafEEc879Ec0Cef5821Aa5340F5D5ab022ACe8'; // This holds the DebtNFT
 
 // Basic contract ABI for loan queries
 const DEBT_VAULT_ABI = [
@@ -47,13 +46,20 @@ const DEBT_VAULT_ABI = [
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+    "name": "ownerOf",
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+    "stateMutability": "view",
+    "type": "function"
   }
 ];
 
 async function testLoanQuery() {
   console.log('=== Testing Loan Query on Hemi Mainnet ===');
   console.log('Contract Address:', DEBT_VAULT_ADDRESS);
-  console.log('Test Address:', TEST_ADDRESS);
+  console.log('Actual Borrower:', ACTUAL_BORROWER);
   
   // Create public client for Hemi mainnet
   const publicClient = createPublicClient({
@@ -83,19 +89,19 @@ async function testLoanQuery() {
       });
     }
     
-    // Now get LoanCreated events where the borrower address is the borrower
-    console.log(`\nFiltering for borrower ${BORROWER_ADDRESS}...`);
+    // Now get LoanCreated events for the actual borrower who holds the DebtNFT
+    console.log(`\nFiltering for actual borrower ${ACTUAL_BORROWER}...`);
     const logs = await publicClient.getLogs({
       address: DEBT_VAULT_ADDRESS,
       event: parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed lender, address indexed borrower, address token, uint256 principal, uint256 interestRate)'),
       args: {
-        borrower: BORROWER_ADDRESS,
+        borrower: ACTUAL_BORROWER,
       },
       fromBlock: 'earliest',
       toBlock: 'latest',
     });
     
-    console.log(`Found ${logs.length} LoanCreated events for borrower ${BORROWER_ADDRESS}`);
+    console.log(`Found ${logs.length} LoanCreated events for borrower ${ACTUAL_BORROWER}`);
     
     if (logs.length === 0) {
       console.log('No loans found. This could mean:');
@@ -131,6 +137,16 @@ async function testLoanQuery() {
           });
           
           console.log('Raw loan data:', loanData);
+          
+          // Check who actually owns this NFT (the current borrower responsible for repayment)
+          const nftOwner = await publicClient.readContract({
+            address: DEBT_VAULT_ADDRESS,
+            abi: DEBT_VAULT_ABI,
+            functionName: 'ownerOf',
+            args: [loanId],
+          });
+          
+          console.log('NFT Owner (current borrower):', nftOwner);
           
           const [contractBorrower, contractLender, contractToken, contractPrincipal, repaidPrincipal, forgivenPrincipal, apr, startTimestamp, lastPaymentTimestamp, isClosed] = loanData;
           
