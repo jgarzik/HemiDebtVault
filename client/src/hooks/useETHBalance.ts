@@ -7,7 +7,7 @@ export function useETHBalance() {
     address,
     query: {
       enabled: !!address,
-      refetchInterval: 30000,
+      refetchInterval: false,
       retry: 1,
     },
   });

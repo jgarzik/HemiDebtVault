@@ -20,6 +20,11 @@ const wagmiConfig = getDefaultConfig({
           'Content-Type': 'application/json',
         },
       },
+      // Disable polling filters to avoid RPC errors
+      key: 'hemi-rpc',
+      name: 'Hemi RPC',
+      retryCount: 2,
+      retryDelay: 1000,
     }),
   },
 });

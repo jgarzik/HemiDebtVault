@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TransactionModal } from '@/components/TransactionModal';
 import { TokenSelector } from '@/components/TokenSelector';
-import { NetworkTest } from '@/components/NetworkTest';
+import { TransactionButton } from '@/components/TransactionButton';
+
 import { useDebtVault } from '@/hooks/useDebtVault';
 import { useTokenBalance } from '@/hooks/useTokenBalance';
+import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { Edit2, Eye, X, TrendingUp, Plus } from 'lucide-react';
 import { parseUnits } from 'viem';
 import { type Token, getAllTokens } from '@/lib/tokens';
@@ -71,7 +73,7 @@ export function Lend() {
         </Button>
       </div>
 
-      <NetworkTest />
+
 
       {/* Deposit Section */}
       <Card className="bg-slate-800 border-slate-700">

@@ -23,9 +23,9 @@ export function useTokenBalance(token?: Token) {
     args: address ? [address] : undefined,
     query: {
       enabled: !!(token && address),
-      refetchInterval: 30000, // Refetch every 30 seconds to reduce RPC load
-      retry: 2,
-      retryDelay: 1000,
+      refetchInterval: false, // Disable automatic refetching to avoid filter errors
+      retry: 1,
+      retryDelay: 2000,
     },
   });
 
