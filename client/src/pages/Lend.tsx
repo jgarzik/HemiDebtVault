@@ -347,19 +347,6 @@ export function Lend() {
       </Card>
 
       {/* Loan Portfolio */}
-      <Card className="bg-slate-800 border-slate-700">
-        <CardHeader>
-          <CardTitle>Active Loans</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <TrendingUp className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-            <p className="text-slate-400">No active loans</p>
-            <p className="text-sm text-slate-500 mt-1">Your lending activity will appear here</p>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Transaction Modal */}
       <TransactionModal
         isOpen={showTransactionModal}
