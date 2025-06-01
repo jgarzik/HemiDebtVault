@@ -366,6 +366,89 @@ export function Lend() {
         isLoading={isDepositLoading}
       />
 
+      {/* Active Loans */}
+      <Card className="bg-slate-800 border-slate-700">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Active Loans</CardTitle>
+            <span className="text-sm text-slate-400">{loans.length} active</span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoansLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p className="text-slate-400">Loading loans...</p>
+            </div>
+          ) : loans.length === 0 ? (
+            <div className="text-center py-8">
+              <TrendingUp className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+              <p className="text-slate-400">No active loans</p>
+              <p className="text-sm text-slate-500 mt-1">Your loans will appear here once borrowers use your credit lines</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {loans.map((loan) => (
+                <div key={loan.loanId.toString()} className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="font-medium text-slate-200">
+                        Loan #{loan.loanId.toString()} - {loan.tokenSymbol}
+                      </span>
+                    </div>
+                    <span className="text-xs bg-blue-900 text-blue-300 px-2 py-1 rounded">
+                      Active
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-slate-400">Borrower:</span>
+                      <p className="font-mono text-slate-200 mt-1">
+                        {loan.borrower.slice(0, 6)}...{loan.borrower.slice(-4)}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">Principal:</span>
+                      <p className="text-green-400 font-semibold mt-1">
+                        {parseFloat(loan.formattedPrincipal).toLocaleString()} {loan.tokenSymbol}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">Interest Rate:</span>
+                      <p className="text-yellow-400 font-semibold mt-1">
+                        {loan.interestRatePercent}% APR
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">Created:</span>
+                      <p className="text-slate-300 mt-1">
+                        {loan.createdAtDate}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end mt-4 gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                    >
+                      <Eye className="w-3 h-3 mr-1" />
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Credit Line Modal */}
       <CreditLineModal
         isOpen={showCreditLineModal}

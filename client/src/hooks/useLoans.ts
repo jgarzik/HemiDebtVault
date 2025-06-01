@@ -61,6 +61,8 @@ export function useLoans() {
         try {
           const { loanId, borrower, token, principal, interestRate } = log.args;
           
+          if (!loanId || !token) continue;
+          
           // Get loan details from contract to check if still active
           const loanData = await publicClient.readContract({
             address: DEBT_VAULT_ADDRESS,
@@ -69,7 +71,7 @@ export function useLoans() {
             args: [loanId],
           });
 
-          const [lender, loanBorrower, loanToken, loanPrincipal, loanInterestRate, createdAt, lastPayment, isActive] = loanData as [string, string, string, bigint, bigint, bigint, bigint, boolean];
+          const [lender, loanBorrower, loanToken, loanPrincipal, loanInterestRate, createdAt, lastPayment, , , isActive] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
           
           // Skip if loan is not active
           if (!isActive) continue;
@@ -79,9 +81,9 @@ export function useLoans() {
           
           const loan: Loan = {
             loanId,
-            borrower,
+            borrower: borrower as string,
             lender: address,
-            token,
+            token: token as string,
             tokenSymbol: tokenInfo?.symbol || 'Unknown',
             principal: loanPrincipal,
             formattedPrincipal: tokenInfo ? formatUnits(loanPrincipal, tokenInfo.decimals) : loanPrincipal.toString(),
@@ -160,6 +162,8 @@ export function useBorrowerLoans() {
         try {
           const { loanId, lender, token, principal, interestRate } = log.args;
           
+          if (!loanId || !token) continue;
+          
           // Get loan details from contract to check if still active
           const loanData = await publicClient.readContract({
             address: DEBT_VAULT_ADDRESS,
@@ -168,7 +172,7 @@ export function useBorrowerLoans() {
             args: [loanId],
           });
 
-          const [loanLender, borrower, loanToken, loanPrincipal, loanInterestRate, createdAt, lastPayment, isActive] = loanData as [string, string, string, bigint, bigint, bigint, bigint, boolean];
+          const [loanLender, borrower, loanToken, loanPrincipal, loanInterestRate, createdAt, lastPayment, , , isActive] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
           
           // Skip if loan is not active
           if (!isActive) continue;
@@ -179,8 +183,8 @@ export function useBorrowerLoans() {
           const loan: Loan = {
             loanId,
             borrower: address,
-            lender,
-            token,
+            lender: lender as string,
+            token: token as string,
             tokenSymbol: tokenInfo?.symbol || 'Unknown',
             principal: loanPrincipal,
             formattedPrincipal: tokenInfo ? formatUnits(loanPrincipal, tokenInfo.decimals) : loanPrincipal.toString(),
