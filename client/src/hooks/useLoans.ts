@@ -167,7 +167,7 @@ export function useBorrowerLoans() {
           
           console.log(`Processing loan event - ID: ${loanId}, borrower: ${borrower}, lender: ${lender}`);
           
-          if (!loanId) {
+          if (loanId === undefined || loanId === null) {
             console.log('Skipping - no loanId');
             continue;
           }
