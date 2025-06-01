@@ -99,41 +99,31 @@ export function TransactionButton({
   const handleMainAction = async () => {
     setIsExecuting(true);
     
-    // If no approval required, execute directly
-    if (!requiresApproval) {
-      try {
-        await onExecute();
-      } catch (error) {
-        console.error('Transaction failed:', error);
-      } finally {
-        setIsExecuting(false);
-      }
-      return;
-    }
-    
-    // If approval was required, show confirmation modal and execute automatically
+    // Show confirmation modal for all transactions
     setModalData({
       title: `Confirm ${actionLabel || children}`,
       description: `Execute ${actionLabel || children} transaction`,
       action: actionLabel || children as string,
-      amount: `${requiresApproval.amount} ${requiresApproval.token.symbol}`,
+      amount: requiresApproval ? `${requiresApproval.amount} ${requiresApproval.token.symbol}` : '',
       gasEstimate: '~$2.50',
     });
     setShowModal(true);
     
-    // Auto-execute the transaction after a brief delay
+    // Execute the transaction after a brief delay
     setTimeout(async () => {
       try {
         await onExecute();
-        // Keep modal open until transaction completes
-        // Modal will close when user clicks "Close" or transaction fully completes
+        // Keep modal open for a moment to show success
+        setTimeout(() => {
+          setShowModal(false);
+        }, 1500);
       } catch (error) {
         console.error('Transaction failed:', error);
-        setModalData({
-          ...modalData,
+        setModalData(prev => ({
+          ...prev,
           title: 'Transaction Failed',
           description: 'Transaction was rejected or failed',
-        });
+        }));
       } finally {
         setIsExecuting(false);
       }

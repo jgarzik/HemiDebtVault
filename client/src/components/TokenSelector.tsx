@@ -130,11 +130,22 @@ export function TokenSelector({ selectedToken, onTokenSelect, className }: Token
     }
   };
 
+  const selectedTokenObj = allTokens.find(t => t.address === selectedToken);
+
   return (
     <>
       <Select value={selectedToken} onValueChange={handleTokenSelect}>
         <SelectTrigger className={className}>
-          <SelectValue placeholder="Select token" />
+          <SelectValue placeholder="Select token">
+            {selectedTokenObj && (
+              <div className="flex items-center space-x-2">
+                <span className="font-medium">{selectedTokenObj.symbol}</span>
+                {selectedTokenObj.isCustom && (
+                  <span className="text-xs text-slate-500 bg-slate-700 px-1 rounded">Custom</span>
+                )}
+              </div>
+            )}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {allTokens.map((token) => (

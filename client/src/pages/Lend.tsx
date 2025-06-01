@@ -33,7 +33,7 @@ export function Lend() {
   const { balance: withdrawBalance, formattedBalance: formattedWithdrawBalance, isLoading: isWithdrawBalanceLoading } = useTokenBalance(selectedWithdrawToken || undefined);
   
   // Get pool position data from contract
-  const { totalDeposited, availableForLending, currentlyLent, totalInterestEarned, invalidatePoolData } = usePoolPosition();
+  const { tokenBalances, totalDeposited, availableForLending, currentlyLent, totalInterestEarned, invalidatePoolData } = usePoolPosition();
 
   const handleDeposit = async () => {
     if (!depositAmount || !address || !selectedToken) return;
@@ -196,7 +196,9 @@ export function Lend() {
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">Available to Withdraw:</span>
                     <span className="font-mono text-slate-300">
-                      {isWithdrawBalanceLoading ? 'Loading...' : selectedWithdrawToken ? `${Number(formattedWithdrawBalance).toFixed(4)} ${selectedWithdrawToken.symbol}` : '0.0000'}
+                      {selectedWithdrawToken ? 
+                        `${(tokenBalances.find((tb: any) => tb.token.address === selectedWithdrawToken.address)?.formattedBalance || '0')} ${selectedWithdrawToken.symbol}` 
+                        : '0.0000'}
                     </span>
                   </div>
                   
