@@ -103,13 +103,56 @@ async function testLoanQuery() {
     
     console.log(`Found ${logs.length} LoanCreated events for borrower ${ACTUAL_BORROWER}`);
     
-    if (logs.length === 0) {
-      console.log('No loans found. This could mean:');
-      console.log('- The address has never borrowed');
-      console.log('- The events are filtered incorrectly');
-      console.log('- The contract address is wrong');
-      return;
+    // Process the existing loan regardless of event filtering
+    console.log('\n2. Processing loan ID 0...');
+    
+    try {
+      const loanData = await publicClient.readContract({
+        address: DEBT_VAULT_ADDRESS,
+        abi: DEBT_VAULT_ABI,
+        functionName: 'loanById',
+        args: [0n],
+      });
+      
+      console.log('Raw loan data:', loanData);
+      
+      // Check who actually owns this NFT (the current borrower responsible for repayment)
+      const nftOwner = await publicClient.readContract({
+        address: DEBT_VAULT_ADDRESS,
+        abi: DEBT_VAULT_ABI,
+        functionName: 'ownerOf',
+        args: [0n],
+      });
+      
+      console.log('NFT Owner (current borrower):', nftOwner);
+      
+      const [contractBorrower, contractLender, contractToken, contractPrincipal, repaidPrincipal, forgivenPrincipal, apr, startTimestamp, lastPaymentTimestamp, isClosed] = loanData;
+      
+      console.log('Parsed loan data:');
+      console.log('- Contract Borrower field:', contractBorrower);
+      console.log('- Contract Lender field:', contractLender);
+      console.log('- NFT Owner (real borrower):', nftOwner);
+      console.log('- Token:', contractToken);
+      console.log('- Principal:', contractPrincipal?.toString());
+      console.log('- APR:', apr?.toString());
+      console.log('- Is Closed:', isClosed);
+      
+      console.log('\n=== CONCLUSION ===');
+      console.log('Event shows:', allLogs[0]?.args?.borrower, 'borrowed from', allLogs[0]?.args?.lender);
+      console.log('Contract borrower field:', contractBorrower);
+      console.log('NFT currently owned by:', nftOwner);
+      
+      if (nftOwner.toLowerCase() === ACTUAL_BORROWER.toLowerCase()) {
+        console.log('✅ Confirmed:', ACTUAL_BORROWER, 'is the current borrower (holds DebtNFT)');
+      } else {
+        console.log('❌ Mismatch: Expected', ACTUAL_BORROWER, 'but NFT owned by', nftOwner);
+      }
+      
+    } catch (error) {
+      console.error('Error processing loan 0:', error);
     }
+    
+    return;
     
     console.log('\n2. Processing each loan...');
     

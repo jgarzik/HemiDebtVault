@@ -142,13 +142,11 @@ export function useBorrowerLoans() {
     try {
       console.log('Fetching borrowed loans for borrower:', address);
       
-      // Get LoanCreated events where the current user is the borrower
+      // Get ALL LoanCreated events and filter by NFT ownership
+      // Since NFTs can be transferred, we need to check current ownership rather than original borrower
       const logs = await publicClient.getLogs({
         address: DEBT_VAULT_ADDRESS,
         event: parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed lender, address indexed borrower, address token, uint256 principal, uint256 interestRate)'),
-        args: {
-          borrower: address,
-        },
         fromBlock: 'earliest',
         toBlock: 'latest',
       });
@@ -162,49 +160,67 @@ export function useBorrowerLoans() {
         try {
           const { loanId, lender, token, principal, interestRate } = log.args;
           
-          if (!loanId || !token) continue;
+          if (!loanId) continue;
           
-          // Get loan details from contract to check if still active
-          const loanData = await publicClient.readContract({
-            address: DEBT_VAULT_ADDRESS,
-            abi: DEBT_VAULT_ABI,
-            functionName: 'loanById',
-            args: [loanId],
-          });
+          try {
+            // Check who currently owns this NFT (the current borrower responsible for repayment)
+            const nftOwner = await publicClient.readContract({
+              address: DEBT_VAULT_ADDRESS,
+              abi: DEBT_VAULT_ABI,
+              functionName: 'ownerOf',
+              args: [loanId],
+            });
+            
+            // Only process loans owned by the current user
+            if (typeof nftOwner === 'string' && nftOwner.toLowerCase() !== address.toLowerCase()) {
+              continue;
+            }
+            
+            // Get loan details from contract
+            const loanData = await publicClient.readContract({
+              address: DEBT_VAULT_ADDRESS,
+              abi: DEBT_VAULT_ABI,
+              functionName: 'loanById',
+              args: [loanId],
+            });
 
-          console.log('Raw loan data for loan', loanId, ':', loanData);
-          
-          // The contract returns a struct with these fields:
-          // borrower, lender, token, principal, repaidPrincipal, forgivenPrincipal, apr, startTimestamp, lastPaymentTimestamp, closed
-          const [borrower, loanLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAt, lastPayment, isClosed] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
-          
-          // Skip if loan is closed
-          if (isClosed) {
-            console.log('Skipping closed loan', loanId);
-            continue;
+            console.log('Raw loan data for loan', loanId, ':', loanData);
+            
+            // The contract returns a struct with these fields:
+            // borrower, lender, token, principal, repaidPrincipal, forgivenPrincipal, apr, startTimestamp, lastPaymentTimestamp, closed
+            const [borrower, loanLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAt, lastPayment, isClosed] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
+            
+            // Skip if loan is closed
+            if (isClosed) {
+              console.log('Skipping closed loan', loanId);
+              continue;
+            }
+            
+            console.log('Processing active loan', loanId, 'owned by', nftOwner);
+
+            // Find token info
+            const tokenInfo = tokens.find(t => t.address.toLowerCase() === loanToken.toLowerCase());
+            
+            const loan: Loan = {
+              loanId,
+              borrower: nftOwner as string, // Use NFT owner as current borrower
+              lender: loanLender as string,
+              token: loanToken as string,
+              tokenSymbol: tokenInfo?.symbol || 'Unknown',
+              principal: loanPrincipal,
+              formattedPrincipal: tokenInfo ? formatUnits(loanPrincipal, tokenInfo.decimals) : loanPrincipal.toString(),
+              interestRate: loanInterestRate,
+              interestRatePercent: (Number(loanInterestRate) / 100).toFixed(2),
+              createdAt,
+              createdAtDate: new Date(Number(createdAt) * 1000).toLocaleDateString(),
+              isActive: !isClosed,
+            };
+
+            activeLoans.push(loan);
+          } catch (nftError) {
+            console.log('NFT may not exist or loan may be closed:', loanId);
+            // Skip if NFT doesn't exist (loan was closed and NFT burned)
           }
-          
-          console.log('Processing active loan', loanId, 'for borrower', borrower);
-
-          // Find token info
-          const tokenInfo = tokens.find(t => t.address.toLowerCase() === loanToken.toLowerCase());
-          
-          const loan: Loan = {
-            loanId,
-            borrower: borrower as string,
-            lender: loanLender as string,
-            token: loanToken as string,
-            tokenSymbol: tokenInfo?.symbol || 'Unknown',
-            principal: loanPrincipal,
-            formattedPrincipal: tokenInfo ? formatUnits(loanPrincipal, tokenInfo.decimals) : loanPrincipal.toString(),
-            interestRate: loanInterestRate,
-            interestRatePercent: (Number(loanInterestRate) / 100).toFixed(2),
-            createdAt,
-            createdAtDate: new Date(Number(createdAt) * 1000).toLocaleDateString(),
-            isActive: !isClosed,
-          };
-
-          activeLoans.push(loan);
         } catch (error) {
           console.error('Error fetching borrowed loan data for loan ID', log.args.loanId, error);
         }
