@@ -83,7 +83,17 @@ export const DEBT_VAULT_ABI = [
     "type": "function"
   },
   
-  // View functions
+  // View functions - Public mappings
+  {
+    "inputs": [
+      {"internalType": "address", "name": "lender", "type": "address"},
+      {"internalType": "address", "name": "token", "type": "address"}
+    ],
+    "name": "lenderDeposits",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
   {
     "inputs": [
       {"internalType": "address", "name": "user", "type": "address"},

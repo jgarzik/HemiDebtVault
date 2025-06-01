@@ -9,12 +9,12 @@ export function usePoolPosition() {
   const { address } = useAccount();
   const allTokens = getAllTokens();
 
-  // Get deposits for each token
+  // Get lender deposits for each token - this represents available liquidity
   const tokenBalances = allTokens.map(token => {
     const { data: balance } = useReadContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
-      functionName: 'deposits',
+      functionName: 'lenderDeposits',
       args: address ? [address, token.address] : undefined,
       query: {
         enabled: !!address,
@@ -43,11 +43,11 @@ export function usePoolPosition() {
   // Function to invalidate and refetch pool data after transactions
   const invalidatePoolData = () => {
     if (address) {
-      // Invalidate all deposit-related queries for this user
+      // Invalidate all lenderDeposits queries for this user
       queryClient.invalidateQueries({
         queryKey: ['readContract', { 
           address: DEBT_VAULT_ADDRESS,
-          functionName: 'deposits',
+          functionName: 'lenderDeposits',
           args: [address] 
         }]
       });
