@@ -18,20 +18,27 @@ export function Borrow() {
   const { borrow } = useDebtVault();
   const { availableCredits, isLoading: isCreditsLoading } = useBorrowerCreditLines();
   
-  const [selectedLender, setSelectedLender] = useState('');
+  const [selectedCreditLine, setSelectedCreditLine] = useState<string>('');
   const [borrowAmount, setBorrowAmount] = useState('');
-  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const allTokens = getAllTokens();
 
+  // Get selected credit line data
+  const selectedCredit = selectedCreditLine ? availableCredits.find(credit => 
+    `${credit.lender}-${credit.token}` === selectedCreditLine
+  ) : null;
+
+  const selectedToken = selectedCredit ? allTokens.find(t => 
+    t.address.toLowerCase() === selectedCredit.token.toLowerCase()
+  ) : null;
+
   const handleBorrow = async () => {
-    if (!borrowAmount || !selectedLender || !selectedToken) return '';
+    if (!borrowAmount || !selectedCredit || !selectedToken) return '';
     
     try {
       const amount = parseUnits(borrowAmount, selectedToken.decimals);
-      const txHash = await borrow(selectedLender as `0x${string}`, selectedToken.address, amount);
+      const txHash = await borrow(selectedCredit.lender as `0x${string}`, selectedCredit.token as `0x${string}`, amount);
       setBorrowAmount('');
-      setSelectedLender('');
-      setSelectedToken(null);
+      setSelectedCreditLine('');
       return txHash;
     } catch (error) {
       console.error('Borrow failed:', error);
@@ -137,9 +144,7 @@ export function Borrow() {
                       size="sm" 
                       className="bg-blue-600 hover:bg-blue-700"
                       onClick={() => {
-                        setSelectedLender(credit.lender);
-                        const token = allTokens.find(t => t.address.toLowerCase() === credit.token.toLowerCase());
-                        if (token) setSelectedToken(token);
+                        setSelectedCreditLine(`${credit.lender}-${credit.token}`);
                         // Scroll to borrow form
                         document.getElementById('borrow-form')?.scrollIntoView({ behavior: 'smooth' });
                       }}
@@ -164,32 +169,30 @@ export function Borrow() {
             {/* Loan Configuration */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Select Lender</label>
-                <Select value={selectedLender} onValueChange={setSelectedLender}>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Select Credit Line</label>
+                <Select value={selectedCreditLine} onValueChange={setSelectedCreditLine}>
                   <SelectTrigger className="bg-slate-900 border-slate-600">
-                    <SelectValue placeholder="Choose a lender..." />
+                    <SelectValue placeholder="Choose a credit line..." />
                   </SelectTrigger>
                   <SelectContent>
                     {availableCredits.length === 0 ? (
-                      <SelectItem value="none" disabled>No lenders available</SelectItem>
+                      <SelectItem value="none" disabled>No credit lines available</SelectItem>
                     ) : (
                       availableCredits.map((credit) => (
-                        <SelectItem key={credit.lender} value={credit.lender}>
-                          {credit.lender.slice(0, 6)}...{credit.lender.slice(-4)} ({credit.tokenSymbol})
+                        <SelectItem key={`${credit.lender}-${credit.token}`} value={`${credit.lender}-${credit.token}`}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {credit.tokenSymbol} from {credit.lender.slice(0, 6)}...{credit.lender.slice(-4)}
+                            </span>
+                            <span className="text-xs text-slate-400">
+                              Available: {parseFloat(credit.formattedAvailableCredit).toLocaleString()} {credit.tokenSymbol} at {credit.minAPRPercent}%-{credit.maxAPRPercent}% APR
+                            </span>
+                          </div>
                         </SelectItem>
                       ))
                     )}
                   </SelectContent>
                 </Select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Token</label>
-                <TokenSelector 
-                  selectedToken={selectedToken?.symbol}
-                  onTokenSelect={(token) => setSelectedToken(token)}
-                  className="mb-4"
-                />
               </div>
               
               <div>
@@ -203,7 +206,7 @@ export function Borrow() {
                     className="bg-slate-900 border-slate-600 text-lg font-mono pr-20"
                   />
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 font-mono">
-                    {selectedToken?.symbol || 'Token'}
+                    {selectedCredit?.tokenSymbol || 'Token'}
                   </div>
                 </div>
               </div>
