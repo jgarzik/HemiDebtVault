@@ -50,6 +50,7 @@ export function RepaymentModal({
   isLoading = false
 }: RepaymentModalProps) {
   const [paymentAmount, setPaymentAmount] = useState('');
+  const queryClient = useQueryClient();
   
   // Get the token info and user's wallet balance
   const tokens = getAllTokens();
