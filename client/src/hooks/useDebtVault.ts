@@ -1,5 +1,6 @@
-import { useAccount, useContractEvent, useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
-import { DEBT_VAULT_ABI, DEBT_VAULT_ADDRESS } from '@/lib/contract';
+import { useAccount, useWatchContractEvent, useReadContract, useWriteContract } from 'wagmi';
+import { DEBT_VAULT_ABI } from '@/lib/contract';
+import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import type { CreditLine, Loan, PortfolioStats } from '@/types';
@@ -10,11 +11,11 @@ export function useDebtVault() {
   const [portfolioStats, setPortfolioStats] = useState<PortfolioStats | null>(null);
 
   // Listen to contract events
-  useContractEvent({
+  useWatchContractEvent({
     address: DEBT_VAULT_ADDRESS,
     abi: DEBT_VAULT_ABI,
     eventName: 'LoanCreated',
-    listener(logs) {
+    onLogs(logs) {
       toast({
         title: "Loan Created",
         description: `New loan created successfully`,
@@ -22,11 +23,11 @@ export function useDebtVault() {
     },
   });
 
-  useContractEvent({
+  useWatchContractEvent({
     address: DEBT_VAULT_ADDRESS,
     abi: DEBT_VAULT_ABI,
     eventName: 'LoanRepaid',
-    listener(logs) {
+    onLogs(logs) {
       toast({
         title: "Payment Received",
         description: `Loan payment processed`,
@@ -34,11 +35,11 @@ export function useDebtVault() {
     },
   });
 
-  useContractEvent({
+  useWatchContractEvent({
     address: DEBT_VAULT_ADDRESS,
     abi: DEBT_VAULT_ABI,
     eventName: 'CreditLineUpdated',
-    listener(logs) {
+    onLogs(logs) {
       toast({
         title: "Credit Line Updated",
         description: `Credit line has been modified`,
@@ -46,82 +47,89 @@ export function useDebtVault() {
     },
   });
 
-  // Deposit function
-  const { config: depositConfig } = usePrepareContractWrite({
-    address: DEBT_VAULT_ADDRESS,
-    abi: DEBT_VAULT_ABI,
-    functionName: 'deposit',
-  });
-  const depositWrite = useContractWrite(depositConfig);
+  // Contract write hook
+  const { writeContract, isPending: isWritePending } = useWriteContract();
 
-  // Withdraw function
-  const { config: withdrawConfig } = usePrepareContractWrite({
-    address: DEBT_VAULT_ADDRESS,
-    abi: DEBT_VAULT_ABI,
-    functionName: 'withdraw',
-  });
-  const withdrawWrite = useContractWrite(withdrawConfig);
+  // Helper functions for contract interactions
+  const deposit = (token: string, amount: bigint) => {
+    writeContract({
+      address: DEBT_VAULT_ADDRESS,
+      abi: DEBT_VAULT_ABI,
+      functionName: 'deposit',
+      args: [token, amount],
+    });
+  };
 
-  // Borrow function
-  const { config: borrowConfig } = usePrepareContractWrite({
-    address: DEBT_VAULT_ADDRESS,
-    abi: DEBT_VAULT_ABI,
-    functionName: 'borrow',
-  });
-  const borrowWrite = useContractWrite(borrowConfig);
+  const withdraw = (token: string, amount: bigint) => {
+    writeContract({
+      address: DEBT_VAULT_ADDRESS,
+      abi: DEBT_VAULT_ABI,
+      functionName: 'withdraw',
+      args: [token, amount],
+    });
+  };
 
-  // Repay function
-  const { config: repayConfig } = usePrepareContractWrite({
-    address: DEBT_VAULT_ADDRESS,
-    abi: DEBT_VAULT_ABI,
-    functionName: 'repay',
-  });
-  const repayWrite = useContractWrite(repayConfig);
+  const borrow = (lender: string, token: string, amount: bigint) => {
+    writeContract({
+      address: DEBT_VAULT_ADDRESS,
+      abi: DEBT_VAULT_ABI,
+      functionName: 'borrow',
+      args: [lender, token, amount],
+    });
+  };
 
-  // Update credit line function
-  const { config: updateCreditConfig } = usePrepareContractWrite({
-    address: DEBT_VAULT_ADDRESS,
-    abi: DEBT_VAULT_ABI,
-    functionName: 'updateCreditLine',
-  });
-  const updateCreditWrite = useContractWrite(updateCreditConfig);
+  const repay = (loanId: bigint, amount: bigint) => {
+    writeContract({
+      address: DEBT_VAULT_ADDRESS,
+      abi: DEBT_VAULT_ABI,
+      functionName: 'repay',
+      args: [loanId, amount],
+    });
+  };
+
+  const updateCreditLine = (borrower: string, token: string, creditLimit: bigint, minAPR: bigint, maxAPR: bigint) => {
+    writeContract({
+      address: DEBT_VAULT_ADDRESS,
+      abi: DEBT_VAULT_ABI,
+      functionName: 'updateCreditLine',
+      args: [borrower, token, creditLimit, minAPR, maxAPR],
+    });
+  };
 
   // Get outstanding balance
   const getOutstandingBalance = (loanId: string) => {
-    return useContractRead({
+    return useReadContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'getOutstandingBalance',
       args: [BigInt(loanId)],
-      enabled: !!loanId,
     });
   };
 
   // Get available credit
   const getAvailableCredit = (borrower: string, lender: string, token: string) => {
-    return useContractRead({
+    return useReadContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'getAvailableCredit',
-      args: [borrower, lender, token],
-      enabled: !!borrower && !!lender && !!token,
+      args: [borrower as `0x${string}`, lender as `0x${string}`, token as `0x${string}`],
     });
   };
 
   return {
     // Contract writes
-    deposit: depositWrite.write,
-    withdraw: withdrawWrite.write,
-    borrow: borrowWrite.write,
-    repay: repayWrite.write,
-    updateCreditLine: updateCreditWrite.write,
+    deposit,
+    withdraw,
+    borrow,
+    repay,
+    updateCreditLine,
     
     // Loading states
-    isDepositLoading: depositWrite.isLoading,
-    isWithdrawLoading: withdrawWrite.isLoading,
-    isBorrowLoading: borrowWrite.isLoading,
-    isRepayLoading: repayWrite.isLoading,
-    isUpdateCreditLoading: updateCreditWrite.isLoading,
+    isDepositLoading: isWritePending,
+    isWithdrawLoading: isWritePending,
+    isBorrowLoading: isWritePending,
+    isRepayLoading: isWritePending,
+    isUpdateCreditLoading: isWritePending,
     
     // Read functions
     getOutstandingBalance,

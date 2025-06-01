@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount, useNetwork } from 'wagmi';
+import { useAccount, useChainId } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { 
   Vault, 
@@ -23,7 +23,7 @@ export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isConnected } = useAccount();
-  const { chain } = useNetwork();
+  const chainId = useChainId();
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
@@ -32,7 +32,7 @@ export function Layout({ children }: LayoutProps) {
     { name: 'Portfolio', href: '/portfolio', icon: BarChart3 },
   ];
 
-  const isWrongNetwork = isConnected && chain?.id !== hemiNetwork.id;
+  const isWrongNetwork = isConnected && chainId !== hemiNetwork.id;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">

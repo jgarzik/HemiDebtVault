@@ -1,8 +1,9 @@
-import { useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
-import { DEBT_VAULT_ABI, DEBT_VAULT_ADDRESS } from '@/lib/contract';
+import { useReadContract, useWriteContract } from 'wagmi';
+import { DEBT_VAULT_ABI } from '@/lib/contract';
+import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 
 export function useContractRead(functionName: string, args?: any[]) {
-  return useContractRead({
+  return useReadContract({
     address: DEBT_VAULT_ADDRESS,
     abi: DEBT_VAULT_ABI,
     functionName,
@@ -10,12 +11,6 @@ export function useContractRead(functionName: string, args?: any[]) {
   });
 }
 
-export function useContractWrite(functionName: string) {
-  const { config } = usePrepareContractWrite({
-    address: DEBT_VAULT_ADDRESS,
-    abi: DEBT_VAULT_ABI,
-    functionName,
-  });
-
-  return useContractWrite(config);
+export function useContractWrite() {
+  return useWriteContract();
 }

@@ -1,28 +1,20 @@
 import '@rainbow-me/rainbowkit/styles.css';
 import {
-  getDefaultWallets,
+  getDefaultConfig,
   RainbowKitProvider,
   darkTheme,
 } from '@rainbow-me/rainbowkit';
-import { configureChains, createConfig, WagmiConfig } from 'wagmi';
-import { publicProvider } from 'wagmi/providers/public';
+import { WagmiProvider } from 'wagmi';
+import { http } from 'viem';
 import { hemiNetwork } from '@/lib/hemi';
 
-const { chains, publicClient } = configureChains(
-  [hemiNetwork],
-  [publicProvider()]
-);
-
-const { connectors } = getDefaultWallets({
+const wagmiConfig = getDefaultConfig({
   appName: 'DebtVault',
-  projectId: process.env.VITE_WALLET_CONNECT_PROJECT_ID || 'default_project_id',
-  chains,
-});
-
-const wagmiConfig = createConfig({
-  autoConnect: true,
-  connectors,
-  publicClient,
+  projectId: import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID || 'default_project_id',
+  chains: [hemiNetwork],
+  transports: {
+    [hemiNetwork.id]: http(),
+  },
 });
 
 const customTheme = darkTheme({
@@ -39,14 +31,13 @@ interface WalletProviderProps {
 
 export function WalletProvider({ children }: WalletProviderProps) {
   return (
-    <WagmiConfig config={wagmiConfig}>
+    <WagmiProvider config={wagmiConfig}>
       <RainbowKitProvider 
-        chains={chains} 
         theme={customTheme}
         showRecentTransactions={true}
       >
         {children}
       </RainbowKitProvider>
-    </WagmiConfig>
+    </WagmiProvider>
   );
 }
