@@ -33,7 +33,7 @@ export function Lend() {
   const { balance: withdrawBalance, formattedBalance: formattedWithdrawBalance, isLoading: isWithdrawBalanceLoading } = useTokenBalance(selectedWithdrawToken || undefined);
   
   // Get pool position data from contract
-  const { totalDeposited, availableForLending, currentlyLent, totalInterestEarned } = usePoolPosition();
+  const { totalDeposited, availableForLending, currentlyLent, totalInterestEarned, invalidatePoolData } = usePoolPosition();
 
   const handleDeposit = async () => {
     if (!depositAmount || !address || !selectedToken) return;
@@ -42,6 +42,8 @@ export function Lend() {
       const amount = parseUnits(depositAmount, selectedToken.decimals);
       await deposit(selectedToken.address, amount);
       setDepositAmount('');
+      // Refresh pool data after successful deposit
+      setTimeout(() => invalidatePoolData(), 2000);
     } catch (error) {
       console.error('Deposit failed:', error);
       throw error; // Let TransactionButton handle the error display
@@ -55,6 +57,8 @@ export function Lend() {
       const amount = parseUnits(withdrawAmount, selectedWithdrawToken.decimals);
       await withdraw(selectedWithdrawToken.address, amount);
       setWithdrawAmount('');
+      // Refresh pool data after successful withdrawal
+      setTimeout(() => invalidatePoolData(), 2000);
     } catch (error) {
       console.error('Withdraw failed:', error);
       throw error;
