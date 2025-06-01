@@ -86,6 +86,16 @@ export const DEBT_VAULT_ABI = [
   // View functions
   {
     "inputs": [
+      {"internalType": "address", "name": "user", "type": "address"},
+      {"internalType": "address", "name": "token", "type": "address"}
+    ],
+    "name": "deposits",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {"internalType": "uint256", "name": "loanId", "type": "uint256"}
     ],
     "name": "getOutstandingBalance",

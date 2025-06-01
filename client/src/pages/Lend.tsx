@@ -10,6 +10,7 @@ import { TransactionButton } from '@/components/TransactionButton';
 
 import { useDebtVault } from '@/hooks/useDebtVault';
 import { useTokenBalance } from '@/hooks/useTokenBalance';
+import { usePoolPosition } from '@/hooks/usePoolPosition';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { Edit2, Eye, X, TrendingUp, Plus } from 'lucide-react';
 import { parseUnits } from 'viem';
@@ -30,6 +31,9 @@ export function Lend() {
   // Get real token balance from blockchain
   const { balance, formattedBalance, isLoading: isBalanceLoading } = useTokenBalance(selectedToken || undefined);
   const { balance: withdrawBalance, formattedBalance: formattedWithdrawBalance, isLoading: isWithdrawBalanceLoading } = useTokenBalance(selectedWithdrawToken || undefined);
+  
+  // Get pool position data from contract
+  const { totalDeposited, availableForLending, currentlyLent, totalInterestEarned } = usePoolPosition();
 
   const handleDeposit = async () => {
     if (!depositAmount || !address || !selectedToken) return;
@@ -210,19 +214,19 @@ export function Lend() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-slate-400">Total Deposited:</span>
-                  <span className="font-mono">$0.00</span>
+                  <span className="font-mono">${totalDeposited.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Available for Lending:</span>
-                  <span className="font-mono text-green-400">$0.00</span>
+                  <span className="font-mono text-green-400">${availableForLending.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Currently Lent:</span>
-                  <span className="font-mono text-blue-400">$0.00</span>
+                  <span className="font-mono text-blue-400">${currentlyLent.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Total Interest Earned:</span>
-                  <span className="font-mono text-blue-400">$0.00</span>
+                  <span className="font-mono text-blue-400">${totalInterestEarned.toFixed(2)}</span>
                 </div>
               </div>
             </div>

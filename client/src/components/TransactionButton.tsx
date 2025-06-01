@@ -125,9 +125,15 @@ export function TransactionButton({
     setTimeout(async () => {
       try {
         await onExecute();
-        setShowModal(false);
+        // Keep modal open until transaction completes
+        // Modal will close when user clicks "Close" or transaction fully completes
       } catch (error) {
         console.error('Transaction failed:', error);
+        setModalData({
+          ...modalData,
+          title: 'Transaction Failed',
+          description: 'Transaction was rejected or failed',
+        });
       } finally {
         setIsExecuting(false);
       }
