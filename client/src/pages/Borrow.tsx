@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TransactionButton } from '@/components/TransactionButton';
+import { RepaymentModal } from '@/components/RepaymentModal';
 import { useDebtVault } from '@/hooks/useDebtVault';
 import { useBorrowerCreditLines } from '@/hooks/useBorrowerCreditLines';
 import { useBorrowerLoans } from '@/hooks/useLoans';
@@ -16,12 +17,14 @@ import { parseUnits } from 'viem';
 
 export function Borrow() {
   const { address } = useAccount();
-  const { borrow } = useDebtVault();
+  const { borrow, repay } = useDebtVault();
   const { availableCredits, isLoading: isCreditsLoading, refetch: refetchCredits } = useBorrowerCreditLines();
   const { borrowedLoans, isLoading: isLoansLoading } = useBorrowerLoans();
   
   const [selectedCreditLine, setSelectedCreditLine] = useState<string>('');
   const [borrowAmount, setBorrowAmount] = useState('');
+  const [showRepayModal, setShowRepayModal] = useState(false);
+  const [selectedLoanForRepay, setSelectedLoanForRepay] = useState<any>(null);
   const allTokens = getAllTokens();
 
   // Get selected credit line data
@@ -382,6 +385,10 @@ export function Borrow() {
                     <Button 
                       size="sm" 
                       className="bg-green-600 hover:bg-green-700"
+                      onClick={() => {
+                        setSelectedLoanForRepay(loan);
+                        setShowRepayModal(true);
+                      }}
                     >
                       Repay Loan
                     </Button>
@@ -393,6 +400,44 @@ export function Borrow() {
         </CardContent>
       </Card>
 
+      {/* Repayment Modal */}
+      {selectedLoanForRepay && (
+        <RepaymentModal
+          isOpen={showRepayModal}
+          onClose={() => {
+            setShowRepayModal(false);
+            setSelectedLoanForRepay(null);
+          }}
+          onConfirm={async (amount) => {
+            try {
+              const token = allTokens.find(t => t.symbol === selectedLoanForRepay.tokenSymbol);
+              if (!token) return;
+              
+              const amountBigInt = parseUnits(amount, token.decimals);
+              await repay(selectedLoanForRepay.loanId, amountBigInt);
+              
+              setShowRepayModal(false);
+              setSelectedLoanForRepay(null);
+              
+              // Refresh data after successful repayment
+              setTimeout(() => {
+                refetchCredits();
+              }, 2000);
+            } catch (error) {
+              console.error('Repayment failed:', error);
+            }
+          }}
+          repaymentDetails={{
+            loanId: selectedLoanForRepay.loanId,
+            token: selectedLoanForRepay.token,
+            tokenSymbol: selectedLoanForRepay.tokenSymbol,
+            currentPrincipal: selectedLoanForRepay.formattedPrincipal,
+            currentInterest: "0.000000", // TODO: Calculate real-time interest
+            totalOwed: selectedLoanForRepay.formattedPrincipal // TODO: Add interest
+          }}
+          isLoading={false}
+        />
+      )}
 
     </div>
   );
