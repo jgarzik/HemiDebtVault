@@ -46,15 +46,32 @@ export function Borrow() {
     }
   };
 
-  const calculateAPR = (amount: string) => {
-    // This would calculate based on real utilization data
-    return '7.8%';
+  // Calculate dynamic APR based on utilization
+  const calculateAPR = (amount: string, creditLine: any) => {
+    if (!amount || !creditLine || parseFloat(amount) === 0) return '0.00';
+    
+    const requestedAmount = parseFloat(amount);
+    const availableCredit = parseFloat(creditLine.formattedAvailableCredit);
+    const minAPR = parseFloat(creditLine.minAPRPercent);
+    const maxAPR = parseFloat(creditLine.maxAPRPercent);
+    
+    // Calculate utilization ratio (0-1)
+    const utilizationRatio = Math.min(requestedAmount / availableCredit, 1);
+    
+    // Linear interpolation between min and max APR based on utilization
+    const dynamicAPR = minAPR + (utilizationRatio * (maxAPR - minAPR));
+    
+    return dynamicAPR.toFixed(2);
   };
 
   const calculateDailyInterest = (amount: string, apr: string) => {
+    if (!amount || !apr || parseFloat(amount) === 0) return '0.000000';
     const daily = (parseFloat(amount) * parseFloat(apr)) / 100 / 365;
-    return daily.toFixed(2);
+    return daily.toFixed(6);
   };
+
+  // Get current calculated APR
+  const currentAPR = selectedCredit ? calculateAPR(borrowAmount, selectedCredit) : '0.00';
 
   return (
     <div className="space-y-8 pb-20 md:pb-8">
@@ -236,18 +253,18 @@ export function Borrow() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Current APR:</span>
-                    <span className="font-mono">{borrowAmount ? calculateAPR(borrowAmount) : '0.0%'}</span>
+                    <span className="font-mono">{currentAPR}%</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Daily Interest:</span>
                     <span className="font-mono text-yellow-400">
-                      ${borrowAmount ? calculateDailyInterest(borrowAmount, '7.8') : '0.00'}
+                      {borrowAmount && selectedCredit ? calculateDailyInterest(borrowAmount, currentAPR) : '0.000000'} {selectedCredit?.tokenSymbol || ''}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Monthly Interest:</span>
                     <span className="font-mono text-yellow-400">
-                      ${borrowAmount ? (parseFloat(calculateDailyInterest(borrowAmount, '7.8')) * 30).toFixed(2) : '0.00'}
+                      {borrowAmount && selectedCredit ? (parseFloat(calculateDailyInterest(borrowAmount, currentAPR)) * 30).toFixed(6) : '0.000000'} {selectedCredit?.tokenSymbol || ''}
                     </span>
                   </div>
                 </CardContent>
