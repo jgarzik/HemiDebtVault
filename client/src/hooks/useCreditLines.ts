@@ -1,5 +1,5 @@
-import { useAccount, useReadContract, useBlockNumber } from 'wagmi';
-import { useState, useEffect } from 'react';
+import { useAccount } from 'wagmi';
+import { useQuery } from '@tanstack/react-query';
 import { createPublicClient, http, parseAbiItem, formatUnits } from 'viem';
 import { DEBT_VAULT_ADDRESS, hemiNetwork } from '@/lib/hemi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
@@ -20,10 +20,6 @@ interface CreditLine {
 
 export function useCreditLines() {
   const { address } = useAccount();
-  const [creditLines, setCreditLines] = useState<CreditLine[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { data: blockNumber } = useBlockNumber({ watch: false });
-
   const tokens = getAllTokens();
 
   // Create public client for event fetching
@@ -32,8 +28,8 @@ export function useCreditLines() {
     transport: http(),
   });
 
-  const fetchCreditLines = async () => {
-    if (!address) return;
+  const fetchCreditLines = async (): Promise<CreditLine[]> => {
+    if (!address) return [];
     
     setIsLoading(true);
     try {

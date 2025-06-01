@@ -1,5 +1,5 @@
-import { useAccount, useBlockNumber } from 'wagmi';
-import { useState, useEffect } from 'react';
+import { useAccount } from 'wagmi';
+import { useQuery } from '@tanstack/react-query';
 import { createPublicClient, http, parseAbiItem, formatUnits } from 'viem';
 import { DEBT_VAULT_ADDRESS, hemiNetwork } from '@/lib/hemi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
@@ -24,10 +24,6 @@ interface Loan {
 
 export function useLoans() {
   const { address } = useAccount();
-  const [loans, setLoans] = useState<Loan[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { data: blockNumber } = useBlockNumber({ watch: false });
-
   const tokens = getAllTokens();
 
   // Create public client for event fetching
@@ -36,131 +32,25 @@ export function useLoans() {
     transport: http(),
   });
 
-  const fetchLoans = async () => {
-    if (!address) return;
+  const fetchLoans = async (): Promise<Loan[]> => {
+    if (!address) return [];
     
-    setIsLoading(true);
-    try {
-      console.log('Fetching loans for lender:', address);
-      
-      // Get LoanCreated events where the current user is the lender
-      const logs = await publicClient.getLogs({
-        address: DEBT_VAULT_ADDRESS,
-        event: parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed lender, address indexed borrower, address token, uint256 principal, uint256 interestRate)'),
-        args: {
-          lender: address,
-        },
-        fromBlock: 'earliest',
-        toBlock: 'latest',
-      });
-
-      console.log('Found loan events:', logs.length);
-
-      // Process each loan
-      const activeLoans: Loan[] = [];
-      
-      for (const log of logs) {
-        try {
-          const { loanId, borrower, token, principal, interestRate } = log.args;
-          
-          if (!loanId || !token) continue;
-          
-          // Get loan details from contract to check if still active
-          const loanData = await publicClient.readContract({
-            address: DEBT_VAULT_ADDRESS,
-            abi: DEBT_VAULT_ABI,
-            functionName: 'loanById',
-            args: [loanId],
-          });
-
-          const [lender, loanBorrower, loanToken, loanPrincipal, loanInterestRate, createdAt, lastPayment, , , isActive] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
-          
-          // Skip if loan is not active
-          if (!isActive) continue;
-
-          // Find token info
-          const tokenInfo = tokens.find(t => t.address.toLowerCase() === token.toLowerCase());
-          
-          const loan: Loan = {
-            loanId,
-            borrower: borrower as string,
-            lender: address,
-            token: token as string,
-            tokenSymbol: tokenInfo?.symbol || 'Unknown',
-            principal: loanPrincipal,
-            formattedPrincipal: tokenInfo ? formatUnits(loanPrincipal, tokenInfo.decimals) : loanPrincipal.toString(),
-            interestRate: loanInterestRate,
-            interestRatePercent: (Number(loanInterestRate) / 100).toFixed(2),
-            createdAt,
-            createdAtDate: new Date(Number(createdAt) * 1000).toLocaleDateString(),
-            isActive,
-          };
-
-          activeLoans.push(loan);
-        } catch (error) {
-          console.error('Error fetching loan data for loan ID', log.args.loanId, error);
-        }
-      }
-
-      console.log('Active loans:', activeLoans);
-      setLoans(activeLoans);
-    } catch (error) {
-      console.error('Error fetching loans:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fetch loans when address changes or new blocks are mined
-  useEffect(() => {
-    fetchLoans();
-  }, [address, blockNumber]);
-
-  return {
-    loans,
-    isLoading,
-    refetch: fetchLoans,
-  };
-}
-
-export function useBorrowerLoans() {
-  const { address } = useAccount();
-  const [borrowedLoans, setBorrowedLoans] = useState<Loan[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { data: blockNumber } = useBlockNumber({ watch: false });
-
-  const tokens = getAllTokens();
-
-  // Create public client for event fetching
-  const publicClient = createPublicClient({
-    chain: hemiNetwork,
-    transport: http(),
-  });
-
-  const fetchBorrowedLoans = async () => {
-    if (!address) return;
+    console.log('Fetching loans for lender:', address);
     
-    setIsLoading(true);
+    const loans: Loan[] = [];
+
     try {
-      console.log('Fetching borrowed loans for borrower:', address);
-      
-      // For now, directly check the known loan ID 0 since event filtering is failing
-      // This will work for the current loan and can be expanded later
-      const activeLoans: Loan[] = [];
-      
-      // Get LoanCreated events where the current user is the borrower
-      // Fixed event signature to match actual contract: (loanId, borrower, lender, ...)
+      // Get all LoanCreated events where this user is the lender
       const logs = await publicClient.getLogs({
         address: DEBT_VAULT_ADDRESS,
         event: parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed borrower, address indexed lender, address token, uint256 amount, uint256 apr)'),
         args: {
-          borrower: address,
+          lender: address
         },
         fromBlock: 'earliest',
-        toBlock: 'latest',
       });
 
-      console.log('Found borrowed loan events:', logs.length);
+      console.log(`Found ${logs.length} loan events for lender ${address}`);
 
       // Process each loan
       for (const log of logs) {
@@ -194,77 +84,183 @@ export function useBorrowerLoans() {
             continue;
           }
 
-          // Since we filtered by borrower in the event query, verify contract data matches
-          if (contractBorrower.toLowerCase() !== address.toLowerCase()) {
-            console.log('Warning: event/contract borrower mismatch for loan', loanId);
-            console.log(`  Event borrower: ${borrower}`);
-            console.log(`  Contract borrower: ${contractBorrower}`); 
-            console.log(`  User address: ${address}`);
+          // Get token info
+          const tokenInfo = tokens.find(t => t.address.toLowerCase() === loanToken.toLowerCase());
+          if (!tokenInfo) {
+            console.log('Skipping - token not found:', loanToken);
             continue;
           }
-          
-          console.log('Processing active loan', loanId, 'for borrower', contractBorrower);
 
-          // Find token info
-          const tokenInfo = tokens.find(t => t.address.toLowerCase() === loanToken.toLowerCase());
-          
-          // Calculate accrued interest based on time elapsed
-          const currentTime = Math.floor(Date.now() / 1000);
-          const elapsedTime = currentTime - Number(createdAt);
-          const elapsedDays = elapsedTime / (24 * 60 * 60);
-          
-          // Interest = (principal × APR × elapsed_days) ÷ (365 × 10000)
-          const accruedInterestBigInt = (loanPrincipal * loanInterestRate * BigInt(Math.floor(elapsedTime))) / (BigInt(365 * 24 * 60 * 60 * 10000));
-          const formattedAccruedInterest = tokenInfo ? formatUnits(accruedInterestBigInt, tokenInfo.decimals) : accruedInterestBigInt.toString();
-          
+          // Calculate accrued interest
+          const currentTime = BigInt(Math.floor(Date.now() / 1000));
+          const timeElapsed = currentTime - createdAt;
+          const accruedInterest = (loanPrincipal * loanInterestRate * timeElapsed) / (BigInt(100) * BigInt(365 * 24 * 3600));
+
           const loan: Loan = {
             loanId,
-            borrower: contractBorrower as string,
-            lender: contractLender as string,
-            token: loanToken as string,
-            tokenSymbol: tokenInfo?.symbol || 'Unknown',
+            borrower: contractBorrower,
+            lender: contractLender,
+            token: loanToken,
+            tokenSymbol: tokenInfo.symbol,
             principal: loanPrincipal,
-            formattedPrincipal: tokenInfo ? formatUnits(loanPrincipal, tokenInfo.decimals) : loanPrincipal.toString(),
+            formattedPrincipal: formatUnits(loanPrincipal, tokenInfo.decimals),
             interestRate: loanInterestRate,
             interestRatePercent: (Number(loanInterestRate) / 100).toFixed(2),
             createdAt,
             createdAtDate: new Date(Number(createdAt) * 1000).toLocaleDateString(),
-            isActive: !isClosed,
-            accruedInterest: accruedInterestBigInt,
-            formattedAccruedInterest,
+            isActive: true,
+            accruedInterest,
+            formattedAccruedInterest: formatUnits(accruedInterest, tokenInfo.decimals),
           };
 
-          activeLoans.push(loan);
-          console.log('Successfully added loan to active loans list');
+          loans.push(loan);
+          console.log('Added loan:', loan);
         } catch (error) {
-          console.error('Error fetching borrowed loan data for loan ID', log.args.loanId, error);
+          console.error('Error processing loan:', error);
         }
       }
 
-      console.log('Final active borrowed loans:', activeLoans);
-      setBorrowedLoans(activeLoans);
+      console.log('Final loans array:', loans);
+      return loans;
     } catch (error) {
-      console.error('Error fetching borrowed loans:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error fetching loans:', error);
+      return [];
     }
   };
 
-  // Fetch borrowed loans when address changes, but not on every block to avoid constant reloading
-  useEffect(() => {
-    fetchBorrowedLoans();
-  }, [address]);
-  
-  // Only refetch on block changes if we have no data yet
-  useEffect(() => {
-    if (address && borrowedLoans.length === 0) {
-      fetchBorrowedLoans();
+  const { data: loans = [], isLoading, refetch } = useQuery({
+    queryKey: ['loans', address],
+    queryFn: fetchLoans,
+    enabled: !!address,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 300000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false,
+  });
+
+  return {
+    loans,
+    isLoading,
+    refetch,
+  };
+}
+
+export function useBorrowerLoans() {
+  const { address } = useAccount();
+  const tokens = getAllTokens();
+
+  // Create public client for event fetching
+  const publicClient = createPublicClient({
+    chain: hemiNetwork,
+    transport: http(),
+  });
+
+  const fetchBorrowedLoans = async (): Promise<Loan[]> => {
+    if (!address) return [];
+    
+    console.log('Fetching borrowed loans for borrower:', address);
+    
+    const activeLoans: Loan[] = [];
+    
+    try {
+      // Get LoanCreated events where the current user is the borrower
+      const logs = await publicClient.getLogs({
+        address: DEBT_VAULT_ADDRESS,
+        event: parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed borrower, address indexed lender, address token, uint256 amount, uint256 apr)'),
+        args: {
+          borrower: address,
+        },
+        fromBlock: 'earliest',
+      });
+
+      console.log(`Found ${logs.length} loan events for borrower ${address}`);
+
+      // Process each loan
+      for (const log of logs) {
+        try {
+          const { loanId, borrower, lender, token, amount, apr } = log.args;
+          
+          console.log(`Processing borrowed loan event - ID: ${loanId}, borrower: ${borrower}, lender: ${lender}`);
+          
+          if (loanId === undefined || loanId === null) {
+            console.log('Skipping - no loanId');
+            continue;
+          }
+          
+          // Get current loan state from contract
+          const loanData = await publicClient.readContract({
+            address: DEBT_VAULT_ADDRESS,
+            abi: DEBT_VAULT_ABI,
+            functionName: 'loanById',
+            args: [loanId],
+          });
+
+          console.log('Raw borrowed loan data for loan', loanId, ':', loanData);
+          
+          // Parse loan data
+          const [contractBorrower, contractLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAt, lastPayment, isClosed] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
+          
+          // Skip if loan is closed
+          if (isClosed) {
+            console.log('Skipping closed borrowed loan', loanId);
+            continue;
+          }
+
+          // Get token info
+          const tokenInfo = tokens.find(t => t.address.toLowerCase() === loanToken.toLowerCase());
+          if (!tokenInfo) {
+            console.log('Skipping borrowed loan - token not found:', loanToken);
+            continue;
+          }
+
+          // Calculate accrued interest for borrower view
+          const currentTime = BigInt(Math.floor(Date.now() / 1000));
+          const timeElapsed = currentTime - createdAt;
+          const accruedInterest = (loanPrincipal * loanInterestRate * timeElapsed) / (BigInt(100) * BigInt(365 * 24 * 3600));
+
+          const loan: Loan = {
+            loanId,
+            borrower: contractBorrower,
+            lender: contractLender,
+            token: loanToken,
+            tokenSymbol: tokenInfo.symbol,
+            principal: loanPrincipal,
+            formattedPrincipal: formatUnits(loanPrincipal, tokenInfo.decimals),
+            interestRate: loanInterestRate,
+            interestRatePercent: (Number(loanInterestRate) / 100).toFixed(2),
+            createdAt,
+            createdAtDate: new Date(Number(createdAt) * 1000).toLocaleDateString(),
+            isActive: true,
+            accruedInterest,
+            formattedAccruedInterest: formatUnits(accruedInterest, tokenInfo.decimals),
+          };
+
+          activeLoans.push(loan);
+          console.log('Added borrowed loan:', loan);
+        } catch (error) {
+          console.error('Error processing borrowed loan:', error);
+        }
+      }
+
+      console.log('Final borrowed loans array:', activeLoans);
+      return activeLoans;
+    } catch (error) {
+      console.error('Error fetching borrowed loans:', error);
+      return [];
     }
-  }, [blockNumber]);
+  };
+
+  const { data: borrowedLoans = [], isLoading, refetch } = useQuery({
+    queryKey: ['borrowedLoans', address],
+    queryFn: fetchBorrowedLoans,
+    enabled: !!address,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 300000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false,
+  });
 
   return {
     borrowedLoans,
     isLoading,
-    refetch: fetchBorrowedLoans,
+    refetch,
   };
 }
