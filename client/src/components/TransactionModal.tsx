@@ -18,14 +18,6 @@ interface TransactionModalProps {
   amount?: string;
   gasEstimate?: string;
   isLoading?: boolean;
-  loanDetails?: {
-    lender: string;
-    token: string;
-    principal: string;
-    apr: string;
-    utilization: string;
-    dailyInterest: string;
-  };
 }
 
 export function TransactionModal({

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { useTransactionFlow } from '@/hooks/useTransactionFlow';
 import { TransactionModal } from './TransactionModal';
+import { LoanConfirmationModal } from './LoanConfirmationModal';
 import { Token } from '@/lib/tokens';
 
 interface TransactionButtonProps {
@@ -62,18 +63,27 @@ export function TransactionButton({
         {buttonLabel}
       </Button>
 
-      <TransactionModal
-        isOpen={showModal}
-        onClose={closeModal}
-        onConfirm={handleConfirm}
-        title={modalData?.title || ''}
-        description={modalData?.description || ''}
-        action={modalData?.action || ''}
-        amount={modalData?.amount}
-        gasEstimate={modalData?.gasEstimate}
-        isLoading={isLoading}
-        loanDetails={loanDetails}
-      />
+      {loanDetails ? (
+        <LoanConfirmationModal
+          isOpen={showModal}
+          onClose={closeModal}
+          onConfirm={handleConfirm}
+          loanDetails={loanDetails}
+          isLoading={isLoading}
+        />
+      ) : (
+        <TransactionModal
+          isOpen={showModal}
+          onClose={closeModal}
+          onConfirm={handleConfirm}
+          title={modalData?.title || ''}
+          description={modalData?.description || ''}
+          action={modalData?.action || ''}
+          amount={modalData?.amount}
+          gasEstimate={modalData?.gasEstimate}
+          isLoading={isLoading}
+        />
+      )}
     </>
   );
 }
