@@ -165,7 +165,12 @@ export function useBorrowerLoans() {
         try {
           const { loanId, borrower, lender, token, amount, apr } = log.args;
           
-          if (!loanId) continue;
+          console.log(`Processing loan event - ID: ${loanId}, borrower: ${borrower}, lender: ${lender}`);
+          
+          if (!loanId) {
+            console.log('Skipping - no loanId');
+            continue;
+          }
           
           // Get loan details from contract to check if still active
           const loanData = await publicClient.readContract({
@@ -190,6 +195,9 @@ export function useBorrowerLoans() {
           // Since we filtered by borrower in the event query, verify contract data matches
           if (contractBorrower.toLowerCase() !== address.toLowerCase()) {
             console.log('Warning: event/contract borrower mismatch for loan', loanId);
+            console.log(`  Event borrower: ${borrower}`);
+            console.log(`  Contract borrower: ${contractBorrower}`); 
+            console.log(`  User address: ${address}`);
             continue;
           }
           
@@ -214,6 +222,7 @@ export function useBorrowerLoans() {
           };
 
           activeLoans.push(loan);
+          console.log('Successfully added loan to active loans list');
         } catch (error) {
           console.error('Error fetching borrowed loan data for loan ID', log.args.loanId, error);
         }
