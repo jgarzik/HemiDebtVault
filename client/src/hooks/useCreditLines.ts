@@ -4,6 +4,7 @@ import { createPublicClient, http, parseAbiItem, formatUnits } from 'viem';
 import { DEBT_VAULT_ADDRESS, hemiNetwork } from '@/lib/hemi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { getAllTokens } from '@/lib/tokens';
+import { QUERY_CACHE_CONFIG } from '@/lib/constants';
 
 interface CreditLine {
   borrower: string;
@@ -115,8 +116,8 @@ export function useCreditLines() {
     queryKey: ['creditLines', address],
     queryFn: fetchCreditLines,
     enabled: !!address,
-    staleTime: 30000, // Consider data fresh for 30 seconds
-    gcTime: 300000, // Keep in cache for 5 minutes
+    staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
+    gcTime: QUERY_CACHE_CONFIG.GC_TIME,
     refetchOnWindowFocus: false,
   });
 

@@ -266,7 +266,7 @@ export function RepaymentModal({
                 queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
                 queryClient.invalidateQueries({ queryKey: ['loans'] });
                 queryClient.invalidateQueries({ queryKey: ['creditLines'] });
-              }, 1000);
+              }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
             }}
           >
             {paymentAmount ? `Pay ${paymentAmount} ${repaymentDetails.tokenSymbol}` : 'Enter amount'}

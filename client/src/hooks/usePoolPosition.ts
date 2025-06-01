@@ -4,6 +4,7 @@ import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { getAllTokens } from '@/lib/tokens';
 import { formatUnits } from 'viem';
+import { QUERY_CACHE_CONFIG } from '@/lib/constants';
 
 export function usePoolPosition() {
   const { address } = useAccount();
@@ -19,8 +20,8 @@ export function usePoolPosition() {
       query: {
         enabled: !!address,
         refetchInterval: false, // Disable automatic polling
-        staleTime: 30000, // Consider data fresh for 30 seconds
-        gcTime: 300000, // Keep in cache for 5 minutes
+        staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
+        gcTime: QUERY_CACHE_CONFIG.GC_TIME,
       },
     });
 

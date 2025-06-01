@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
+import { TRANSACTION_CONFIG } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -51,7 +52,7 @@ export function Borrow() {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
         queryClient.invalidateQueries({ queryKey: ['borrowedLoans'] });
-      }, 2000);
+      }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
       
       return txHash;
     } catch (error) {
