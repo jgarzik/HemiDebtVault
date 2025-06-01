@@ -178,17 +178,22 @@ export function useBorrowerLoans() {
           // borrower, lender, token, principal, repaidPrincipal, forgivenPrincipal, apr, startTimestamp, lastPaymentTimestamp, closed
           const [borrower, loanLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAt, lastPayment, isClosed] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
           
-          // Skip if loan is not active
-          if (!isActive) continue;
+          // Skip if loan is closed
+          if (isClosed) {
+            console.log('Skipping closed loan', loanId);
+            continue;
+          }
+          
+          console.log('Processing active loan', loanId, 'for borrower', borrower);
 
           // Find token info
-          const tokenInfo = tokens.find(t => t.address.toLowerCase() === token.toLowerCase());
+          const tokenInfo = tokens.find(t => t.address.toLowerCase() === loanToken.toLowerCase());
           
           const loan: Loan = {
             loanId,
-            borrower: address,
-            lender: lender as string,
-            token: token as string,
+            borrower: borrower as string,
+            lender: loanLender as string,
+            token: loanToken as string,
             tokenSymbol: tokenInfo?.symbol || 'Unknown',
             principal: loanPrincipal,
             formattedPrincipal: tokenInfo ? formatUnits(loanPrincipal, tokenInfo.decimals) : loanPrincipal.toString(),
@@ -196,7 +201,7 @@ export function useBorrowerLoans() {
             interestRatePercent: (Number(loanInterestRate) / 100).toFixed(2),
             createdAt,
             createdAtDate: new Date(Number(createdAt) * 1000).toLocaleDateString(),
-            isActive,
+            isActive: !isClosed,
           };
 
           activeLoans.push(loan);
