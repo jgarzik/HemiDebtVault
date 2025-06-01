@@ -146,35 +146,59 @@ export function useBorrowerLoans() {
       // This will work for the current loan and can be expanded later
       const activeLoans: Loan[] = [];
       
-      try {
-        console.log('Checking loan ID 0 for borrower:', address);
-        // Get loan details from contract
-        const loanData = await publicClient.readContract({
-          address: DEBT_VAULT_ADDRESS,
-          abi: DEBT_VAULT_ABI,
-          functionName: 'loanById',
-          args: [0n], // Check loan ID 0
-        });
+      // Get ALL LoanCreated events and check contract data to determine actual borrower
+      // The event structure might not match the contract borrower field
+      const logs = await publicClient.getLogs({
+        address: DEBT_VAULT_ADDRESS,
+        event: parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed lender, address indexed borrower, address token, uint256 principal, uint256 interestRate)'),
+        fromBlock: 'earliest',
+        toBlock: 'latest',
+      });
 
-        console.log('Raw loan data for loan 0:', loanData);
-        
-        // The contract returns a struct with these fields:
-        // borrower, lender, token, principal, repaidPrincipal, forgivenPrincipal, apr, startTimestamp, lastPaymentTimestamp, closed
-        const [borrower, loanLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAt, lastPayment, isClosed] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
-        
-        console.log('Loan 0 borrower:', borrower, 'User:', address, 'Match:', borrower.toLowerCase() === address.toLowerCase());
-        
-        // Check if this loan belongs to the user and is active
-        if (borrower.toLowerCase() === address.toLowerCase() && !isClosed) {
-          console.log('Processing active loan 0 for user');
+      console.log('Found borrowed loan events:', logs.length);
+
+      // Process each loan
+      for (const log of logs) {
+        try {
+          const { loanId, lender, token, principal, interestRate } = log.args;
+          
+          if (!loanId) continue;
+          
+          // Get loan details from contract to check if still active
+          const loanData = await publicClient.readContract({
+            address: DEBT_VAULT_ADDRESS,
+            abi: DEBT_VAULT_ABI,
+            functionName: 'loanById',
+            args: [loanId],
+          });
+
+          console.log('Raw loan data for loan', loanId, ':', loanData);
+          
+          // The contract returns a struct with these fields:
+          // borrower, lender, token, principal, repaidPrincipal, forgivenPrincipal, apr, startTimestamp, lastPaymentTimestamp, closed
+          const [contractBorrower, contractLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAt, lastPayment, isClosed] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
+          
+          // Skip if loan is closed
+          if (isClosed) {
+            console.log('Skipping closed loan', loanId);
+            continue;
+          }
+
+          // Only include loans where the user is the borrower according to contract data
+          if (contractBorrower.toLowerCase() !== address.toLowerCase()) {
+            console.log('Skipping loan', loanId, '- user is not the borrower');
+            continue;
+          }
+          
+          console.log('Processing active loan', loanId, 'for borrower', contractBorrower);
 
           // Find token info
           const tokenInfo = tokens.find(t => t.address.toLowerCase() === loanToken.toLowerCase());
           
           const loan: Loan = {
-            loanId: 0n,
-            borrower: borrower as string,
-            lender: loanLender as string,
+            loanId,
+            borrower: contractBorrower as string,
+            lender: contractLender as string,
             token: loanToken as string,
             tokenSymbol: tokenInfo?.symbol || 'Unknown',
             principal: loanPrincipal,
@@ -187,12 +211,9 @@ export function useBorrowerLoans() {
           };
 
           activeLoans.push(loan);
-          console.log('Added loan 0 to borrowed loans list');
-        } else {
-          console.log('Loan 0 does not belong to user or is closed');
+        } catch (error) {
+          console.error('Error fetching borrowed loan data for loan ID', log.args.loanId, error);
         }
-      } catch (error) {
-        console.error('Error fetching loan 0 data:', error);
       }
 
       console.log('Final active borrowed loans:', activeLoans);
