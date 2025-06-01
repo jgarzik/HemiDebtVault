@@ -48,18 +48,14 @@ export function Lend() {
   // Get loans data
   const { loans, isLoading: isLoansLoading } = useLoans();
 
-  // Listen for transaction success events to refresh data
-  useEffect(() => {
-    const handleTransactionSuccess = () => {
-      console.log('Transaction success detected, refreshing data...');
-      invalidatePoolData();
-      refetchBalance();
-      refetchWithdrawBalance();
-    };
-
-    window.addEventListener('transactionSuccess', handleTransactionSuccess);
-    return () => window.removeEventListener('transactionSuccess', handleTransactionSuccess);
-  }, [invalidatePoolData, refetchBalance, refetchWithdrawBalance]);
+  // Data refresh function for after successful transactions
+  const refreshAllData = () => {
+    console.log('Refreshing all lend page data...');
+    invalidatePoolData();
+    refetchBalance();
+    refetchWithdrawBalance();
+    refetchCreditLines();
+  };
 
   const handleDeposit = async () => {
     if (!depositAmount || !address || !selectedToken) return '';
@@ -184,6 +180,11 @@ export function Lend() {
                     } : undefined}
                     actionLabel="Deposit"
                     transactionAmount={selectedToken && depositAmount ? `${depositAmount} ${selectedToken.symbol}` : undefined}
+                    onSuccess={() => {
+                      setTimeout(() => {
+                        refreshAllData();
+                      }, 2000);
+                    }}
                   >
                     Deposit Tokens
                   </TransactionButton>
@@ -234,6 +235,11 @@ export function Lend() {
                     disabled={!withdrawAmount || !selectedWithdrawToken}
                     actionLabel="Withdraw"
                     transactionAmount={selectedWithdrawToken && withdrawAmount ? `${withdrawAmount} ${selectedWithdrawToken.symbol}` : undefined}
+                    onSuccess={() => {
+                      setTimeout(() => {
+                        refreshAllData();
+                      }, 2000);
+                    }}
                   >
                     Withdraw Tokens
                   </TransactionButton>

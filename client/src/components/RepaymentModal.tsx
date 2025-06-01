@@ -255,6 +255,10 @@ export function RepaymentModal({
             } : undefined}
             actionLabel="Repay Loan"
             transactionAmount={paymentAmount ? `${paymentAmount} ${repaymentDetails.tokenSymbol}` : undefined}
+            onSuccess={() => {
+              // Close modal and trigger parent refresh
+              onClose();
+            }}
           >
             {paymentAmount ? `Pay ${paymentAmount} ${repaymentDetails.tokenSymbol}` : 'Enter amount'}
           </TransactionButton>

@@ -424,8 +424,12 @@ export function Borrow() {
             const amountBigInt = parseUnits(amount, token.decimals);
             const txHash = await repay(selectedLoanForRepay.loanId, amountBigInt);
             
-            setShowRepayModal(false);
-            setSelectedLoanForRepay(null);
+            // Don't close modal here - let the success callback handle it
+            // and trigger data refresh
+            setTimeout(() => {
+              refetchLoans();
+              refetchCredits();
+            }, 2000);
             
             return txHash;
           }}
