@@ -1,0 +1,103 @@
+import { useState } from 'react';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { parseUnits } from 'viem';
+import { Token } from '@/lib/tokens';
+
+const ERC20_ABI = [
+  {
+    name: 'allowance',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' }
+    ],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    name: 'approve',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' }
+    ],
+    outputs: [{ name: '', type: 'bool' }]
+  }
+];
+
+interface ApprovalParams {
+  token: Token;
+  amount: string;
+  spenderAddress: `0x${string}`;
+}
+
+export function useTokenApproval(params?: ApprovalParams) {
+  const { address } = useAccount();
+  const { writeContract } = useWriteContract();
+  const [approvalHash, setApprovalHash] = useState<string | null>(null);
+  const [isApproving, setIsApproving] = useState(false);
+
+  // Check current allowance
+  const { data: currentAllowance, refetch: refetchAllowance } = useReadContract({
+    address: params?.token.address,
+    abi: ERC20_ABI,
+    functionName: 'allowance',
+    args: address && params ? [address, params.spenderAddress] : undefined,
+    query: {
+      enabled: !!(address && params),
+    }
+  });
+
+  // Wait for approval transaction receipt
+  const { isLoading: isApprovalLoading, isSuccess: isApprovalSuccess } = useWaitForTransactionReceipt({
+    hash: approvalHash as `0x${string}` | undefined,
+  });
+
+  // Check if approval is needed
+  const needsApproval = params && currentAllowance !== undefined && currentAllowance !== null
+    ? (currentAllowance as bigint) < parseUnits(params.amount, params.token.decimals)
+    : false;
+
+  const approve = async () => {
+    if (!params || !address) return;
+
+    setIsApproving(true);
+    try {
+      const approvalAmount = parseUnits(params.amount, params.token.decimals);
+      
+      const txHash = await writeContract({
+        address: params.token.address,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [params.spenderAddress, approvalAmount],
+      });
+      
+      if (txHash) {
+        setApprovalHash(txHash);
+      }
+    } catch (error) {
+      console.error('Approval failed:', error);
+      setIsApproving(false);
+      throw error;
+    }
+  };
+
+  // Reset approval state when params change
+  if (params && approvalHash && isApprovalSuccess) {
+    setTimeout(() => {
+      setApprovalHash(null);
+      setIsApproving(false);
+      refetchAllowance();
+    }, 1000);
+  }
+
+  return {
+    needsApproval,
+    isApproving: isApproving || isApprovalLoading,
+    isApprovalSuccess,
+    approve,
+    currentAllowance,
+    refetchAllowance
+  };
+}
