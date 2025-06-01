@@ -418,23 +418,21 @@ export function Borrow() {
             setSelectedLoanForRepay(null);
           }}
           onConfirm={async (amount) => {
-            try {
-              const token = allTokens.find(t => t.symbol === selectedLoanForRepay.tokenSymbol);
-              if (!token) return;
-              
-              const amountBigInt = parseUnits(amount, token.decimals);
-              await repay(selectedLoanForRepay.loanId, amountBigInt);
-              
-              setShowRepayModal(false);
-              setSelectedLoanForRepay(null);
-              
-              // Refresh data after successful repayment
-              setTimeout(() => {
-                refetchCredits();
-              }, 2000);
-            } catch (error) {
-              console.error('Repayment failed:', error);
-            }
+            const token = allTokens.find(t => t.symbol === selectedLoanForRepay.tokenSymbol);
+            if (!token) throw new Error('Token not found');
+            
+            const amountBigInt = parseUnits(amount, token.decimals);
+            const txHash = await repay(selectedLoanForRepay.loanId, amountBigInt);
+            
+            setShowRepayModal(false);
+            setSelectedLoanForRepay(null);
+            
+            // Refresh data after successful repayment
+            setTimeout(() => {
+              refetchCredits();
+            }, 2000);
+            
+            return txHash;
           }}
           repaymentDetails={{
             loanId: selectedLoanForRepay.loanId,

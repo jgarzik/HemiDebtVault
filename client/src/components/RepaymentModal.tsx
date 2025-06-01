@@ -8,11 +8,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TransactionButton } from "@/components/TransactionButton";
 import { Loader2, ArrowRight } from "lucide-react";
 import { useState, useMemo } from "react";
 import { parseUnits, formatUnits } from "viem";
 import { type Token, getAllTokens } from "@/lib/tokens";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
+import { DEBT_VAULT_ADDRESS } from "@/lib/hemi";
 
 interface RepaymentDetails {
   loanId: bigint;
@@ -35,7 +37,7 @@ interface PaymentBreakdown {
 interface RepaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (amount: string) => void;
+  onConfirm: (amount: string) => Promise<string>;
   repaymentDetails: RepaymentDetails;
   isLoading?: boolean;
 }
@@ -237,20 +239,25 @@ export function RepaymentModal({
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleConfirm}
-            disabled={isLoading || !paymentAmount || parseFloat(paymentAmount) === 0}
+          <TransactionButton
+            onExecute={async () => {
+              if (paymentAmount && parseFloat(paymentAmount) > 0) {
+                return await onConfirm(paymentAmount);
+              }
+              throw new Error('Invalid payment amount');
+            }}
+            disabled={!paymentAmount || parseFloat(paymentAmount) === 0}
             className="flex-1 bg-green-600 hover:bg-green-700"
+            requiresApproval={tokenInfo && paymentAmount ? {
+              token: tokenInfo,
+              amount: paymentAmount,
+              spenderAddress: DEBT_VAULT_ADDRESS
+            } : undefined}
+            actionLabel="Repay Loan"
+            transactionAmount={paymentAmount ? `${paymentAmount} ${repaymentDetails.tokenSymbol}` : undefined}
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              `Pay ${paymentAmount || '0'} ${repaymentDetails.tokenSymbol}`
-            )}
-          </Button>
+            {paymentAmount ? `Pay ${paymentAmount} ${repaymentDetails.tokenSymbol}` : 'Enter amount'}
+          </TransactionButton>
         </div>
       </DialogContent>
     </Dialog>
