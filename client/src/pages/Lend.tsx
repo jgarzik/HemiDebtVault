@@ -1,39 +1,38 @@
 import { useState } from 'react';
-import { useAccount, useBalance } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TransactionModal } from '@/components/TransactionModal';
+import { TokenSelector } from '@/components/TokenSelector';
 import { useDebtVault } from '@/hooks/useDebtVault';
+import { useTokenBalance } from '@/hooks/useTokenBalance';
 import { Edit2, Eye, X, TrendingUp, Plus } from 'lucide-react';
-import { formatEther, parseEther } from 'viem';
+import { parseUnits } from 'viem';
+import { type Token, getAllTokens } from '@/lib/tokens';
 
 export function Lend() {
   const { address } = useAccount();
   const { deposit, withdraw, updateCreditLine, isDepositLoading, isUpdateCreditLoading } = useDebtVault();
   
-  const [selectedToken, setSelectedToken] = useState('USDC');
+  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [depositAmount, setDepositAmount] = useState('');
   const [activeTab, setActiveTab] = useState('deposit');
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [transactionData, setTransactionData] = useState<any>(null);
   
-  // Get token balance
-  const { data: balance } = useBalance({
-    address,
-    token: selectedToken === 'ETH' ? undefined : '0x', // Token addresses would be real
-  });
+  // Get real token balance from blockchain
+  const { balance, formattedBalance, isLoading: isBalanceLoading } = useTokenBalance(selectedToken || undefined);
 
   const handleDeposit = () => {
-    if (!depositAmount || !address) return;
+    if (!depositAmount || !address || !selectedToken) return;
     
     setTransactionData({
       title: 'Confirm Deposit',
       description: 'Add tokens to your lending pool',
       action: 'Deposit',
-      amount: `${depositAmount} ${selectedToken}`,
+      amount: `${depositAmount} ${selectedToken.symbol}`,
       gasEstimate: '~$2.50',
     });
     setShowTransactionModal(true);
@@ -41,9 +40,9 @@ export function Lend() {
 
   const confirmTransaction = async () => {
     try {
-      if (deposit && depositAmount) {
-        // This would call the actual contract function with real parameters
-        await deposit();
+      if (deposit && depositAmount && selectedToken) {
+        const amount = parseUnits(depositAmount, selectedToken.decimals);
+        await deposit(selectedToken.address, amount);
       }
     } catch (error) {
       console.error('Transaction failed:', error);
@@ -53,8 +52,8 @@ export function Lend() {
   };
 
   const setMaxAmount = () => {
-    if (balance) {
-      setDepositAmount(formatEther(balance.value));
+    if (formattedBalance) {
+      setDepositAmount(formattedBalance);
     }
   };
 
@@ -87,17 +86,11 @@ export function Lend() {
                 </TabsList>
                 
                 <TabsContent value="deposit" className="space-y-4">
-                  <Select value={selectedToken} onValueChange={setSelectedToken}>
-                    <SelectTrigger className="bg-slate-900 border-slate-600">
-                      <SelectValue placeholder="Select token" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USDC">USDC</SelectItem>
-                      <SelectItem value="USDT">USDT</SelectItem>
-                      <SelectItem value="DAI">DAI</SelectItem>
-                      <SelectItem value="WETH">WETH</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <TokenSelector
+                    selectedToken={selectedToken?.address}
+                    onTokenSelect={setSelectedToken}
+                    className="bg-slate-900 border-slate-600"
+                  />
                   
                   <div className="relative">
                     <Input
@@ -120,7 +113,7 @@ export function Lend() {
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">Available Balance:</span>
                     <span className="font-mono text-slate-300">
-                      {balance ? `${Number(formatEther(balance.value)).toFixed(4)} ${balance.symbol}` : '0.0000'}
+                      {isBalanceLoading ? 'Loading...' : selectedToken ? `${Number(formattedBalance).toFixed(4)} ${selectedToken.symbol}` : '0.0000'}
                     </span>
                   </div>
                   
