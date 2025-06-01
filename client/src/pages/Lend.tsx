@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useDebtVault } from '@/hooks/useDebtVault';
 import { useTokenBalance } from '@/hooks/useTokenBalance';
 import { usePoolPosition } from '@/hooks/usePoolPosition';
+import { useCreditLines } from '@/hooks/useCreditLines';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { Edit2, Eye, X, TrendingUp, Plus } from 'lucide-react';
 import { parseUnits } from 'viem';
@@ -39,6 +40,9 @@ export function Lend() {
   
   // Get pool position data from contract
   const { tokenBalances, totalDeposited, availableForLending, currentlyLent, totalInterestEarned, invalidatePoolData } = usePoolPosition();
+  
+  // Get credit lines data
+  const { creditLines, isLoading: isCreditLinesLoading, refetch: refetchCreditLines } = useCreditLines();
 
   // Listen for transaction success events to refresh data
   useEffect(() => {
@@ -264,22 +268,70 @@ export function Lend() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Active Credit Lines</CardTitle>
-            <span className="text-sm text-slate-400">0 active</span>
+            <span className="text-sm text-slate-400">{creditLines.length} active</span>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <TrendingUp className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-            <p className="text-slate-400">No credit lines yet</p>
-            <p className="text-sm text-slate-500 mt-1">Set up credit lines with borrowers to start earning interest</p>
-            <Button 
-              className="mt-4 bg-blue-600 hover:bg-blue-700"
-              onClick={() => setShowCreditLineModal(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create First Credit Line
-            </Button>
-          </div>
+          {isCreditLinesLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p className="text-slate-400">Loading credit lines...</p>
+            </div>
+          ) : creditLines.length === 0 ? (
+            <div className="text-center py-8">
+              <TrendingUp className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+              <p className="text-slate-400">No credit lines yet</p>
+              <p className="text-sm text-slate-500 mt-1">Set up credit lines with borrowers to start earning interest</p>
+              <Button 
+                className="mt-4 bg-blue-600 hover:bg-blue-700"
+                onClick={() => setShowCreditLineModal(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create First Credit Line
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {creditLines.map((creditLine, index) => (
+                <div key={`${creditLine.borrower}-${creditLine.token}`} className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="font-medium text-slate-200">
+                        {creditLine.tokenSymbol} Credit Line
+                      </span>
+                    </div>
+                    <span className="text-xs bg-green-900 text-green-300 px-2 py-1 rounded">
+                      Active
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-slate-400">Borrower:</span>
+                      <p className="font-mono text-slate-200 mt-1">
+                        {creditLine.borrower.slice(0, 6)}...{creditLine.borrower.slice(-4)}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">Credit Limit:</span>
+                      <p className="text-blue-400 font-semibold mt-1">
+                        {parseFloat(creditLine.formattedCreditLimit).toLocaleString()} {creditLine.tokenSymbol}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">APR Range:</span>
+                      <p className="text-green-400 font-semibold mt-1">
+                        {creditLine.minAPRPercent}% - {creditLine.maxAPRPercent}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
