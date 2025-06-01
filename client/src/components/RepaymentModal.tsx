@@ -170,7 +170,6 @@ export function RepaymentModal({
                 Wallet Balance: {formattedWalletBalance || '0.000000'} {repaymentDetails.tokenSymbol}
               </div>
             </div>
-            <p className="text-xs text-slate-500">Available: [Your {repaymentDetails.tokenSymbol} balance]</p>
           </div>
           
           {/* Payment Breakdown */}
