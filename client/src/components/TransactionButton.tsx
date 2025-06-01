@@ -24,6 +24,7 @@ interface TransactionButtonProps {
     utilization: string;
     dailyInterest: string;
   };
+  onSuccess?: () => void;
 }
 
 export function TransactionButton({ 
@@ -34,7 +35,8 @@ export function TransactionButton({
   requiresApproval,
   actionLabel,
   transactionAmount,
-  loanDetails
+  loanDetails,
+  onSuccess
 }: TransactionButtonProps) {
   const {
     buttonLabel,
@@ -50,7 +52,8 @@ export function TransactionButton({
     requiresApproval,
     actionLabel,
     transactionAmount,
-    disabled
+    disabled,
+    onSuccess
   });
 
   return (

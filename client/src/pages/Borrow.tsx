@@ -19,7 +19,7 @@ export function Borrow() {
   const { address } = useAccount();
   const { borrow, repay } = useDebtVault();
   const { availableCredits, isLoading: isCreditsLoading, refetch: refetchCredits } = useBorrowerCreditLines();
-  const { borrowedLoans, isLoading: isLoansLoading } = useBorrowerLoans();
+  const { borrowedLoans, isLoading: isLoansLoading, refetch: refetchLoans } = useBorrowerLoans();
   
   const [selectedCreditLine, setSelectedCreditLine] = useState<string>('');
   const [borrowAmount, setBorrowAmount] = useState('');
@@ -426,11 +426,6 @@ export function Borrow() {
             
             setShowRepayModal(false);
             setSelectedLoanForRepay(null);
-            
-            // Refresh data after successful repayment
-            setTimeout(() => {
-              refetchCredits();
-            }, 2000);
             
             return txHash;
           }}

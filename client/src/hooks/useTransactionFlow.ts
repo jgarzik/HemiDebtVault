@@ -25,6 +25,7 @@ interface TransactionFlowParams {
   actionLabel?: string;
   transactionAmount?: string;
   disabled?: boolean;
+  onSuccess?: () => void;
 }
 
 export function useTransactionFlow({
@@ -32,7 +33,8 @@ export function useTransactionFlow({
   requiresApproval,
   actionLabel,
   transactionAmount,
-  disabled = false
+  disabled = false,
+  onSuccess
 }: TransactionFlowParams) {
   const { toast } = useToast();
   const [showModal, setShowModal] = useState(false);
@@ -125,7 +127,16 @@ export function useTransactionFlow({
       } else if (currentState === 'ready_to_execute') {
         await execution.execute(onExecute);
         setShowModal(false);
-        // Note: Success toast will be shown when transaction is confirmed
+        
+        // Show success toast and call success callback
+        toast({
+          title: `${actionLabel || 'Transaction'} Successful`,
+          description: 'Your transaction has been confirmed on the blockchain.',
+        });
+        
+        if (onSuccess) {
+          onSuccess();
+        }
       }
     } catch (error) {
       console.error('Transaction failed:', error);
