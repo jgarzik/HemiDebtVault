@@ -46,22 +46,29 @@ export function Borrow() {
     }
   };
 
-  // Calculate dynamic APR based on utilization
+  // Calculate APR exactly as the smart contract does
   const calculateAPR = (amount: string, creditLine: any) => {
     if (!amount || !creditLine || parseFloat(amount) === 0) return '0.00';
     
     const requestedAmount = parseFloat(amount);
-    const availableCredit = parseFloat(creditLine.formattedAvailableCredit);
-    const minAPR = parseFloat(creditLine.minAPRPercent);
-    const maxAPR = parseFloat(creditLine.maxAPRPercent);
+    const creditLimit = parseFloat(creditLine.formattedCreditLimit);
+    const utilisedCredit = parseFloat(creditLine.formattedUtilisedCredit);
+    const minAPR = Number(creditLine.minAPR); // basis points
+    const maxAPR = Number(creditLine.maxAPR); // basis points
     
-    // Calculate utilization ratio (0-1)
-    const utilizationRatio = Math.min(requestedAmount / availableCredit, 1);
+    // Current borrowing = existing utilised credit + new requested amount
+    const currentBorrowing = utilisedCredit + requestedAmount;
     
-    // Linear interpolation between min and max APR based on utilization
-    const dynamicAPR = minAPR + (utilizationRatio * (maxAPR - minAPR));
+    // Solidity calculation: utilization = (currentBorrowing * PRECISION_FACTOR) / creditLimit
+    // PRECISION_FACTOR is 10^18 in the contract
+    const PRECISION_FACTOR = 1e18;
+    const utilization = (currentBorrowing * PRECISION_FACTOR) / creditLimit;
     
-    return dynamicAPR.toFixed(2);
+    // Solidity calculation: apr = minAPR + ((utilization * (maxAPR - minAPR)) / PRECISION_FACTOR)
+    const apr = minAPR + ((utilization * (maxAPR - minAPR)) / PRECISION_FACTOR);
+    
+    // Convert from basis points to percentage
+    return (apr / 100).toFixed(2);
   };
 
   const calculateDailyInterest = (amount: string, apr: string) => {
