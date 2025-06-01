@@ -101,7 +101,99 @@ export function Borrow() {
 
       </div>
 
-      {/* Available Credit Lines */}
+      {/* My Loans */}
+      <Card className="bg-slate-800 border-slate-700">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>My Loans</CardTitle>
+            <span className="text-sm text-slate-400">{borrowedLoans.length} active</span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoansLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p className="text-slate-400">Loading loans...</p>
+            </div>
+          ) : borrowedLoans.length === 0 ? (
+            <div className="text-center py-8">
+              <Search className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+              <p className="text-slate-400">No active loans</p>
+              <p className="text-sm text-slate-500 mt-1">Your borrowed funds will appear here</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {borrowedLoans.map((loan) => (
+                <div key={loan.loanId.toString()} className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      <span className="font-medium text-slate-200">
+                        Loan #{loan.loanId.toString()} - {loan.tokenSymbol}
+                      </span>
+                    </div>
+                    <span className="text-xs bg-orange-900 text-orange-300 px-2 py-1 rounded">
+                      Borrowed
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
+                    <div>
+                      <span className="text-slate-400">Lender:</span>
+                      <p className="font-mono text-slate-200 mt-1">
+                        {loan.lender.slice(0, 6)}...{loan.lender.slice(-4)}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">Principal:</span>
+                      <p className="text-orange-400 font-semibold mt-1">
+                        {parseFloat(loan.formattedPrincipal).toLocaleString()} {loan.tokenSymbol}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">Accrued Interest:</span>
+                      <p className="text-red-400 font-semibold mt-1">
+                        {loan.formattedAccruedInterest} {loan.tokenSymbol}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">Interest Rate:</span>
+                      <p className="text-yellow-400 font-semibold mt-1">
+                        {loan.interestRatePercent}% APR
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">Created:</span>
+                      <p className="text-slate-300 mt-1">
+                        {loan.createdAtDate}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end mt-4 gap-2">
+                    <Button 
+                      size="sm" 
+                      className="bg-green-600 hover:bg-green-700"
+                      onClick={() => {
+                        setSelectedLoanForRepay(loan);
+                        setShowRepayModal(true);
+                      }}
+                    >
+                      Repay
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Available Credit */}
       <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
           <div className="flex items-center justify-between">
