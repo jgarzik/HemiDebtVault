@@ -41,6 +41,7 @@ interface TransactionButtonProps {
     spenderAddress: `0x${string}`;
   };
   actionLabel?: string;
+  transactionAmount?: string;
 }
 
 export function TransactionButton({ 
@@ -49,7 +50,8 @@ export function TransactionButton({
   className = '', 
   disabled = false,
   requiresApproval,
-  actionLabel 
+  actionLabel,
+  transactionAmount
 }: TransactionButtonProps) {
   const { address, isConnected, chainId } = useAccount();
   const { openConnectModal } = useConnectModal();
@@ -113,18 +115,11 @@ export function TransactionButton({
     setIsExecuting(true);
     try {
       await onExecute();
-      setModalData(prev => ({
-        ...prev,
-        title: 'Transaction Successful',
-        description: 'Your transaction has been completed successfully',
-      }));
-      // Keep modal open for success message
-      setTimeout(() => {
-        setShowModal(false);
-      }, 2000);
+      // Close modal immediately after successful execution
+      setShowModal(false);
     } catch (error) {
       console.error('Transaction failed:', error);
-      setModalData(prev => ({
+      setModalData((prev: any) => ({
         ...prev,
         title: 'Transaction Failed',
         description: 'Transaction was rejected or failed',
