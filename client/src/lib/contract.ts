@@ -61,6 +61,15 @@ export const DEBT_VAULT_ABI = [
     "type": "function"
   },
   
+  // NFT functions
+  {
+    "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+    "name": "ownerOf",
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  
   // Forgiveness functions
   {
     "inputs": [

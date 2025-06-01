@@ -26,7 +26,7 @@ export function useBorrowerCreditLines() {
   const { address } = useAccount();
   const [availableCredits, setAvailableCredits] = useState<AvailableCredit[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { data: blockNumber } = useBlockNumber({ watch: true });
+  const { data: blockNumber } = useBlockNumber({ watch: false });
 
   const tokens = getAllTokens();
 

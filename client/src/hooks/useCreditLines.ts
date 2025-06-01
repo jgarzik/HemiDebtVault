@@ -22,7 +22,7 @@ export function useCreditLines() {
   const { address } = useAccount();
   const [creditLines, setCreditLines] = useState<CreditLine[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { data: blockNumber } = useBlockNumber({ watch: true });
+  const { data: blockNumber } = useBlockNumber({ watch: false });
 
   const tokens = getAllTokens();
 
