@@ -12,6 +12,7 @@ import { Loader2, ArrowRight } from "lucide-react";
 import { useState, useMemo } from "react";
 import { parseUnits, formatUnits } from "viem";
 import { type Token, getAllTokens } from "@/lib/tokens";
+import { useTokenBalance } from "@/hooks/useTokenBalance";
 
 interface RepaymentDetails {
   loanId: bigint;
@@ -48,8 +49,10 @@ export function RepaymentModal({
 }: RepaymentModalProps) {
   const [paymentAmount, setPaymentAmount] = useState('');
   
+  // Get the token info and user's wallet balance
   const tokens = getAllTokens();
-  const token = tokens.find(t => t.symbol === repaymentDetails.tokenSymbol);
+  const tokenInfo = tokens.find(t => t.address.toLowerCase() === repaymentDetails.token.toLowerCase());
+  const { balance: walletBalance, formattedBalance: formattedWalletBalance } = useTokenBalance(tokenInfo);
   
   // Calculate payment breakdown as user types
   const paymentBreakdown: PaymentBreakdown = useMemo(() => {
@@ -143,24 +146,29 @@ export function RepaymentModal({
           {/* Payment Input */}
           <div className="space-y-2">
             <Label htmlFor="payment" className="text-slate-300">Payment Amount</Label>
-            <div className="flex gap-2">
-              <Input
-                id="payment"
-                type="number"
-                step="0.000001"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                placeholder="0.000000"
-                className="bg-slate-900 border-slate-600 text-slate-200"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleMaxPayment}
-                className="border-slate-600 text-slate-300 hover:bg-slate-700"
-              >
-                Max
-              </Button>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  id="payment"
+                  type="number"
+                  step="0.000001"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  placeholder="0.000000"
+                  className="bg-slate-900 border-slate-600 text-slate-200"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleMaxPayment}
+                  className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                >
+                  Max
+                </Button>
+              </div>
+              <div className="text-xs text-slate-400">
+                Wallet Balance: {formattedWalletBalance || '0.000000'} {repaymentDetails.tokenSymbol}
+              </div>
             </div>
             <p className="text-xs text-slate-500">Available: [Your {repaymentDetails.tokenSymbol} balance]</p>
           </div>

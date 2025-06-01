@@ -351,7 +351,7 @@ export function Borrow() {
                     </span>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
                     <div>
                       <span className="text-slate-400">Lender:</span>
                       <p className="font-mono text-slate-200 mt-1">
@@ -363,6 +363,13 @@ export function Borrow() {
                       <span className="text-slate-400">Principal:</span>
                       <p className="text-orange-400 font-semibold mt-1">
                         {parseFloat(loan.formattedPrincipal).toLocaleString()} {loan.tokenSymbol}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">Accrued Interest:</span>
+                      <p className="text-red-400 font-semibold mt-1">
+                        {parseFloat(loan.formattedAccruedInterest).toLocaleString()} {loan.tokenSymbol}
                       </p>
                     </div>
                     

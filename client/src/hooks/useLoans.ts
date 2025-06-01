@@ -18,6 +18,8 @@ interface Loan {
   createdAt: bigint;
   createdAtDate: string;
   isActive: boolean;
+  accruedInterest: bigint;
+  formattedAccruedInterest: string;
 }
 
 export function useLoans() {
@@ -206,6 +208,15 @@ export function useBorrowerLoans() {
           // Find token info
           const tokenInfo = tokens.find(t => t.address.toLowerCase() === loanToken.toLowerCase());
           
+          // Calculate accrued interest based on time elapsed
+          const currentTime = Math.floor(Date.now() / 1000);
+          const elapsedTime = currentTime - Number(createdAt);
+          const elapsedDays = elapsedTime / (24 * 60 * 60);
+          
+          // Interest = (principal × APR × elapsed_days) ÷ (365 × 10000)
+          const accruedInterestBigInt = (loanPrincipal * loanInterestRate * BigInt(Math.floor(elapsedTime))) / (BigInt(365 * 24 * 60 * 60 * 10000));
+          const formattedAccruedInterest = tokenInfo ? formatUnits(accruedInterestBigInt, tokenInfo.decimals) : accruedInterestBigInt.toString();
+          
           const loan: Loan = {
             loanId,
             borrower: contractBorrower as string,
@@ -219,6 +230,8 @@ export function useBorrowerLoans() {
             createdAt,
             createdAtDate: new Date(Number(createdAt) * 1000).toLocaleDateString(),
             isActive: !isClosed,
+            accruedInterest: accruedInterestBigInt,
+            formattedAccruedInterest,
           };
 
           activeLoans.push(loan);
