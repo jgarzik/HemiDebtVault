@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,8 +19,9 @@ import { parseUnits } from 'viem';
 export function Borrow() {
   const { address } = useAccount();
   const { borrow, repay } = useDebtVault();
-  const { availableCredits, isLoading: isCreditsLoading, refetch: refetchCredits } = useBorrowerCreditLines();
-  const { borrowedLoans, isLoading: isLoansLoading, refetch: refetchLoans } = useBorrowerLoans();
+  const queryClient = useQueryClient();
+  const { availableCredits, isLoading: isCreditsLoading } = useBorrowerCreditLines();
+  const { borrowedLoans, isLoading: isLoansLoading } = useBorrowerLoans();
   
   const [selectedCreditLine, setSelectedCreditLine] = useState<string>('');
   const [borrowAmount, setBorrowAmount] = useState('');
@@ -47,7 +49,8 @@ export function Borrow() {
       
       // Refresh data after successful transaction
       setTimeout(() => {
-        refetchCredits();
+        queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
+        queryClient.invalidateQueries({ queryKey: ['borrowedLoans'] });
       }, 2000);
       
       return txHash;
@@ -423,13 +426,6 @@ export function Borrow() {
             
             const amountBigInt = parseUnits(amount, token.decimals);
             const txHash = await repay(selectedLoanForRepay.loanId, amountBigInt);
-            
-            // Don't close modal here - let the success callback handle it
-            // and trigger data refresh
-            setTimeout(() => {
-              refetchLoans();
-              refetchCredits();
-            }, 2000);
             
             return txHash;
           }}

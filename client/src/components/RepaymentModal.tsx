@@ -256,8 +256,16 @@ export function RepaymentModal({
             actionLabel="Repay Loan"
             transactionAmount={paymentAmount ? `${paymentAmount} ${repaymentDetails.tokenSymbol}` : undefined}
             onSuccess={() => {
-              // Close modal and trigger parent refresh
+              // Close modal and invalidate loan-related queries
               onClose();
+              
+              // Invalidate all loan and credit line queries to refresh data
+              setTimeout(() => {
+                queryClient.invalidateQueries({ queryKey: ['borrowedLoans'] });
+                queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
+                queryClient.invalidateQueries({ queryKey: ['loans'] });
+                queryClient.invalidateQueries({ queryKey: ['creditLines'] });
+              }, 1000);
             }}
           >
             {paymentAmount ? `Pay ${paymentAmount} ${repaymentDetails.tokenSymbol}` : 'Enter amount'}
