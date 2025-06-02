@@ -425,11 +425,11 @@ export function Lend() {
                     </div>
                     
                     <div>
-                      <span className="text-slate-400">Outstanding:</span>
+                      <span className="text-slate-400">Outstanding Balance:</span>
                       <p className="text-red-400 font-semibold mt-1">
-                        {(parseFloat(loan.formattedPrincipal) + parseFloat(loan.formattedAccruedInterest)).toLocaleString()} {loan.tokenSymbol}
+                        {parseFloat(loan.formattedOutstandingBalance).toLocaleString()} {loan.tokenSymbol}
                       </p>
-                      <p className="text-xs text-slate-500">Principal + Interest</p>
+                      <p className="text-xs text-slate-500">Contract getOutstandingBalance</p>
                     </div>
                     
                     <div>
@@ -537,15 +537,41 @@ export function Lend() {
                   <Card className="bg-slate-900 border-slate-700">
                     <CardContent className="p-4">
                       <div className="text-center">
-                        <p className="text-sm text-slate-400 mb-1">Total Outstanding (Contract)</p>
-                        <p className="text-2xl font-bold text-red-400">
-                          {parseFloat(selectedLoanForDetails.formattedOutstandingBalance).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
+                        <p className="text-sm text-slate-400 mb-1">Outstanding Principal</p>
+                        <p className="text-2xl font-bold text-orange-400">
+                          {parseFloat(selectedLoanForDetails.formattedOutstandingPrincipal).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">Principal + Interest Owed</p>
+                        <p className="text-xs text-slate-500 mt-1">From getOutstandingBalance[0]</p>
                       </div>
                     </CardContent>
                   </Card>
                   
+                  <Card className="bg-slate-900 border-slate-700">
+                    <CardContent className="p-4">
+                      <div className="text-center">
+                        <p className="text-sm text-slate-400 mb-1">Accrued Interest</p>
+                        <p className="text-2xl font-bold text-green-400">
+                          {parseFloat(selectedLoanForDetails.formattedAccruedInterest).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">From getOutstandingBalance[1]</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card className="bg-slate-900 border-slate-700">
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <p className="text-sm text-slate-400 mb-1">Total Outstanding Balance</p>
+                      <p className="text-3xl font-bold text-red-400">
+                        {parseFloat(selectedLoanForDetails.formattedOutstandingBalance).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">Outstanding Principal + Accrued Interest</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="grid grid-cols-2 gap-4">
                   <Card className="bg-slate-900 border-slate-700">
                     <CardContent className="p-4">
                       <div className="text-center">
@@ -556,25 +582,12 @@ export function Lend() {
                       </div>
                     </CardContent>
                   </Card>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <Card className="bg-slate-900 border-slate-700">
-                    <CardContent className="p-4">
-                      <div className="text-center">
-                        <p className="text-sm text-slate-400 mb-1">Outstanding Principal</p>
-                        <p className="text-xl font-bold text-orange-400">
-                          {parseFloat(selectedLoanForDetails.formattedOutstandingPrincipal).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
                   
                   <Card className="bg-slate-900 border-slate-700">
                     <CardContent className="p-4">
                       <div className="text-center">
                         <p className="text-sm text-slate-400 mb-1">Repaid Principal</p>
-                        <p className="text-xl font-bold text-green-400">
+                        <p className="text-xl font-bold text-slate-300">
                           {parseFloat(selectedLoanForDetails.formattedRepaidPrincipal).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
                         </p>
                       </div>
