@@ -295,10 +295,10 @@ export function usePortfolioMetrics() {
 
   return {
     metrics: metrics || {
-      totalLent: '0',
-      totalBorrowed: '0',
-      interestEarned: '0',
-      interestPaid: '0',
+      totalLent: '0.000000 VCRED',
+      totalBorrowed: '0.000000 VCRED',
+      interestEarned: '0.000000 VCRED',
+      interestPaid: '0.000000 VCRED',
       activeLoans: 0,
       avgUtilization: '0',
       relationshipCount: 0,
@@ -307,6 +307,12 @@ export function usePortfolioMetrics() {
       riskScore: 'Low' as const,
       monthlyYield: '0',
       paymentHealth: 'New' as const,
+      tokenBreakdown: {
+        lent: {},
+        borrowed: {},
+        interestEarned: {},
+        interestPaid: {},
+      },
     },
     relationships: calculateRelationships(),
     isLoading,

@@ -220,7 +220,7 @@ export function Portfolio() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-slate-200 font-mono">{relationship.totalVolume} ETH</p>
+                    <p className="text-slate-200 font-mono">{relationship.totalVolume}</p>
                     <div className="flex items-center space-x-2">
                       <span className={`text-xs px-2 py-1 rounded ${
                         relationship.trustLevel === 'Verified' ? 'bg-green-900 text-green-300' :
