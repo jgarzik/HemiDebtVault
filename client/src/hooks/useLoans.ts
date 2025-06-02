@@ -213,10 +213,15 @@ export function useBorrowerLoans() {
             continue;
           }
 
-          // Calculate accrued interest for borrower view
-          const currentTime = BigInt(Math.floor(Date.now() / 1000));
-          const timeElapsed = currentTime - createdAt;
-          const accruedInterest = (loanPrincipal * loanInterestRate * timeElapsed) / (BigInt(100) * BigInt(365 * 24 * 3600));
+          // Get accurate outstanding balance from contract
+          const outstandingBalance = await publicClient.readContract({
+            address: DEBT_VAULT_ADDRESS,
+            abi: DEBT_VAULT_ABI,
+            functionName: 'getOutstandingBalance',
+            args: [loanId],
+          });
+
+          const [outstandingPrincipal, accruedInterest] = outstandingBalance as [bigint, bigint];
 
           const loan: Loan = {
             loanId,
@@ -224,8 +229,8 @@ export function useBorrowerLoans() {
             lender: contractLender,
             token: loanToken,
             tokenSymbol: tokenInfo.symbol,
-            principal: loanPrincipal,
-            formattedPrincipal: formatUnits(loanPrincipal, tokenInfo.decimals),
+            principal: outstandingPrincipal,
+            formattedPrincipal: formatUnits(outstandingPrincipal, tokenInfo.decimals),
             interestRate: loanInterestRate,
             interestRatePercent: (Number(loanInterestRate) / 100).toFixed(2),
             createdAt,
