@@ -109,33 +109,17 @@ export function useLoans() {
           const [contractOutstandingPrincipal, accruedInterest] = outstandingBalanceResult as readonly [bigint, bigint];
           const outstandingBalance = contractOutstandingPrincipal + accruedInterest;
 
-          // Get total interest earned by fetching LoanRepaid events
-          const repaymentEvents = await publicClient.getLogs({
-            address: DEBT_VAULT_ADDRESS,
-            event: {
-              type: 'event',
-              name: 'LoanRepaid',
-              inputs: [
-                { name: 'loanId', type: 'uint256', indexed: true },
-                { name: 'amount', type: 'uint256', indexed: false },
-                { name: 'interestPaid', type: 'uint256', indexed: false },
-                { name: 'principalPaid', type: 'uint256', indexed: false }
-              ]
-            },
-            args: { loanId },
-            fromBlock: BigInt(0),
-          });
-
-          // Sum up total interest earned from all repayment events
-          let totalInterestEarned = BigInt(0);
-          console.log(`Found ${repaymentEvents.length} repayment events for loan ${loanId}`);
-          for (const event of repaymentEvents) {
-            if (event.args && typeof event.args.interestPaid === 'bigint') {
-              console.log(`Adding interest paid: ${event.args.interestPaid}`);
-              totalInterestEarned += event.args.interestPaid;
-            }
-          }
-          console.log(`Total interest earned for loan ${loanId}: ${totalInterestEarned}`);
+          // Calculate interest earned: Original principal - outstanding principal - repaid principal
+          // This gives us how much principal has been paid down beyond what's still owed
+          const originalPrincipal = loanPrincipal;
+          const totalPrincipalPaidDown = originalPrincipal - contractOutstandingPrincipal;
+          const netPrincipalRepaid = totalPrincipalPaidDown - repaidPrincipal;
+          
+          // If more has been paid down than just principal repayments, the difference is interest
+          const totalInterestEarned = netPrincipalRepaid > 0 ? netPrincipalRepaid : BigInt(0);
+          
+          console.log(`Loan ${loanId}: Original=${originalPrincipal}, Outstanding=${contractOutstandingPrincipal}, Repaid=${repaidPrincipal}`);
+          console.log(`Interest earned for loan ${loanId}: ${totalInterestEarned}`);
 
           const loan: Loan = {
             loanId,
