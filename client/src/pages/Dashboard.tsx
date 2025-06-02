@@ -190,7 +190,7 @@ export function Dashboard() {
             </div>
             <div className="space-y-1">
               <p className="text-2xl font-bold text-slate-100">
-                {metrics.totalLent} ETH
+                {metrics.totalLent}
               </p>
               <p className="text-sm text-green-400">Ready to lend</p>
             </div>
@@ -205,7 +205,7 @@ export function Dashboard() {
             </div>
             <div className="space-y-1">
               <p className="text-2xl font-bold text-slate-100">
-                {metrics.totalBorrowed} ETH
+                {metrics.totalBorrowed}
               </p>
               <p className="text-sm text-blue-400">Active loans</p>
             </div>

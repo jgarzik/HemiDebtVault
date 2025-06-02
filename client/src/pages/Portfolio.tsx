@@ -99,7 +99,7 @@ export function Portfolio() {
                         <TrendingUp className="w-4 h-4 text-green-400" />
                       </div>
                       <p className="text-2xl font-bold text-green-400">
-                        {metrics.interestEarned} ETH
+                        {metrics.interestEarned}
                       </p>
                       <p className="text-sm text-green-300">Total earned</p>
                     </CardContent>
@@ -112,7 +112,7 @@ export function Portfolio() {
                         <TrendingDown className="w-4 h-4 text-blue-400" />
                       </div>
                       <p className="text-2xl font-bold text-blue-400">
-                        {metrics.interestPaid} ETH
+                        {metrics.interestPaid}
                       </p>
                       <p className="text-sm text-blue-300">Total paid</p>
                     </CardContent>
@@ -127,7 +127,13 @@ export function Portfolio() {
                         <DollarSign className="w-4 h-4 text-blue-400" />
                       </div>
                       <p className="text-2xl font-bold text-blue-400">
-                        {(parseFloat(metrics.interestEarned) - parseFloat(metrics.interestPaid)).toFixed(6)} ETH
+                        Net: {Object.keys(metrics.tokenBreakdown.lent).length > 0 ? 
+                          Object.keys(metrics.tokenBreakdown.lent).map(token => {
+                            const earned = parseFloat(metrics.tokenBreakdown.interestEarned[token] || '0');
+                            const paid = parseFloat(metrics.tokenBreakdown.interestPaid[token] || '0');
+                            return `${(earned - paid).toFixed(6)} ${token}`;
+                          }).join(', ') : '0.000000'
+                        }
                       </p>
                       <p className="text-sm text-blue-300">Net position</p>
                     </CardContent>
@@ -344,8 +350,12 @@ export function Portfolio() {
                   <p className="font-mono text-blue-400">{metrics.monthlyYield}%</p>
                 </div>
                 <div>
-                  <span className="text-slate-400">Total Volume:</span>
-                  <p className="font-mono text-green-400">{(parseFloat(metrics.totalLent) + parseFloat(metrics.totalBorrowed)).toFixed(6)} ETH</p>
+                  <span className="text-slate-400">Primary Token:</span>
+                  <p className="font-mono text-green-400">{
+                    Object.keys(metrics.tokenBreakdown.lent).length > 0 
+                      ? Object.keys(metrics.tokenBreakdown.lent)[0]
+                      : 'None'
+                  }</p>
                 </div>
               </div>
               

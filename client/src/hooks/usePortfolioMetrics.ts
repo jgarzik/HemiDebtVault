@@ -21,6 +21,12 @@ interface PortfolioMetrics {
   riskScore: 'Low' | 'Medium' | 'High';
   monthlyYield: string;
   paymentHealth: 'New' | 'Good' | 'Warning' | 'Poor';
+  tokenBreakdown: {
+    lent: { [token: string]: string };
+    borrowed: { [token: string]: string };
+    interestEarned: { [token: string]: string };
+    interestPaid: { [token: string]: string };
+  };
 }
 
 interface Relationship {
@@ -58,17 +64,26 @@ export function usePortfolioMetrics() {
         riskScore: 'Low',
         monthlyYield: '0',
         paymentHealth: 'New',
+        tokenBreakdown: {
+          lent: {},
+          borrowed: {},
+          interestEarned: {},
+          interestPaid: {},
+        },
       };
     }
 
-    // Calculate totals from active loans
-    let totalLentValue = 0;
-    let totalBorrowedValue = 0;
-    let totalInterestEarned = 0;
-    let totalInterestPaid = 0;
+    // Track totals by token - NEVER mix different currencies
+    const tokenTotals = {
+      lent: {} as { [symbol: string]: number },
+      borrowed: {} as { [symbol: string]: number },
+      interestEarned: {} as { [symbol: string]: number },
+      interestPaid: {} as { [symbol: string]: number },
+    };
+
     let totalLoanDuration = 0;
 
-    // Process lender loans
+    // Process lender loans - keep per token
     for (const loan of lenderLoans) {
       const tokenInfo = tokens.find(t => t.address.toLowerCase() === loan.token.toLowerCase());
       if (!tokenInfo) continue;
@@ -76,8 +91,9 @@ export function usePortfolioMetrics() {
       const principalValue = parseFloat(loan.formattedPrincipal);
       const interestValue = parseFloat(loan.formattedAccruedInterest);
       
-      totalLentValue += principalValue;
-      totalInterestEarned += interestValue;
+      // Accumulate by token symbol
+      tokenTotals.lent[tokenInfo.symbol] = (tokenTotals.lent[tokenInfo.symbol] || 0) + principalValue;
+      tokenTotals.interestEarned[tokenInfo.symbol] = (tokenTotals.interestEarned[tokenInfo.symbol] || 0) + interestValue;
 
       // Calculate loan duration
       const createdDate = new Date(Number(loan.createdAt) * 1000);
@@ -85,7 +101,7 @@ export function usePortfolioMetrics() {
       totalLoanDuration += daysSinceCreation;
     }
 
-    // Process borrower loans
+    // Process borrower loans - keep per token
     for (const loan of borrowedLoans) {
       const tokenInfo = tokens.find(t => t.address.toLowerCase() === loan.token.toLowerCase());
       if (!tokenInfo) continue;
@@ -93,8 +109,9 @@ export function usePortfolioMetrics() {
       const principalValue = parseFloat(loan.formattedPrincipal);
       const interestValue = parseFloat(loan.formattedAccruedInterest);
       
-      totalBorrowedValue += principalValue;
-      totalInterestPaid += interestValue;
+      // Accumulate by token symbol
+      tokenTotals.borrowed[tokenInfo.symbol] = (tokenTotals.borrowed[tokenInfo.symbol] || 0) + principalValue;
+      tokenTotals.interestPaid[tokenInfo.symbol] = (tokenTotals.interestPaid[tokenInfo.symbol] || 0) + interestValue;
     }
 
     // Calculate utilization
@@ -131,13 +148,57 @@ export function usePortfolioMetrics() {
     lenderLoans.forEach(loan => relationships.add(loan.borrower.toLowerCase()));
     borrowedLoans.forEach(loan => relationships.add(loan.lender.toLowerCase()));
 
-    // Calculate annualized return
+    // Create formatted token breakdown
+    const tokenBreakdown = {
+      lent: {} as { [token: string]: string },
+      borrowed: {} as { [token: string]: string },
+      interestEarned: {} as { [token: string]: string },
+      interestPaid: {} as { [token: string]: string },
+    };
+
+    // Format all token amounts
+    Object.keys(tokenTotals.lent).forEach(symbol => {
+      tokenBreakdown.lent[symbol] = tokenTotals.lent[symbol].toFixed(6);
+    });
+    Object.keys(tokenTotals.borrowed).forEach(symbol => {
+      tokenBreakdown.borrowed[symbol] = tokenTotals.borrowed[symbol].toFixed(6);
+    });
+    Object.keys(tokenTotals.interestEarned).forEach(symbol => {
+      tokenBreakdown.interestEarned[symbol] = tokenTotals.interestEarned[symbol].toFixed(6);
+    });
+    Object.keys(tokenTotals.interestPaid).forEach(symbol => {
+      tokenBreakdown.interestPaid[symbol] = tokenTotals.interestPaid[symbol].toFixed(6);
+    });
+
+    // Find primary token for display (most lent amount)
+    let primaryLentToken = 'VCRED';
+    let maxLentAmount = 0;
+    Object.keys(tokenTotals.lent).forEach(symbol => {
+      if (tokenTotals.lent[symbol] > maxLentAmount) {
+        maxLentAmount = tokenTotals.lent[symbol];
+        primaryLentToken = symbol;
+      }
+    });
+
+    // Find primary borrowed token
+    let primaryBorrowedToken = 'VCRED';
+    let maxBorrowedAmount = 0;
+    Object.keys(tokenTotals.borrowed).forEach(symbol => {
+      if (tokenTotals.borrowed[symbol] > maxBorrowedAmount) {
+        maxBorrowedAmount = tokenTotals.borrowed[symbol];
+        primaryBorrowedToken = symbol;
+      }
+    });
+
+    // Calculate metrics using primary tokens (no mixing currencies)
     const totalActiveLoans = lenderLoans.length + borrowedLoans.length;
     const avgDuration = totalActiveLoans > 0 ? totalLoanDuration / lenderLoans.length : 0;
     
     let annualizedReturn = 0;
-    if (totalLentValue > 0 && avgDuration > 0) {
-      const dailyReturn = totalInterestEarned / totalLentValue / avgDuration;
+    const primaryLentAmount = tokenTotals.lent[primaryLentToken] || 0;
+    const primaryInterestEarned = tokenTotals.interestEarned[primaryLentToken] || 0;
+    if (primaryLentAmount > 0 && avgDuration > 0) {
+      const dailyReturn = primaryInterestEarned / primaryLentAmount / avgDuration;
       annualizedReturn = dailyReturn * 365 * 100;
     }
 
@@ -159,14 +220,14 @@ export function usePortfolioMetrics() {
       riskScore = 'Medium';
     }
 
-    // Calculate monthly yield
-    const monthlyYield = totalLentValue > 0 ? (totalInterestEarned / totalLentValue) * 100 : 0;
+    // Calculate monthly yield using primary token
+    const monthlyYield = primaryLentAmount > 0 ? (primaryInterestEarned / primaryLentAmount) * 100 : 0;
 
     return {
-      totalLent: totalLentValue.toFixed(6),
-      totalBorrowed: totalBorrowedValue.toFixed(6),
-      interestEarned: totalInterestEarned.toFixed(6),
-      interestPaid: totalInterestPaid.toFixed(6),
+      totalLent: `${maxLentAmount.toFixed(6)} ${primaryLentToken}`,
+      totalBorrowed: `${maxBorrowedAmount.toFixed(6)} ${primaryBorrowedToken}`,
+      interestEarned: `${primaryInterestEarned.toFixed(6)} ${primaryLentToken}`,
+      interestPaid: `${(tokenTotals.interestPaid[primaryBorrowedToken] || 0).toFixed(6)} ${primaryBorrowedToken}`,
       activeLoans: totalActiveLoans,
       avgUtilization: avgUtilization.toFixed(1),
       relationshipCount: relationships.size,
@@ -175,6 +236,7 @@ export function usePortfolioMetrics() {
       riskScore,
       monthlyYield: monthlyYield.toFixed(2),
       paymentHealth,
+      tokenBreakdown,
     };
   };
 
