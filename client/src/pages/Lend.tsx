@@ -477,7 +477,7 @@ export function Lend() {
 
       {/* Loan Details Modal */}
       <Dialog open={showLoanDetailsModal} onOpenChange={setShowLoanDetailsModal}>
-        <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl">
+        <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-slate-100">
               Loan Details - #{selectedLoanForDetails?.loanId.toString()}
@@ -530,46 +530,54 @@ export function Lend() {
               </div>
 
               {/* Financial Details */}
-              <div className="space-y-4">
-                <h4 className="font-medium text-slate-300">Complete Financial Summary</h4>
+              <div className="space-y-3">
+                <h4 className="font-medium text-slate-300">Financial Summary</h4>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <Card className="bg-slate-900 border-slate-700">
-                    <CardContent className="p-4">
-                      <div className="text-center">
-                        <p className="text-sm text-slate-400 mb-1">Outstanding Principal</p>
-                        <p className="text-2xl font-bold text-orange-400">
-                          {parseFloat(selectedLoanForDetails.formattedOutstandingPrincipal).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
-                        </p>
-
-                      </div>
-                    </CardContent>
-                  </Card>
+                {/* Compact Financial Display */}
+                <div className="bg-slate-900 rounded-lg p-3 space-y-3">
+                  <div className="text-center border-b border-slate-700 pb-3">
+                    <p className="text-sm text-slate-400 mb-1">Total Outstanding Balance</p>
+                    <p className="text-2xl font-bold text-red-400">
+                      {parseFloat(selectedLoanForDetails.formattedOutstandingBalance).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
+                    </p>
+                  </div>
                   
-                  <Card className="bg-slate-900 border-slate-700">
-                    <CardContent className="p-4">
-                      <div className="text-center">
-                        <p className="text-sm text-slate-400 mb-1">Accrued Interest</p>
-                        <p className="text-2xl font-bold text-green-400">
-                          {parseFloat(selectedLoanForDetails.formattedAccruedInterest).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
-                        </p>
-
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <Card className="bg-slate-900 border-slate-700">
-                  <CardContent className="p-4">
-                    <div className="text-center">
-                      <p className="text-sm text-slate-400 mb-1">Total Outstanding Balance</p>
-                      <p className="text-3xl font-bold text-red-400">
-                        {parseFloat(selectedLoanForDetails.formattedOutstandingBalance).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-slate-400">Outstanding Principal</p>
+                      <p className="text-orange-400 font-semibold">
+                        {parseFloat(selectedLoanForDetails.formattedOutstandingPrincipal).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
                       </p>
-                      <p className="text-xs text-slate-500 mt-1">Outstanding Principal + Accrued Interest</p>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <p className="text-slate-400">Accrued Interest</p>
+                      <p className="text-green-400 font-semibold">
+                        {parseFloat(selectedLoanForDetails.formattedAccruedInterest).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-3 text-sm pt-2 border-t border-slate-700">
+                    <div>
+                      <p className="text-slate-400">Original</p>
+                      <p className="text-blue-400 font-medium">
+                        {parseFloat(selectedLoanForDetails.formattedPrincipal).toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-slate-400">Repaid</p>
+                      <p className="text-slate-300 font-medium">
+                        {parseFloat(selectedLoanForDetails.formattedRepaidPrincipal).toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-slate-400">Interest Rate</p>
+                      <p className="text-yellow-400 font-medium">
+                        {selectedLoanForDetails.interestRatePercent}% APR
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <Card className="bg-slate-900 border-slate-700">
