@@ -109,17 +109,34 @@ export function useLoans() {
           const [contractOutstandingPrincipal, accruedInterest] = outstandingBalanceResult as readonly [bigint, bigint];
           const outstandingBalance = contractOutstandingPrincipal + accruedInterest;
 
-          // Calculate interest earned: Original principal - outstanding principal - repaid principal
-          // This gives us how much principal has been paid down beyond what's still owed
-          const originalPrincipal = loanPrincipal;
-          const totalPrincipalPaidDown = originalPrincipal - contractOutstandingPrincipal;
-          const netPrincipalRepaid = totalPrincipalPaidDown - repaidPrincipal;
-          
-          // If more has been paid down than just principal repayments, the difference is interest
-          const totalInterestEarned = netPrincipalRepaid > 0 ? netPrincipalRepaid : BigInt(0);
-          
-          console.log(`Loan ${loanId}: Original=${originalPrincipal}, Outstanding=${contractOutstandingPrincipal}, Repaid=${repaidPrincipal}`);
-          console.log(`Interest earned for loan ${loanId}: ${totalInterestEarned}`);
+          // Based on the contract events, calculate total interest earned from LoanRepaid events
+          // Even though current events show interestPaid=0, we'll use the event-based approach
+          let totalInterestEarned = BigInt(0);
+          try {
+            const repaymentEvents = await publicClient.getLogs({
+              address: DEBT_VAULT_ADDRESS,
+              event: {
+                type: 'event',
+                name: 'LoanRepaid',
+                inputs: [
+                  { name: 'loanId', type: 'uint256', indexed: true },
+                  { name: 'amount', type: 'uint256', indexed: false },
+                  { name: 'interestPaid', type: 'uint256', indexed: false },
+                  { name: 'principalPaid', type: 'uint256', indexed: false }
+                ]
+              },
+              args: { loanId },
+              fromBlock: BigInt(0),
+            });
+
+            for (const event of repaymentEvents) {
+              if (event.args && typeof event.args.interestPaid === 'bigint') {
+                totalInterestEarned += event.args.interestPaid;
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching repayment events:', error);
+          }
 
           const loan: Loan = {
             loanId,
