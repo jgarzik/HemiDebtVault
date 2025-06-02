@@ -19,10 +19,12 @@ export interface Loan {
   repaidPrincipal: bigint;
   forgivenPrincipal: bigint;
   outstandingPrincipal: bigint;
+  outstandingBalance: bigint;
   formattedPrincipal: string;
   formattedRepaidPrincipal: string;
   formattedForgivenPrincipal: string;
   formattedOutstandingPrincipal: string;
+  formattedOutstandingBalance: string;
   interestRate: number;
   createdAt: number;
   lastPayment: number;

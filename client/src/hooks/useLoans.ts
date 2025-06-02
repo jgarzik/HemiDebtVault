@@ -87,10 +87,17 @@ export function useLoans() {
             continue;
           }
 
-          // Calculate accrued interest
-          const currentTime = BigInt(Math.floor(Date.now() / 1000));
-          const timeElapsed = currentTime - createdAt;
-          const accruedInterest = (loanPrincipal * loanInterestRate * timeElapsed) / (BigInt(100) * BigInt(365 * 24 * 3600));
+          // Get outstanding balance from contract
+          const outstandingBalance = await publicClient.readContract({
+            address: DEBT_VAULT_ADDRESS,
+            abi: DEBT_VAULT_ABI,
+            functionName: 'getOutstandingBalance',
+            args: [loanId],
+          }) as bigint;
+
+          // Calculate accrued interest (outstanding - remaining principal)
+          const remainingPrincipal = loanPrincipal - repaidPrincipal;
+          const accruedInterest = outstandingBalance - remainingPrincipal;
 
           const loan: Loan = {
             loanId,
@@ -115,6 +122,8 @@ export function useLoans() {
             formattedAccruedInterest: formatUnits(accruedInterest, tokenInfo.decimals),
             outstandingPrincipal: loanPrincipal - repaidPrincipal,
             formattedOutstandingPrincipal: formatUnits(loanPrincipal - repaidPrincipal, tokenInfo.decimals),
+            outstandingBalance,
+            formattedOutstandingBalance: formatUnits(outstandingBalance, tokenInfo.decimals),
           };
 
           loans.push(loan);

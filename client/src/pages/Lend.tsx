@@ -533,7 +533,19 @@ export function Lend() {
               <div className="space-y-4">
                 <h4 className="font-medium text-slate-300">Complete Financial Summary</h4>
                 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="bg-slate-900 border-slate-700">
+                    <CardContent className="p-4">
+                      <div className="text-center">
+                        <p className="text-sm text-slate-400 mb-1">Total Outstanding (Contract)</p>
+                        <p className="text-2xl font-bold text-red-400">
+                          {parseFloat(selectedLoanForDetails.formattedOutstandingBalance).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">Principal + Interest Owed</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
                   <Card className="bg-slate-900 border-slate-700">
                     <CardContent className="p-4">
                       <div className="text-center">
@@ -544,12 +556,14 @@ export function Lend() {
                       </div>
                     </CardContent>
                   </Card>
-                  
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
                   <Card className="bg-slate-900 border-slate-700">
                     <CardContent className="p-4">
                       <div className="text-center">
                         <p className="text-sm text-slate-400 mb-1">Outstanding Principal</p>
-                        <p className="text-xl font-bold text-red-400">
+                        <p className="text-xl font-bold text-orange-400">
                           {parseFloat(selectedLoanForDetails.formattedOutstandingPrincipal).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
                         </p>
                       </div>
