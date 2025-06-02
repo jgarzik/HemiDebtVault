@@ -85,45 +85,16 @@ export function useBorrowerCreditLines() {
           // Skip inactive credit lines (creditLimit = 0)
           if (creditLimit === BigInt(0)) continue;
 
-          // Calculate utilised credit by aggregating active loans for this lender-borrower-token combination
-          // Get all loan events for this specific combination
-          const loanLogs = await publicClient.getLogs({
+          // Use contract's getAvailableCredit function for accurate calculation
+          const availableCredit = await publicClient.readContract({
             address: DEBT_VAULT_ADDRESS,
-            event: parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed lender, address indexed borrower, address token, uint256 amount, uint256 apr)'),
-            args: {
-              lender: eventData.lender,
-              borrower: address,
-            },
-            fromBlock: 'earliest',
-            toBlock: 'latest',
-          });
+            abi: DEBT_VAULT_ABI,
+            functionName: 'getAvailableCredit',
+            args: [address, eventData.lender, eventData.token],
+          }) as bigint;
 
-          let utilisedCredit = BigInt(0);
-          
-          // For each loan, check if it's still active and for the correct token
-          for (const loanLog of loanLogs) {
-            try {
-              const loanData = await publicClient.readContract({
-                address: DEBT_VAULT_ADDRESS,
-                abi: DEBT_VAULT_ABI,
-                functionName: 'loanById',
-                args: [loanLog.args.loanId!],
-              });
-
-              const [borrower, lender, token, principal, repaidPrincipal, , , , , closed] = loanData as [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
-              
-              // Only count active loans for this specific token
-              if (!closed && token.toLowerCase() === eventData.token.toLowerCase()) {
-                const outstandingPrincipal = principal - repaidPrincipal;
-                utilisedCredit += outstandingPrincipal;
-              }
-            } catch (error) {
-              console.error('Error fetching loan data:', error);
-            }
-          }
-
-          // Calculate available credit
-          const availableCredit = creditLimit - utilisedCredit;
+          // Calculate utilized credit (creditLimit - availableCredit)
+          const utilisedCredit = creditLimit - availableCredit;
 
           // Get token info
           const tokenInfo = tokens.find(t => t.address.toLowerCase() === eventData.token.toLowerCase());

@@ -162,6 +162,19 @@ export const DEBT_VAULT_ABI = [
   },
   {
     "inputs": [
+      {"internalType": "address", "name": "borrower", "type": "address"},
+      {"internalType": "address", "name": "lender", "type": "address"},
+      {"internalType": "address", "name": "token", "type": "address"}
+    ],
+    "name": "getAvailableCredit",
+    "outputs": [
+      {"internalType": "uint256", "name": "availableCredit", "type": "uint256"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {"internalType": "address", "name": "", "type": "address"}
     ],
     "name": "userLoanCount",
