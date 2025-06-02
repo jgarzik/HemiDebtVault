@@ -12,6 +12,11 @@ interface CreditLine {
   tokenSymbol: string;
   creditLimit: bigint;
   formattedCreditLimit: string;
+  utilisedCredit: bigint;
+  formattedUtilisedCredit: string;
+  availableCredit: bigint;
+  formattedAvailableCredit: string;
+  utilizationPercent: string;
   minAPR: bigint;
   maxAPR: bigint;
   minAPRPercent: string;
@@ -81,6 +86,17 @@ export function useCreditLines() {
           // Skip inactive credit lines (creditLimit = 0)
           if (creditLimit === BigInt(0)) continue;
 
+          // Use contract's getAvailableCredit function for accurate utilization calculation
+          const availableCredit = await publicClient.readContract({
+            address: DEBT_VAULT_ADDRESS,
+            abi: DEBT_VAULT_ABI,
+            functionName: 'getAvailableCredit',
+            args: [eventData.borrower, address, eventData.token],
+          }) as bigint;
+
+          // Calculate utilized credit (creditLimit - availableCredit)
+          const utilisedCredit = creditLimit - availableCredit;
+
           // Get token info
           const tokenInfo = tokens.find(t => t.address.toLowerCase() === eventData.token.toLowerCase());
           if (!tokenInfo) continue;
@@ -91,6 +107,11 @@ export function useCreditLines() {
             tokenSymbol: tokenInfo.symbol,
             creditLimit,
             formattedCreditLimit: formatUnits(creditLimit, tokenInfo.decimals),
+            utilisedCredit,
+            formattedUtilisedCredit: formatUnits(utilisedCredit, tokenInfo.decimals),
+            availableCredit,
+            formattedAvailableCredit: formatUnits(availableCredit, tokenInfo.decimals),
+            utilizationPercent: creditLimit > 0 ? ((Number(utilisedCredit) / Number(creditLimit)) * 100).toFixed(1) : '0.0',
             minAPR,
             maxAPR,
             minAPRPercent: (Number(minAPR) / 100).toFixed(2),

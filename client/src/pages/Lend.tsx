@@ -252,22 +252,20 @@ export function Lend() {
             <div className="space-y-4">
               <h3 className="font-semibold">Your Pool Position</h3>
               <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Total Deposited:</span>
-                  <span className="font-mono">${totalDeposited.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Available for Lending:</span>
-                  <span className="font-mono text-green-400">${availableForLending.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Currently Lent:</span>
-                  <span className="font-mono text-blue-400">${currentlyLent.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Total Interest Earned:</span>
-                  <span className="font-mono text-blue-400">${totalInterestEarned.toFixed(2)}</span>
-                </div>
+                {tokenBalances && tokenBalances.length > 0 ? (
+                  tokenBalances.map((balance: any, index: number) => (
+                    <div key={index} className="space-y-2 p-3 bg-slate-900 rounded">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400 font-medium">{balance.token.symbol}:</span>
+                        <span className="font-mono text-slate-200">{balance.formattedBalance}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4">
+                    <span className="text-slate-500">No tokens deposited</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -317,7 +315,7 @@ export function Lend() {
                     </span>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <span className="text-slate-400">Borrower:</span>
                       <p className="font-mono text-slate-200 mt-1">
@@ -330,6 +328,18 @@ export function Lend() {
                       <p className="text-blue-400 font-semibold mt-1">
                         {parseFloat(creditLine.formattedCreditLimit).toLocaleString()} {creditLine.tokenSymbol}
                       </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">Utilization:</span>
+                      <div className="mt-1">
+                        <p className="text-yellow-400 font-semibold">
+                          {parseFloat(creditLine.formattedUtilisedCredit).toLocaleString()} {creditLine.tokenSymbol}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {creditLine.utilizationPercent}% used
+                        </p>
+                      </div>
                     </div>
                     
                     <div>
@@ -426,15 +436,27 @@ export function Lend() {
                     </div>
                   </div>
                   
-                  <div className="flex justify-end mt-4 gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
-                    >
-                      <Eye className="w-3 h-3 mr-1" />
-                      View Details
-                    </Button>
+                  <div className="mt-4">
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span className="text-slate-400">Accrued Interest:</span>
+                      <span className="text-green-400 font-mono">
+                        {parseFloat(loan.formattedAccruedInterest).toLocaleString()} {loan.tokenSymbol}
+                      </span>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                        onClick={() => {
+                          // Navigate to loan details or show modal
+                          console.log('View loan details for:', loan.loanId.toString());
+                        }}
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        View Details
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
