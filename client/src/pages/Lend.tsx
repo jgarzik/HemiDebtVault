@@ -435,7 +435,7 @@ export function Lend() {
                     <div>
                       <span className="text-slate-400">Interest Earned:</span>
                       <p className="text-green-400 font-semibold mt-1">
-                        {parseFloat(loan.formattedAccruedInterest).toLocaleString()} {loan.tokenSymbol}
+                        {loan.formattedTotalInterestEarned ? parseFloat(loan.formattedTotalInterestEarned).toLocaleString() : '0'} {loan.tokenSymbol}
                       </p>
                       <p className="text-xs text-slate-500">{loan.interestRatePercent}% APR</p>
                     </div>
