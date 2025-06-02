@@ -31,6 +31,8 @@ interface Loan {
   isActive: boolean;
   accruedInterest: bigint;
   formattedAccruedInterest: string;
+  totalInterestEarned: bigint;
+  formattedTotalInterestEarned: string;
 }
 
 export function useLoans() {
@@ -121,11 +123,11 @@ export function useLoans() {
               ]
             },
             args: { loanId },
-            fromBlock: 0n,
+            fromBlock: BigInt(0),
           });
 
           // Sum up total interest earned from all repayment events
-          let totalInterestEarned = 0n;
+          let totalInterestEarned = BigInt(0);
           for (const event of repaymentEvents) {
             if (event.args && typeof event.args.interestPaid === 'bigint') {
               totalInterestEarned += event.args.interestPaid;
@@ -279,6 +281,8 @@ export function useBorrowerLoans() {
             formattedOutstandingPrincipal: formatUnits(outstandingPrincipal, tokenInfo.decimals),
             outstandingBalance: outstandingPrincipal + accruedInterest,
             formattedOutstandingBalance: formatUnits(outstandingPrincipal + accruedInterest, tokenInfo.decimals),
+            totalInterestEarned: BigInt(0),
+            formattedTotalInterestEarned: '0',
             interestRate: loanInterestRate,
             interestRatePercent: (Number(loanInterestRate) / 100).toFixed(2),
             createdAt,
