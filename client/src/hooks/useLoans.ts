@@ -159,6 +159,8 @@ export function useLoans() {
             formattedOutstandingPrincipal: formatUnits(contractOutstandingPrincipal, tokenInfo.decimals),
             outstandingBalance,
             formattedOutstandingBalance: formatUnits(outstandingBalance, tokenInfo.decimals),
+            totalInterestEarned,
+            formattedTotalInterestEarned: formatUnits(totalInterestEarned, tokenInfo.decimals),
           };
 
           loans.push(loan);
@@ -281,8 +283,6 @@ export function useBorrowerLoans() {
             formattedOutstandingPrincipal: formatUnits(outstandingPrincipal, tokenInfo.decimals),
             outstandingBalance: outstandingPrincipal + accruedInterest,
             formattedOutstandingBalance: formatUnits(outstandingPrincipal + accruedInterest, tokenInfo.decimals),
-            totalInterestEarned: BigInt(0),
-            formattedTotalInterestEarned: '0',
             interestRate: loanInterestRate,
             interestRatePercent: (Number(loanInterestRate) / 100).toFixed(2),
             createdAt,
