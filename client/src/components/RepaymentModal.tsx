@@ -206,9 +206,11 @@ export function RepaymentModal({
                   <div className="border-t border-slate-700 pt-2 mt-2">
                     <div className="flex justify-between font-semibold">
                       <span className="text-slate-300">Total Owed:</span>
-                  <span className="font-mono text-red-400">{repaymentDetails.totalOwed} {repaymentDetails.tokenSymbol}</span>
-                </div>
-              </div>
+                      <span className="font-mono text-red-400">{(parseFloat(currentPrincipal) + parseFloat(currentInterest)).toFixed(tokenInfo?.decimals || 6)} {repaymentDetails.tokenSymbol}</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           
