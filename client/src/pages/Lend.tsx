@@ -256,15 +256,22 @@ export function Lend() {
               <h3 className="font-semibold">Your Pool Position</h3>
               <div className="space-y-3">
                 {tokenBalances && tokenBalances.length > 0 ? (
-                  tokenBalances.map((balance: any, index: number) => (
-                    <div key={index} className="space-y-2 p-3 bg-slate-900 rounded">
-                      <div className="flex justify-between">
-                        <span className="text-slate-400 font-medium">{balance.token.symbol}:</span>
-                        <span className="font-mono text-slate-200">{balance.formattedBalance}</span>
+                  tokenBalances
+                    .filter((balance: any) => parseFloat(balance.formattedBalance) > 0) // Hide zero balances
+                    .map((balance: any, index: number) => (
+                      <div key={index} className="space-y-2 p-3 bg-slate-900 rounded">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400 font-medium">{balance.token.symbol}:</span>
+                          <span className="font-mono text-slate-200">{balance.formattedBalance}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    ))
                 ) : (
+                  <div className="text-center py-4">
+                    <span className="text-slate-500">No tokens deposited</span>
+                  </div>
+                )}
+                {tokenBalances && tokenBalances.filter((balance: any) => parseFloat(balance.formattedBalance) > 0).length === 0 && (
                   <div className="text-center py-4">
                     <span className="text-slate-500">No tokens deposited</span>
                   </div>
@@ -418,17 +425,19 @@ export function Lend() {
                     </div>
                     
                     <div>
-                      <span className="text-slate-400">Principal:</span>
-                      <p className="text-green-400 font-semibold mt-1">
-                        {parseFloat(loan.formattedPrincipal).toLocaleString()} {loan.tokenSymbol}
+                      <span className="text-slate-400">Outstanding:</span>
+                      <p className="text-red-400 font-semibold mt-1">
+                        {(parseFloat(loan.formattedPrincipal) + parseFloat(loan.formattedAccruedInterest)).toLocaleString()} {loan.tokenSymbol}
                       </p>
+                      <p className="text-xs text-slate-500">Principal + Interest</p>
                     </div>
                     
                     <div>
-                      <span className="text-slate-400">Interest Rate:</span>
-                      <p className="text-yellow-400 font-semibold mt-1">
-                        {loan.interestRatePercent}% APR
+                      <span className="text-slate-400">Interest Earned:</span>
+                      <p className="text-green-400 font-semibold mt-1">
+                        {parseFloat(loan.formattedAccruedInterest).toLocaleString()} {loan.tokenSymbol}
                       </p>
+                      <p className="text-xs text-slate-500">{loan.interestRatePercent}% APR</p>
                     </div>
                     
                     <div>
@@ -439,27 +448,19 @@ export function Lend() {
                     </div>
                   </div>
                   
-                  <div className="mt-4">
-                    <div className="flex justify-between items-center text-sm mb-2">
-                      <span className="text-slate-400">Accrued Interest:</span>
-                      <span className="text-green-400 font-mono">
-                        {parseFloat(loan.formattedAccruedInterest).toLocaleString()} {loan.tokenSymbol}
-                      </span>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="border-slate-600 text-slate-300 hover:bg-slate-700"
-                        onClick={() => {
-                          setSelectedLoanForDetails(loan);
-                          setShowLoanDetailsModal(true);
-                        }}
-                      >
-                        <Eye className="w-3 h-3 mr-1" />
-                        View Details
-                      </Button>
-                    </div>
+                  <div className="flex justify-end gap-2 mt-4">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                      onClick={() => {
+                        setSelectedLoanForDetails(loan);
+                        setShowLoanDetailsModal(true);
+                      }}
+                    >
+                      <Eye className="w-3 h-3 mr-1" />
+                      View Details
+                    </Button>
                   </div>
                 </div>
               ))}
