@@ -33,7 +33,6 @@ export function useTransactionExecution() {
 
   // Reset when transaction is confirmed
   if (isConfirmed && txHash) {
-    console.log('Transaction confirmed:', txHash);
     setTimeout(() => {
       setIsExecuting(false);
       setTxHash(null);

@@ -36,7 +36,7 @@ export function useLoans() {
   const fetchLoans = async (): Promise<Loan[]> => {
     if (!address) return [];
     
-    console.log('Fetching loans for lender:', address);
+
     
     const loans: Loan[] = [];
 
@@ -51,17 +51,14 @@ export function useLoans() {
         fromBlock: 'earliest',
       });
 
-      console.log(`Found ${logs.length} loan events for lender ${address}`);
+
 
       // Process each loan
       for (const log of logs) {
         try {
           const { loanId, borrower, lender, token, amount, apr } = log.args;
           
-          console.log(`Processing loan event - ID: ${loanId}, borrower: ${borrower}, lender: ${lender}`);
-          
           if (loanId === undefined || loanId === null) {
-            console.log('Skipping - no loanId');
             continue;
           }
           
@@ -73,7 +70,7 @@ export function useLoans() {
             args: [loanId],
           });
 
-          console.log('Raw loan data for loan', loanId, ':', loanData);
+
           
           // The contract returns a struct with these fields:
           // borrower, lender, token, principal, repaidPrincipal, forgivenPrincipal, apr, startTimestamp, lastPaymentTimestamp, closed
@@ -81,14 +78,12 @@ export function useLoans() {
           
           // Skip if loan is closed
           if (isClosed) {
-            console.log('Skipping closed loan', loanId);
             continue;
           }
 
           // Get token info
           const tokenInfo = tokens.find(t => t.address.toLowerCase() === loanToken.toLowerCase());
           if (!tokenInfo) {
-            console.log('Skipping - token not found:', loanToken);
             continue;
           }
 
@@ -115,13 +110,13 @@ export function useLoans() {
           };
 
           loans.push(loan);
-          console.log('Added loan:', loan);
+
         } catch (error) {
           console.error('Error processing loan:', error);
         }
       }
 
-      console.log('Final loans array:', loans);
+
       return loans;
     } catch (error) {
       console.error('Error fetching loans:', error);
@@ -158,7 +153,7 @@ export function useBorrowerLoans() {
   const fetchBorrowedLoans = async (): Promise<Loan[]> => {
     if (!address) return [];
     
-    console.log('Fetching borrowed loans for borrower:', address);
+
     
     const activeLoans: Loan[] = [];
     
@@ -173,17 +168,14 @@ export function useBorrowerLoans() {
         fromBlock: 'earliest',
       });
 
-      console.log(`Found ${logs.length} loan events for borrower ${address}`);
+
 
       // Process each loan
       for (const log of logs) {
         try {
           const { loanId, borrower, lender, token, amount, apr } = log.args;
           
-          console.log(`Processing borrowed loan event - ID: ${loanId}, borrower: ${borrower}, lender: ${lender}`);
-          
           if (loanId === undefined || loanId === null) {
-            console.log('Skipping - no loanId');
             continue;
           }
           
@@ -195,21 +187,19 @@ export function useBorrowerLoans() {
             args: [loanId],
           });
 
-          console.log('Raw borrowed loan data for loan', loanId, ':', loanData);
+
           
           // Parse loan data
           const [contractBorrower, contractLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAt, lastPayment, isClosed] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
           
           // Skip if loan is closed
           if (isClosed) {
-            console.log('Skipping closed borrowed loan', loanId);
             continue;
           }
 
           // Get token info
           const tokenInfo = tokens.find(t => t.address.toLowerCase() === loanToken.toLowerCase());
           if (!tokenInfo) {
-            console.log('Skipping borrowed loan - token not found:', loanToken);
             continue;
           }
 
@@ -241,13 +231,13 @@ export function useBorrowerLoans() {
           };
 
           activeLoans.push(loan);
-          console.log('Added borrowed loan:', loan);
+
         } catch (error) {
           console.error('Error processing borrowed loan:', error);
         }
       }
 
-      console.log('Final borrowed loans array:', activeLoans);
+
       return activeLoans;
     } catch (error) {
       console.error('Error fetching borrowed loans:', error);

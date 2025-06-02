@@ -32,7 +32,7 @@ export function useCreditLines() {
   const fetchCreditLines = async (): Promise<CreditLine[]> => {
     if (!address) return [];
     
-    console.log('Fetching credit lines for lender:', address);
+
     
     try {
       // Get CreditLineUpdated events where the current user is the lender
@@ -46,7 +46,7 @@ export function useCreditLines() {
         toBlock: 'latest',
       });
 
-      console.log('Found credit line events:', logs.length);
+
 
       // For each unique borrower-token combination, get the latest credit line data
       const uniqueCreditLines = new Map<string, any>();
@@ -104,7 +104,7 @@ export function useCreditLines() {
         }
       }
 
-      console.log('Processed credit lines:', activeCreditLines);
+
       return activeCreditLines;
     } catch (error) {
       console.error('Error fetching credit lines:', error);

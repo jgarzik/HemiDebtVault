@@ -19,26 +19,26 @@ export function useDebtVault() {
 
   // Helper functions for contract interactions
   const deposit = async (token: string, amount: bigint) => {
-    console.log('Depositing:', { token, amount });
+
     const hash = await writeContractAsync({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'deposit',
       args: [token as `0x${string}`, amount],
     });
-    console.log('Deposit transaction hash:', hash);
+
     return hash;
   };
 
   const withdraw = async (token: string, amount: bigint) => {
-    console.log('Withdrawing:', { token, amount });
+
     const hash = await writeContractAsync({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'withdraw',
       args: [token as `0x${string}`, amount],
     });
-    console.log('Withdraw transaction hash:', hash);
+
     return hash;
   };
 
@@ -63,14 +63,14 @@ export function useDebtVault() {
   };
 
   const updateCreditLine = async (borrower: string, token: string, creditLimit: bigint, minAPR: bigint, maxAPR: bigint) => {
-    console.log('Creating credit line:', { borrower, token, creditLimit, minAPR, maxAPR });
+
     const hash = await writeContractAsync({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'updateCreditLine',
       args: [borrower as `0x${string}`, token as `0x${string}`, creditLimit, minAPR, maxAPR],
     });
-    console.log('Credit line transaction hash:', hash);
+
     return hash;
   };
 
