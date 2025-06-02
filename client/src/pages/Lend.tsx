@@ -9,6 +9,7 @@ import { TransactionModal } from '@/components/TransactionModal';
 import { TokenSelector } from '@/components/TokenSelector';
 import { TransactionButton } from '@/components/TransactionButton';
 import { CreditLineModal } from '@/components/CreditLineModal';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
 import { useDebtVault } from '@/hooks/useDebtVault';
@@ -32,6 +33,8 @@ export function Lend() {
   const [activeTab, setActiveTab] = useState('deposit');
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showCreditLineModal, setShowCreditLineModal] = useState(false);
+  const [showLoanDetailsModal, setShowLoanDetailsModal] = useState(false);
+  const [selectedLoanForDetails, setSelectedLoanForDetails] = useState<any>(null);
   const [transactionData, setTransactionData] = useState<any>(null);
   
   const { toast } = useToast();
@@ -449,8 +452,8 @@ export function Lend() {
                         variant="outline"
                         className="border-slate-600 text-slate-300 hover:bg-slate-700"
                         onClick={() => {
-                          // Navigate to loan details or show modal
-                          console.log('View loan details for:', loan.loanId.toString());
+                          setSelectedLoanForDetails(loan);
+                          setShowLoanDetailsModal(true);
                         }}
                       >
                         <Eye className="w-3 h-3 mr-1" />
@@ -470,6 +473,129 @@ export function Lend() {
         isOpen={showCreditLineModal}
         onClose={() => setShowCreditLineModal(false)}
       />
+
+      {/* Loan Details Modal */}
+      <Dialog open={showLoanDetailsModal} onOpenChange={setShowLoanDetailsModal}>
+        <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-slate-100">
+              Loan Details - #{selectedLoanForDetails?.loanId.toString()}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedLoanForDetails && (
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-slate-300">Loan Information</h4>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Loan ID:</span>
+                      <span className="font-mono text-slate-200">#{selectedLoanForDetails.loanId.toString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Token:</span>
+                      <span className="font-mono text-slate-200">{selectedLoanForDetails.tokenSymbol}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Status:</span>
+                      <span className="text-green-400">Active</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Created:</span>
+                      <span className="text-slate-200">{selectedLoanForDetails.createdAtDate}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-medium text-slate-300">Counterparty</h4>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Borrower:</span>
+                      <span className="font-mono text-slate-200">
+                        {selectedLoanForDetails.borrower.slice(0, 8)}...{selectedLoanForDetails.borrower.slice(-6)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Full Address:</span>
+                      <span className="font-mono text-xs text-slate-400 break-all">
+                        {selectedLoanForDetails.borrower}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Financial Details */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-slate-300">Financial Summary</h4>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="bg-slate-900 border-slate-700">
+                    <CardContent className="p-4">
+                      <div className="text-center">
+                        <p className="text-sm text-slate-400 mb-1">Principal Amount</p>
+                        <p className="text-2xl font-bold text-blue-400">
+                          {parseFloat(selectedLoanForDetails.formattedPrincipal).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-slate-900 border-slate-700">
+                    <CardContent className="p-4">
+                      <div className="text-center">
+                        <p className="text-sm text-slate-400 mb-1">Interest Rate</p>
+                        <p className="text-2xl font-bold text-green-400">
+                          {selectedLoanForDetails.interestRatePercent}%
+                        </p>
+                        <p className="text-xs text-slate-500">Annual APR</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                <Card className="bg-slate-900 border-slate-700">
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <p className="text-sm text-slate-400 mb-1">Accrued Interest Earned</p>
+                      <p className="text-3xl font-bold text-yellow-400">
+                        {parseFloat(selectedLoanForDetails.formattedAccruedInterest).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">Your earnings so far</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-700">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowLoanDetailsModal(false)}
+                  className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                >
+                  Close
+                </Button>
+                <Button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(selectedLoanForDetails.borrower);
+                    toast({
+                      title: "Address Copied",
+                      description: "Borrower address copied to clipboard",
+                    });
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Copy Borrower Address
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
