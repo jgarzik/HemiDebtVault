@@ -107,6 +107,31 @@ export function useLoans() {
           const [contractOutstandingPrincipal, accruedInterest] = outstandingBalanceResult as readonly [bigint, bigint];
           const outstandingBalance = contractOutstandingPrincipal + accruedInterest;
 
+          // Get total interest earned by fetching LoanRepaid events
+          const repaymentEvents = await publicClient.getLogs({
+            address: DEBT_VAULT_ADDRESS,
+            event: {
+              type: 'event',
+              name: 'LoanRepaid',
+              inputs: [
+                { name: 'loanId', type: 'uint256', indexed: true },
+                { name: 'amount', type: 'uint256', indexed: false },
+                { name: 'interestPaid', type: 'uint256', indexed: false },
+                { name: 'principalPaid', type: 'uint256', indexed: false }
+              ]
+            },
+            args: { loanId },
+            fromBlock: 0n,
+          });
+
+          // Sum up total interest earned from all repayment events
+          let totalInterestEarned = 0n;
+          for (const event of repaymentEvents) {
+            if (event.args && typeof event.args.interestPaid === 'bigint') {
+              totalInterestEarned += event.args.interestPaid;
+            }
+          }
+
           const loan: Loan = {
             loanId,
             borrower: contractBorrower,
@@ -250,10 +275,10 @@ export function useBorrowerLoans() {
             formattedRepaidPrincipal: formatUnits(repaidPrincipal, tokenInfo.decimals),
             forgivenPrincipal,
             formattedForgivenPrincipal: formatUnits(forgivenPrincipal, tokenInfo.decimals),
-            outstandingPrincipal: contractOutstandingPrincipal,
-            formattedOutstandingPrincipal: formatUnits(contractOutstandingPrincipal, tokenInfo.decimals),
-            outstandingBalance: contractOutstandingPrincipal + accruedInterest,
-            formattedOutstandingBalance: formatUnits(contractOutstandingPrincipal + accruedInterest, tokenInfo.decimals),
+            outstandingPrincipal: outstandingPrincipal,
+            formattedOutstandingPrincipal: formatUnits(outstandingPrincipal, tokenInfo.decimals),
+            outstandingBalance: outstandingPrincipal + accruedInterest,
+            formattedOutstandingBalance: formatUnits(outstandingPrincipal + accruedInterest, tokenInfo.decimals),
             interestRate: loanInterestRate,
             interestRatePercent: (Number(loanInterestRate) / 100).toFixed(2),
             createdAt,

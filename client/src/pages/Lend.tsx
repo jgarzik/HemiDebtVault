@@ -429,7 +429,7 @@ export function Lend() {
                       <p className="text-red-400 font-semibold mt-1">
                         {parseFloat(loan.formattedOutstandingBalance).toLocaleString()} {loan.tokenSymbol}
                       </p>
-                      <p className="text-xs text-slate-500">Contract getOutstandingBalance</p>
+
                     </div>
                     
                     <div>
@@ -541,7 +541,7 @@ export function Lend() {
                         <p className="text-2xl font-bold text-orange-400">
                           {parseFloat(selectedLoanForDetails.formattedOutstandingPrincipal).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">From getOutstandingBalance[0]</p>
+
                       </div>
                     </CardContent>
                   </Card>
@@ -553,7 +553,7 @@ export function Lend() {
                         <p className="text-2xl font-bold text-green-400">
                           {parseFloat(selectedLoanForDetails.formattedAccruedInterest).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">From getOutstandingBalance[1]</p>
+
                       </div>
                     </CardContent>
                   </Card>
