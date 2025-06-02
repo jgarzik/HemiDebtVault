@@ -14,10 +14,20 @@ interface Loan {
   tokenSymbol: string;
   principal: bigint;
   formattedPrincipal: string;
+  repaidPrincipal: bigint;
+  formattedRepaidPrincipal: string;
+  forgivenPrincipal: bigint;
+  formattedForgivenPrincipal: string;
+  outstandingPrincipal: bigint;
+  formattedOutstandingPrincipal: string;
+  outstandingBalance: bigint;
+  formattedOutstandingBalance: string;
   interestRate: bigint;
   interestRatePercent: string;
   createdAt: bigint;
   createdAtDate: string;
+  lastPayment: bigint;
+  lastPaymentDate: string;
   isActive: boolean;
   accruedInterest: bigint;
   formattedAccruedInterest: string;
@@ -87,17 +97,15 @@ export function useLoans() {
             continue;
           }
 
-          // Get outstanding balance from contract
-          const outstandingBalance = await publicClient.readContract({
+          // Get outstanding balance from contract - returns [principal, interest]
+          const outstandingBalanceResult = await publicClient.readContract({
             address: DEBT_VAULT_ADDRESS,
             abi: DEBT_VAULT_ABI,
             functionName: 'getOutstandingBalance',
             args: [loanId],
-          }) as bigint;
-
-          // Calculate accrued interest (outstanding - remaining principal)
-          const remainingPrincipal = loanPrincipal - repaidPrincipal;
-          const accruedInterest = outstandingBalance - remainingPrincipal;
+          });
+          const [contractOutstandingPrincipal, accruedInterest] = outstandingBalanceResult as readonly [bigint, bigint];
+          const outstandingBalance = contractOutstandingPrincipal + accruedInterest;
 
           const loan: Loan = {
             loanId,
@@ -120,8 +128,8 @@ export function useLoans() {
             isActive: true,
             accruedInterest,
             formattedAccruedInterest: formatUnits(accruedInterest, tokenInfo.decimals),
-            outstandingPrincipal: loanPrincipal - repaidPrincipal,
-            formattedOutstandingPrincipal: formatUnits(loanPrincipal - repaidPrincipal, tokenInfo.decimals),
+            outstandingPrincipal: contractOutstandingPrincipal,
+            formattedOutstandingPrincipal: formatUnits(contractOutstandingPrincipal, tokenInfo.decimals),
             outstandingBalance,
             formattedOutstandingBalance: formatUnits(outstandingBalance, tokenInfo.decimals),
           };
@@ -236,12 +244,22 @@ export function useBorrowerLoans() {
             lender: contractLender,
             token: loanToken,
             tokenSymbol: tokenInfo.symbol,
-            principal: outstandingPrincipal,
-            formattedPrincipal: formatUnits(outstandingPrincipal, tokenInfo.decimals),
+            principal: loanPrincipal,
+            formattedPrincipal: formatUnits(loanPrincipal, tokenInfo.decimals),
+            repaidPrincipal,
+            formattedRepaidPrincipal: formatUnits(repaidPrincipal, tokenInfo.decimals),
+            forgivenPrincipal,
+            formattedForgivenPrincipal: formatUnits(forgivenPrincipal, tokenInfo.decimals),
+            outstandingPrincipal: contractOutstandingPrincipal,
+            formattedOutstandingPrincipal: formatUnits(contractOutstandingPrincipal, tokenInfo.decimals),
+            outstandingBalance: contractOutstandingPrincipal + accruedInterest,
+            formattedOutstandingBalance: formatUnits(contractOutstandingPrincipal + accruedInterest, tokenInfo.decimals),
             interestRate: loanInterestRate,
             interestRatePercent: (Number(loanInterestRate) / 100).toFixed(2),
             createdAt,
             createdAtDate: new Date(Number(createdAt) * 1000).toLocaleDateString(),
+            lastPayment,
+            lastPaymentDate: lastPayment > 0 ? new Date(Number(lastPayment) * 1000).toLocaleDateString() : 'No payments yet',
             isActive: true,
             accruedInterest,
             formattedAccruedInterest: formatUnits(accruedInterest, tokenInfo.decimals),
