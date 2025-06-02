@@ -29,17 +29,7 @@ export function useTokenBalance(token?: Token) {
     },
   });
 
-  // Debug logging for VCRED balance issues
-  if (token?.symbol === 'VCRED') {
-    console.log('VCRED Balance Debug:', {
-      tokenAddress: token?.address,
-      userAddress: address,
-      rawBalance,
-      isLoading,
-      error,
-      enabled: !!(token && address)
-    });
-  }
+
 
   const formattedBalance = token && rawBalance 
     ? (() => {
