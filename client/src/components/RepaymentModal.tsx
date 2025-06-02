@@ -12,11 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TransactionButton } from "@/components/TransactionButton";
 import { Loader2, ArrowRight } from "lucide-react";
-import { useState, useMemo } from "react";
-import { parseUnits, formatUnits } from "viem";
+import { useState, useMemo, useEffect } from "react";
+import { parseUnits, formatUnits, createPublicClient, http } from "viem";
 import { type Token, getAllTokens } from "@/lib/tokens";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
-import { DEBT_VAULT_ADDRESS } from "@/lib/hemi";
+import { DEBT_VAULT_ADDRESS, hemiNetwork } from "@/lib/hemi";
+import { DEBT_VAULT_ABI } from "@/lib/contract";
 
 interface RepaymentDetails {
   loanId: bigint;
@@ -52,12 +53,55 @@ export function RepaymentModal({
   isLoading = false
 }: RepaymentModalProps) {
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [currentPrincipal, setCurrentPrincipal] = useState<string>('0');
+  const [currentInterest, setCurrentInterest] = useState<string>('0');
+  const [isLoadingBalance, setIsLoadingBalance] = useState(true);
   const queryClient = useQueryClient();
   
   // Get the token info and user's wallet balance
   const tokens = getAllTokens();
   const tokenInfo = tokens.find(t => t.address.toLowerCase() === repaymentDetails.token.toLowerCase());
   const { balance: walletBalance, formattedBalance: formattedWalletBalance } = useTokenBalance(tokenInfo);
+
+  // Create public client for contract calls
+  const publicClient = createPublicClient({
+    chain: hemiNetwork,
+    transport: http(),
+  });
+
+  // Fetch accurate outstanding balance when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const fetchOutstandingBalance = async () => {
+      try {
+        setIsLoadingBalance(true);
+        
+        const outstandingBalance = await publicClient.readContract({
+          address: DEBT_VAULT_ADDRESS,
+          abi: DEBT_VAULT_ABI,
+          functionName: 'getOutstandingBalance',
+          args: [repaymentDetails.loanId],
+        });
+
+        const [principal, interest] = outstandingBalance as [bigint, bigint];
+        
+        if (tokenInfo) {
+          setCurrentPrincipal(formatUnits(principal, tokenInfo.decimals));
+          setCurrentInterest(formatUnits(interest, tokenInfo.decimals));
+        }
+      } catch (error) {
+        console.error('Error fetching outstanding balance:', error);
+        // Fallback to passed values
+        setCurrentPrincipal(repaymentDetails.currentPrincipal);
+        setCurrentInterest(repaymentDetails.currentInterest);
+      } finally {
+        setIsLoadingBalance(false);
+      }
+    };
+
+    fetchOutstandingBalance();
+  }, [isOpen, repaymentDetails.loanId, tokenInfo, publicClient]);
   
   // Calculate payment breakdown as user types
   const paymentBreakdown: PaymentBreakdown = useMemo(() => {
@@ -66,15 +110,15 @@ export function RepaymentModal({
         paymentAmount: '0',
         interestPaid: '0',
         principalPaid: '0',
-        remainingInterest: repaymentDetails.currentInterest,
-        remainingPrincipal: repaymentDetails.currentPrincipal,
+        remainingInterest: currentInterest,
+        remainingPrincipal: currentPrincipal,
         isFullPayoff: false
       };
     }
     
     const payment = parseFloat(paymentAmount);
-    const interest = parseFloat(repaymentDetails.currentInterest);
-    const principal = parseFloat(repaymentDetails.currentPrincipal);
+    const interest = parseFloat(currentInterest);
+    const principal = parseFloat(currentPrincipal);
     
     // Apply contract logic: interest paid first, then principal
     let remaining = payment;
@@ -107,16 +151,17 @@ export function RepaymentModal({
       remainingPrincipal: remainingPrincipal.toFixed(decimals),
       isFullPayoff
     };
-  }, [paymentAmount, repaymentDetails]);
+  }, [paymentAmount, currentPrincipal, currentInterest, tokenInfo]);
   
   const handleMaxPayment = () => {
     if (!tokenInfo || !formattedWalletBalance) {
-      setPaymentAmount(repaymentDetails.totalOwed);
+      const totalOwed = (parseFloat(currentPrincipal) + parseFloat(currentInterest)).toString();
+      setPaymentAmount(totalOwed);
       return;
     }
     
     const walletBalanceNum = parseFloat(formattedWalletBalance);
-    const totalOwedNum = parseFloat(repaymentDetails.totalOwed);
+    const totalOwedNum = parseFloat(currentPrincipal) + parseFloat(currentInterest);
     const maxPayable = Math.min(walletBalanceNum, totalOwedNum);
     
     setPaymentAmount(maxPayable.toString());
@@ -143,17 +188,24 @@ export function RepaymentModal({
           <div className="bg-slate-900 rounded-lg p-4">
             <h4 className="font-medium text-slate-200 mb-3">Current Debt</h4>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Accrued Interest:</span>
-                <span className="font-mono text-orange-400">{repaymentDetails.currentInterest} {repaymentDetails.tokenSymbol}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Outstanding Principal:</span>
-                <span className="font-mono text-blue-400">{repaymentDetails.currentPrincipal} {repaymentDetails.tokenSymbol}</span>
-              </div>
-              <div className="border-t border-slate-700 pt-2 mt-2">
-                <div className="flex justify-between font-semibold">
-                  <span className="text-slate-300">Total Owed:</span>
+              {isLoadingBalance ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  <span className="text-slate-400">Loading current balance...</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Accrued Interest:</span>
+                    <span className="font-mono text-orange-400">{currentInterest} {repaymentDetails.tokenSymbol}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Outstanding Principal:</span>
+                    <span className="font-mono text-blue-400">{currentPrincipal} {repaymentDetails.tokenSymbol}</span>
+                  </div>
+                  <div className="border-t border-slate-700 pt-2 mt-2">
+                    <div className="flex justify-between font-semibold">
+                      <span className="text-slate-300">Total Owed:</span>
                   <span className="font-mono text-red-400">{repaymentDetails.totalOwed} {repaymentDetails.tokenSymbol}</span>
                 </div>
               </div>
