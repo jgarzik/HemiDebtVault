@@ -296,6 +296,8 @@ export function useBorrowerLoans() {
             isActive: true,
             accruedInterest,
             formattedAccruedInterest: formatUnits(accruedInterest, tokenInfo.decimals),
+            totalInterestEarned: BigInt(0),
+            formattedTotalInterestEarned: '0.00',
           };
 
           activeLoans.push(loan);

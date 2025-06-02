@@ -66,16 +66,13 @@ export function useTokenApproval(params?: ApprovalParams) {
     try {
       const approvalAmount = parseUnits(params.amount, params.token.decimals);
       
-      const txHash = await writeContract({
+      await writeContract({
         address: params.token.address,
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [params.spenderAddress, approvalAmount],
       });
       
-      if (txHash) {
-        setApprovalHash(txHash);
-      }
     } catch (error) {
       console.error('Approval failed:', error);
       setIsApproving(false);

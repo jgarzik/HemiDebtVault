@@ -104,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           // Only include loans owned by the requested user
-          if (nftOwner.toLowerCase() !== userAddress.toLowerCase()) {
+          if ((nftOwner as string).toLowerCase() !== userAddress.toLowerCase()) {
             continue;
           }
 
@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             args: [loanId],
           });
 
-          const [borrower, lender, token, principal, repaidPrincipal, forgivenPrincipal, apr, startTimestamp, lastPaymentTimestamp, isClosed] = loanData;
+          const [borrower, lender, token, principal, repaidPrincipal, forgivenPrincipal, apr, startTimestamp, lastPaymentTimestamp, isClosed] = loanData as [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
 
           // Skip closed loans
           if (isClosed) continue;
