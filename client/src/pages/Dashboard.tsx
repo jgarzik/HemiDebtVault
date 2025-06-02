@@ -16,20 +16,102 @@ import {
   ArrowUpRight,
   Plus
 } from 'lucide-react';
-import { useDebtVault } from '@/hooks/useDebtVault';
+import { usePortfolioMetrics } from '@/hooks/usePortfolioMetrics';
+import { useQuery } from '@tanstack/react-query';
+import { createPublicClient, http, parseAbiItem } from 'viem';
+import { DEBT_VAULT_ADDRESS, hemiNetwork } from '@/lib/hemi';
+import { getAllTokens } from '@/lib/tokens';
+import { QUERY_CACHE_CONFIG } from '@/lib/constants';
+
+interface RecentTransaction {
+  type: string;
+  amount: string;
+  token: string;
+  counterparty: string;
+  timestamp: string;
+  hash: string;
+}
 
 export function Dashboard() {
   const { isConnected, address } = useAccount();
-  const { portfolioStats } = useDebtVault();
-  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const { metrics } = usePortfolioMetrics();
+  const tokens = getAllTokens();
 
-  // Load portfolio data when connected
-  useEffect(() => {
-    if (isConnected && address) {
-      // This would fetch real data from the contract
-      // For now, we'll use empty state since no mock data is allowed
-    }
-  }, [isConnected, address]);
+  const publicClient = createPublicClient({
+    chain: hemiNetwork,
+    transport: http(),
+  });
+
+  // Fetch recent transactions from blockchain events
+  const { data: recentTransactions = [] } = useQuery({
+    queryKey: ['recentTransactions', address],
+    queryFn: async (): Promise<RecentTransaction[]> => {
+      if (!address) return [];
+
+      const transactions: RecentTransaction[] = [];
+
+      try {
+        // Get recent loan creation events
+        const loanLogs = await publicClient.getLogs({
+          address: DEBT_VAULT_ADDRESS,
+          event: parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed lender, address indexed borrower, address token, uint256 amount, uint256 apr)'),
+          args: {
+            lender: address,
+          },
+          fromBlock: 'earliest',
+          toBlock: 'latest',
+        });
+
+        for (const log of loanLogs.slice(-5)) { // Last 5 transactions
+          const tokenInfo = tokens.find(t => t.address.toLowerCase() === log.args.token?.toLowerCase());
+          const amount = log.args.amount ? Number(log.args.amount) / Math.pow(10, tokenInfo?.decimals || 18) : 0;
+          
+          transactions.push({
+            type: 'Loan Created',
+            amount: `${amount.toFixed(6)} ${tokenInfo?.symbol || 'ETH'}`,
+            token: tokenInfo?.symbol || 'ETH',
+            counterparty: `${log.args.borrower?.slice(0, 6)}...${log.args.borrower?.slice(-4)}`,
+            timestamp: 'Recent',
+            hash: log.transactionHash || '',
+          });
+        }
+
+        // Get recent borrowing events
+        const borrowLogs = await publicClient.getLogs({
+          address: DEBT_VAULT_ADDRESS,
+          event: parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed lender, address indexed borrower, address token, uint256 amount, uint256 apr)'),
+          args: {
+            borrower: address,
+          },
+          fromBlock: 'earliest',
+          toBlock: 'latest',
+        });
+
+        for (const log of borrowLogs.slice(-3)) { // Last 3 transactions
+          const tokenInfo = tokens.find(t => t.address.toLowerCase() === log.args.token?.toLowerCase());
+          const amount = log.args.amount ? Number(log.args.amount) / Math.pow(10, tokenInfo?.decimals || 18) : 0;
+          
+          transactions.push({
+            type: 'Loan Received',
+            amount: `${amount.toFixed(6)} ${tokenInfo?.symbol || 'ETH'}`,
+            token: tokenInfo?.symbol || 'ETH',
+            counterparty: `${log.args.lender?.slice(0, 6)}...${log.args.lender?.slice(-4)}`,
+            timestamp: 'Recent',
+            hash: log.transactionHash || '',
+          });
+        }
+
+      } catch (error) {
+        console.error('Error fetching recent transactions:', error);
+      }
+
+      return transactions.slice(-5); // Keep only the 5 most recent
+    },
+    enabled: !!address && isConnected,
+    staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
+    gcTime: QUERY_CACHE_CONFIG.GC_TIME,
+    refetchOnWindowFocus: false,
+  });
 
   if (!isConnected) {
     return (
@@ -108,7 +190,7 @@ export function Dashboard() {
             </div>
             <div className="space-y-1">
               <p className="text-2xl font-bold text-slate-100">
-                {portfolioStats ? `$${(Number(portfolioStats.totalLent) / 1e6).toFixed(2)}` : '$0.00'}
+                {metrics.totalLent} ETH
               </p>
               <p className="text-sm text-green-400">Ready to lend</p>
             </div>
@@ -123,7 +205,7 @@ export function Dashboard() {
             </div>
             <div className="space-y-1">
               <p className="text-2xl font-bold text-slate-100">
-                {portfolioStats ? `$${(Number(portfolioStats.totalBorrowed) / 1e6).toFixed(2)}` : '$0.00'}
+                {metrics.totalBorrowed} ETH
               </p>
               <p className="text-sm text-blue-400">Active loans</p>
             </div>
@@ -138,7 +220,7 @@ export function Dashboard() {
             </div>
             <div className="space-y-1">
               <p className="text-2xl font-bold text-slate-100">
-                {portfolioStats?.activeLoans || 0}
+                {metrics.activeLoans}
               </p>
               <p className="text-sm text-slate-400">as lender & borrower</p>
             </div>
@@ -153,7 +235,7 @@ export function Dashboard() {
             </div>
             <div className="space-y-1">
               <p className="text-2xl font-bold text-slate-100">
-                {portfolioStats ? `${portfolioStats.netAPY.toFixed(2)}%` : '0.00%'}
+                {metrics.annualizedReturn}%
               </p>
               <p className="text-sm text-purple-400">earning potential</p>
             </div>
@@ -211,7 +293,7 @@ export function Dashboard() {
               </div>
             </div>
             <p className="text-sm text-slate-400 mt-4">
-              {portfolioStats && (portfolioStats.totalLent > 0n || portfolioStats.totalBorrowed > 0n) 
+              {parseFloat(metrics.totalLent) > 0 || parseFloat(metrics.totalBorrowed) > 0
                 ? "You have positions in both roles" 
                 : "Connect with lenders and borrowers to start"}
             </p>
@@ -233,10 +315,16 @@ export function Dashboard() {
             ) : (
               <div className="space-y-3">
                 {recentTransactions.map((tx, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg">
+                  <div key={`${tx.hash}-${index}`} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
-                        <ArrowDownLeft className="w-4 h-4 text-green-400" />
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        tx.type === 'Loan Created' ? 'bg-green-500/20' : 'bg-blue-500/20'
+                      }`}>
+                        {tx.type === 'Loan Created' ? (
+                          <ArrowUpRight className="w-4 h-4 text-green-400" />
+                        ) : (
+                          <ArrowDownLeft className="w-4 h-4 text-blue-400" />
+                        )}
                       </div>
                       <div>
                         <p className="text-sm font-medium">{tx.type}</p>
@@ -244,7 +332,11 @@ export function Dashboard() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium text-green-400">{tx.amount}</p>
+                      <p className={`text-sm font-medium ${
+                        tx.type === 'Loan Created' ? 'text-green-400' : 'text-blue-400'
+                      }`}>
+                        {tx.amount}
+                      </p>
                       <p className="text-xs text-slate-400">{tx.timestamp}</p>
                     </div>
                   </div>
