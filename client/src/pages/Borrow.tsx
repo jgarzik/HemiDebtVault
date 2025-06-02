@@ -216,10 +216,6 @@ export function Borrow() {
               <Search className="w-8 h-8 text-slate-600 mx-auto mb-2" />
               <p className="text-slate-400">No credit lines available</p>
               <p className="text-sm text-slate-500 mt-1">Connect with lenders to establish credit lines</p>
-              <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Request Your First Credit Line
-              </Button>
             </div>
           ) : (
             <div className="space-y-4">
