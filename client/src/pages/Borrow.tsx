@@ -215,7 +215,6 @@ export function Borrow() {
             <div className="text-center py-8">
               <Search className="w-8 h-8 text-slate-600 mx-auto mb-2" />
               <p className="text-slate-400">No credit lines available</p>
-              <p className="text-sm text-slate-500 mt-1">Connect with lenders to establish credit lines</p>
             </div>
           ) : (
             <div className="space-y-4">
