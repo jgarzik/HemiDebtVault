@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TransactionModal } from '@/components/TransactionModal';
-import { useDebtVault } from '@/hooks/useDebtVault';
+import { usePortfolioMetrics } from '@/hooks/usePortfolioMetrics';
+import { useNFTTransfer } from '@/hooks/useNFTTransfer';
+import { useToast } from '@/hooks/use-toast';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -14,12 +16,17 @@ import {
   Settings,
   History,
   MessageCircle,
-  BarChart3
+  BarChart3,
+  Users,
+  Clock,
+  Shield
 } from 'lucide-react';
 
 export function Portfolio() {
   const { address } = useAccount();
-  const { portfolioStats } = useDebtVault();
+  const { metrics, relationships, isLoading: isMetricsLoading } = usePortfolioMetrics();
+  const { transferableLoans, transferLoanNFT, isPending, isSuccess } = useNFTTransfer();
+  const { toast } = useToast();
   
   const [selectedLoanForTransfer, setSelectedLoanForTransfer] = useState('');
   const [transferRecipient, setTransferRecipient] = useState('');
@@ -29,11 +36,14 @@ export function Portfolio() {
   const handleTransferNFT = () => {
     if (!selectedLoanForTransfer || !transferRecipient) return;
     
+    const selectedLoan = transferableLoans.find(loan => loan.loanId.toString() === selectedLoanForTransfer);
+    if (!selectedLoan) return;
+    
     setTransactionData({
       title: 'Transfer Loan NFT',
-      description: 'Transfer loan position to another address',
+      description: `Transfer loan #${selectedLoanForTransfer} (${selectedLoan.principal} ${selectedLoan.tokenSymbol}) to another address`,
       action: 'Transfer NFT',
-      amount: `Loan #${selectedLoanForTransfer}`,
+      amount: `${selectedLoan.principal} ${selectedLoan.tokenSymbol}`,
       gasEstimate: '~$2.10',
     });
     setShowTransactionModal(true);
@@ -41,12 +51,26 @@ export function Portfolio() {
 
   const confirmTransaction = async () => {
     try {
-      // This would call the actual NFT transfer function
-      console.log('Transferring loan NFT...');
+      if (!selectedLoanForTransfer || !transferRecipient) return;
+      
+      const loanId = BigInt(selectedLoanForTransfer);
+      await transferLoanNFT(loanId, transferRecipient);
+      
+      toast({
+        title: "Transfer Initiated",
+        description: "Loan NFT transfer transaction has been submitted",
+      });
+      
+      setShowTransactionModal(false);
+      setSelectedLoanForTransfer('');
+      setTransferRecipient('');
     } catch (error) {
       console.error('Transaction failed:', error);
-    } finally {
-      setShowTransactionModal(false);
+      toast({
+        title: "Transfer Failed",
+        description: "Failed to transfer loan NFT. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -75,7 +99,7 @@ export function Portfolio() {
                         <TrendingUp className="w-4 h-4 text-green-400" />
                       </div>
                       <p className="text-2xl font-bold text-green-400">
-                        ${portfolioStats ? (Number(portfolioStats.interestEarned) / 1e6).toFixed(2) : '0.00'}
+                        {metrics.interestEarned} ETH
                       </p>
                       <p className="text-sm text-green-300">Total earned</p>
                     </CardContent>
@@ -88,7 +112,7 @@ export function Portfolio() {
                         <TrendingDown className="w-4 h-4 text-blue-400" />
                       </div>
                       <p className="text-2xl font-bold text-blue-400">
-                        ${portfolioStats ? (Number(portfolioStats.interestPaid) / 1e6).toFixed(2) : '0.00'}
+                        {metrics.interestPaid} ETH
                       </p>
                       <p className="text-sm text-blue-300">Total paid</p>
                     </CardContent>
@@ -103,9 +127,7 @@ export function Portfolio() {
                         <DollarSign className="w-4 h-4 text-blue-400" />
                       </div>
                       <p className="text-2xl font-bold text-blue-400">
-                        ${portfolioStats 
-                          ? ((Number(portfolioStats.interestEarned) - Number(portfolioStats.interestPaid)) / 1e6).toFixed(2) 
-                          : '0.00'}
+                        {(parseFloat(metrics.interestEarned) - parseFloat(metrics.interestPaid)).toFixed(6)} ETH
                       </p>
                       <p className="text-sm text-blue-300">Net position</p>
                     </CardContent>
@@ -118,7 +140,7 @@ export function Portfolio() {
                         <FileText className="w-4 h-4 text-purple-400" />
                       </div>
                       <p className="text-2xl font-bold text-purple-400">
-                        {portfolioStats?.activeLoans || 0}
+                        {metrics.activeLoans}
                       </p>
                       <p className="text-sm text-purple-300">Total positions</p>
                     </CardContent>
@@ -138,19 +160,26 @@ export function Portfolio() {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Avg. Utilization</span>
-                <span className="font-mono">0%</span>
+                <span className="font-mono">{metrics.avgUtilization}%</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Payment Health</span>
-                <span className="text-green-400 font-medium">New</span>
+                <span className={`font-medium ${
+                  metrics.paymentHealth === 'Good' ? 'text-green-400' :
+                  metrics.paymentHealth === 'Warning' ? 'text-yellow-400' :
+                  metrics.paymentHealth === 'Poor' ? 'text-red-400' :
+                  'text-slate-400'
+                }`}>
+                  {metrics.paymentHealth}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Relationship Count</span>
-                <span className="font-mono">0</span>
+                <span className="font-mono">{metrics.relationshipCount}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Avg. Loan Duration</span>
-                <span className="font-mono">0 days</span>
+                <span className="font-mono">{metrics.avgLoanDuration} days</span>
               </div>
             </div>
           </CardContent>
@@ -163,11 +192,43 @@ export function Portfolio() {
           <CardTitle>Counterparty Relationships</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <BarChart3 className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-            <p className="text-slate-400">No relationships established</p>
-            <p className="text-sm text-slate-500 mt-1">Your lending and borrowing relationships will appear here</p>
-          </div>
+          {relationships.length === 0 ? (
+            <div className="text-center py-8">
+              <BarChart3 className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+              <p className="text-slate-400">No relationships established</p>
+              <p className="text-sm text-slate-500 mt-1">Your lending and borrowing relationships will appear here</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {relationships.slice(0, 5).map((relationship, index) => (
+                <div key={relationship.address} className="flex items-center justify-between p-4 bg-slate-900 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                      <Users className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-slate-200 font-medium">
+                        {relationship.address.slice(0, 6)}...{relationship.address.slice(-4)}
+                      </p>
+                      <p className="text-xs text-slate-400">{relationship.totalLoans} loans</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-slate-200 font-mono">{relationship.totalVolume} ETH</p>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-xs px-2 py-1 rounded ${
+                        relationship.trustLevel === 'Verified' ? 'bg-green-900 text-green-300' :
+                        relationship.trustLevel === 'Trusted' ? 'bg-blue-900 text-blue-300' :
+                        'bg-slate-700 text-slate-400'
+                      }`}>
+                        {relationship.trustLevel}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -191,7 +252,15 @@ export function Portfolio() {
                     <SelectValue placeholder="Choose a loan to transfer..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none" disabled>No loans available</SelectItem>
+                    {transferableLoans.length === 0 ? (
+                      <SelectItem value="none" disabled>No loans available</SelectItem>
+                    ) : (
+                      transferableLoans.map(loan => (
+                        <SelectItem key={loan.loanId.toString()} value={loan.loanId.toString()}>
+                          Loan #{loan.loanId.toString()} - {loan.principal} {loan.tokenSymbol}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -229,10 +298,13 @@ export function Portfolio() {
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-slate-400">Annualized Return</span>
-                    <span className="text-green-400 font-semibold">0.0%</span>
+                    <span className="text-green-400 font-semibold">{metrics.annualizedReturn}%</span>
                   </div>
                   <div className="w-full bg-slate-700 rounded-full h-2">
-                    <div className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full" style={{width: '0%'}}></div>
+                    <div 
+                      className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full" 
+                      style={{width: `${Math.min(parseFloat(metrics.annualizedReturn), 100)}%`}}
+                    ></div>
                   </div>
                 </CardContent>
               </Card>
@@ -241,22 +313,39 @@ export function Portfolio() {
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-slate-400">Risk Score</span>
-                    <span className="text-green-400 font-semibold">Low</span>
+                    <span className={`font-semibold ${
+                      metrics.riskScore === 'Low' ? 'text-green-400' :
+                      metrics.riskScore === 'Medium' ? 'text-yellow-400' :
+                      'text-red-400'
+                    }`}>
+                      {metrics.riskScore}
+                    </span>
                   </div>
                   <div className="w-full bg-slate-700 rounded-full h-2">
-                    <div className="bg-gradient-to-r from-green-500 to-yellow-500 h-2 rounded-full" style={{width: '20%'}}></div>
+                    <div 
+                      className={`h-2 rounded-full ${
+                        metrics.riskScore === 'Low' ? 'bg-gradient-to-r from-green-500 to-blue-500' :
+                        metrics.riskScore === 'Medium' ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
+                        'bg-gradient-to-r from-red-500 to-red-700'
+                      }`}
+                      style={{width: `${
+                        metrics.riskScore === 'Low' ? '20%' :
+                        metrics.riskScore === 'Medium' ? '60%' :
+                        '90%'
+                      }`}}
+                    ></div>
                   </div>
                 </CardContent>
               </Card>
               
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-slate-400">Yield This Month:</span>
-                  <p className="font-mono text-blue-400">$0.00</p>
+                  <span className="text-slate-400">Monthly Yield:</span>
+                  <p className="font-mono text-blue-400">{metrics.monthlyYield}%</p>
                 </div>
                 <div>
-                  <span className="text-slate-400">Best Performer:</span>
-                  <p className="font-mono text-green-400">None</p>
+                  <span className="text-slate-400">Total Volume:</span>
+                  <p className="font-mono text-green-400">{(parseFloat(metrics.totalLent) + parseFloat(metrics.totalBorrowed)).toFixed(6)} ETH</p>
                 </div>
               </div>
               
