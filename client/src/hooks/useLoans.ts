@@ -100,13 +100,21 @@ export function useLoans() {
             tokenSymbol: tokenInfo.symbol,
             principal: loanPrincipal,
             formattedPrincipal: formatUnits(loanPrincipal, tokenInfo.decimals),
+            repaidPrincipal,
+            formattedRepaidPrincipal: formatUnits(repaidPrincipal, tokenInfo.decimals),
+            forgivenPrincipal,
+            formattedForgivenPrincipal: formatUnits(forgivenPrincipal, tokenInfo.decimals),
             interestRate: loanInterestRate,
             interestRatePercent: (Number(loanInterestRate) / 100).toFixed(2),
             createdAt,
             createdAtDate: new Date(Number(createdAt) * 1000).toLocaleDateString(),
+            lastPayment,
+            lastPaymentDate: lastPayment > 0 ? new Date(Number(lastPayment) * 1000).toLocaleDateString() : 'No payments yet',
             isActive: true,
             accruedInterest,
             formattedAccruedInterest: formatUnits(accruedInterest, tokenInfo.decimals),
+            outstandingPrincipal: loanPrincipal - repaidPrincipal,
+            formattedOutstandingPrincipal: formatUnits(loanPrincipal - repaidPrincipal, tokenInfo.decimals),
           };
 
           loans.push(loan);

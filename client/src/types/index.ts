@@ -16,9 +16,17 @@ export interface Loan {
   borrower: string;
   token: string;
   principal: bigint;
+  repaidPrincipal: bigint;
+  forgivenPrincipal: bigint;
+  outstandingPrincipal: bigint;
+  formattedPrincipal: string;
+  formattedRepaidPrincipal: string;
+  formattedForgivenPrincipal: string;
+  formattedOutstandingPrincipal: string;
   interestRate: number;
   createdAt: number;
   lastPayment: number;
+  lastPaymentDate: string;
   isActive: boolean;
 }
 

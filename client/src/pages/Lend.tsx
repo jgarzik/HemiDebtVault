@@ -531,16 +531,52 @@ export function Lend() {
 
               {/* Financial Details */}
               <div className="space-y-4">
-                <h4 className="font-medium text-slate-300">Financial Summary</h4>
+                <h4 className="font-medium text-slate-300">Complete Financial Summary</h4>
                 
+                <div className="grid grid-cols-3 gap-4">
+                  <Card className="bg-slate-900 border-slate-700">
+                    <CardContent className="p-4">
+                      <div className="text-center">
+                        <p className="text-sm text-slate-400 mb-1">Original Principal</p>
+                        <p className="text-xl font-bold text-blue-400">
+                          {parseFloat(selectedLoanForDetails.formattedPrincipal).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-slate-900 border-slate-700">
+                    <CardContent className="p-4">
+                      <div className="text-center">
+                        <p className="text-sm text-slate-400 mb-1">Outstanding Principal</p>
+                        <p className="text-xl font-bold text-red-400">
+                          {parseFloat(selectedLoanForDetails.formattedOutstandingPrincipal).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-slate-900 border-slate-700">
+                    <CardContent className="p-4">
+                      <div className="text-center">
+                        <p className="text-sm text-slate-400 mb-1">Repaid Principal</p>
+                        <p className="text-xl font-bold text-green-400">
+                          {parseFloat(selectedLoanForDetails.formattedRepaidPrincipal).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <Card className="bg-slate-900 border-slate-700">
                     <CardContent className="p-4">
                       <div className="text-center">
-                        <p className="text-sm text-slate-400 mb-1">Principal Amount</p>
-                        <p className="text-2xl font-bold text-blue-400">
-                          {parseFloat(selectedLoanForDetails.formattedPrincipal).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
+                        <p className="text-sm text-slate-400 mb-1">Accrued Interest Earned</p>
+                        <p className="text-2xl font-bold text-yellow-400">
+                          {parseFloat(selectedLoanForDetails.formattedAccruedInterest).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
                         </p>
+                        <p className="text-xs text-slate-500 mt-1">Your earnings so far</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -558,14 +594,37 @@ export function Lend() {
                   </Card>
                 </div>
                 
+                {parseFloat(selectedLoanForDetails.formattedForgivenPrincipal) > 0 && (
+                  <Card className="bg-slate-900 border-slate-700">
+                    <CardContent className="p-4">
+                      <div className="text-center">
+                        <p className="text-sm text-slate-400 mb-1">Forgiven Principal</p>
+                        <p className="text-xl font-bold text-orange-400">
+                          {parseFloat(selectedLoanForDetails.formattedForgivenPrincipal).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">Amount written off</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Payment History */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-slate-300">Payment Information</h4>
                 <Card className="bg-slate-900 border-slate-700">
                   <CardContent className="p-4">
-                    <div className="text-center">
-                      <p className="text-sm text-slate-400 mb-1">Accrued Interest Earned</p>
-                      <p className="text-3xl font-bold text-yellow-400">
-                        {parseFloat(selectedLoanForDetails.formattedAccruedInterest).toLocaleString()} {selectedLoanForDetails.tokenSymbol}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1">Your earnings so far</p>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Last Payment:</span>
+                        <span className="text-slate-200">{selectedLoanForDetails.lastPaymentDate}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Loan Duration:</span>
+                        <span className="text-slate-200">
+                          {Math.floor((Date.now() - Number(selectedLoanForDetails.createdAt) * 1000) / (1000 * 60 * 60 * 24))} days
+                        </span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
