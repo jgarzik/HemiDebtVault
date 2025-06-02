@@ -128,11 +128,14 @@ export function useLoans() {
 
           // Sum up total interest earned from all repayment events
           let totalInterestEarned = BigInt(0);
+          console.log(`Found ${repaymentEvents.length} repayment events for loan ${loanId}`);
           for (const event of repaymentEvents) {
             if (event.args && typeof event.args.interestPaid === 'bigint') {
+              console.log(`Adding interest paid: ${event.args.interestPaid}`);
               totalInterestEarned += event.args.interestPaid;
             }
           }
+          console.log(`Total interest earned for loan ${loanId}: ${totalInterestEarned}`);
 
           const loan: Loan = {
             loanId,
