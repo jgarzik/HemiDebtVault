@@ -52,7 +52,7 @@ export function useBorrowerCreditLines() {
 
 
 
-      // For each unique lender-token combination, get the latest credit line data
+      // Process unique lender-token combinations to avoid duplicates
       const uniqueCredits = new Map<string, any>();
       
       for (const log of logs) {
@@ -85,7 +85,7 @@ export function useBorrowerCreditLines() {
           // Skip inactive credit lines (creditLimit = 0)
           if (creditLimit === BigInt(0)) continue;
 
-          // Use contract's getAvailableCredit function for accurate calculation
+          // Query contract for accurate available credit calculation
           const availableCredit = await publicClient.readContract({
             address: DEBT_VAULT_ADDRESS,
             abi: DEBT_VAULT_ABI,

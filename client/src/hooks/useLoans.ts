@@ -99,7 +99,7 @@ export function useLoans() {
             continue;
           }
 
-          // Get outstanding balance from contract - returns [principal, interest]
+          // Get outstanding balance using contract's getOutstandingBalance function
           const outstandingBalanceResult = await publicClient.readContract({
             address: DEBT_VAULT_ADDRESS,
             abi: DEBT_VAULT_ABI,
@@ -109,8 +109,7 @@ export function useLoans() {
           const [contractOutstandingPrincipal, accruedInterest] = outstandingBalanceResult as readonly [bigint, bigint];
           const outstandingBalance = contractOutstandingPrincipal + accruedInterest;
 
-          // Based on the contract events, calculate total interest earned from LoanRepaid events
-          // Even though current events show interestPaid=0, we'll use the event-based approach
+          // Calculate total interest earned by aggregating LoanRepaid event data
           let totalInterestEarned = BigInt(0);
           try {
             const repaymentEvents = await publicClient.getLogs({
@@ -216,7 +215,7 @@ export function useBorrowerLoans() {
     const activeLoans: Loan[] = [];
     
     try {
-      // Get LoanCreated events where the current user is the borrower
+      // Fetch LoanCreated events where current user is borrower
       const logs = await publicClient.getLogs({
         address: DEBT_VAULT_ADDRESS,
         event: parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed borrower, address indexed lender, address token, uint256 amount, uint256 apr)'),

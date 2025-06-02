@@ -30,7 +30,7 @@ export function Borrow() {
   const [selectedLoanForRepay, setSelectedLoanForRepay] = useState<any>(null);
   const allTokens = getAllTokens();
 
-  // Get selected credit line data
+  // Extract selected credit line and token data
   const selectedCredit = selectedCreditLine ? availableCredits.find(credit => 
     `${credit.lender}-${credit.token}` === selectedCreditLine
   ) : null;

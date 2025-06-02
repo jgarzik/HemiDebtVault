@@ -118,7 +118,7 @@ export function useTransactionFlow({
     }
   };
 
-  // Handle modal confirmation
+  // Execute transaction or approval based on current state
   const handleConfirm = async () => {
     try {
       if (currentState === 'needs_approval') {

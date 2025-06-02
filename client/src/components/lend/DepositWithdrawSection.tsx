@@ -24,7 +24,7 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [activeTab, setActiveTab] = useState('deposit');
 
-  // Get real token balance from blockchain
+  // Get token balances for selected tokens
   const { balance, formattedBalance, isLoading: isBalanceLoading } = useTokenBalance(selectedToken || undefined);
   const { balance: withdrawBalance, formattedBalance: formattedWithdrawBalance, isLoading: isWithdrawBalanceLoading } = useTokenBalance(selectedWithdrawToken || undefined);
 
