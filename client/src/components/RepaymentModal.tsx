@@ -321,7 +321,7 @@ export function RepaymentModal({
               
               return txHash;
             }}
-            disabled={!paymentAmount || parseFloat(paymentAmount) === 0}
+            disabled={!paymentAmount || !validatePaymentInput(paymentAmount)}
             className="flex-1 bg-green-600 hover:bg-green-700"
             requiresApproval={tokenInfo && paymentAmount ? {
               token: tokenInfo,
