@@ -7,6 +7,7 @@ export interface CreditLine {
   utilisedCredit: bigint;
   minAPR: number;
   maxAPR: number;
+  originationFee: number;
   isActive: boolean;
 }
 
@@ -14,6 +15,7 @@ export interface Loan {
   id: string;
   lender: string;
   borrower: string;
+  originalBorrower: string;
   token: string;
   principal: bigint;
   repaidPrincipal: bigint;
@@ -30,6 +32,8 @@ export interface Loan {
   lastPayment: number;
   lastPaymentDate: string;
   isActive: boolean;
+  isOwner: boolean;
+  isOriginalBorrower: boolean;
 }
 
 export interface TokenBalance {
@@ -60,10 +64,19 @@ export interface Relationship {
 
 export interface Transaction {
   hash: string;
-  type: 'deposit' | 'withdraw' | 'borrow' | 'repay' | 'credit_line';
+  type: 'deposit' | 'withdraw' | 'borrow' | 'repay' | 'credit_line' | 'forgive_principal' | 'forgive_interest' | 'transfer_nft';
   amount: bigint;
   token: string;
   timestamp: number;
   status: 'pending' | 'confirmed' | 'failed';
   counterparty?: string;
+  loanId?: string;
+  originationFee?: bigint;
+}
+
+export interface LoanLimits {
+  maxLoansPerUser: number;
+  currentLoanCount: number;
+  totalLoanCount: number;
+  canCreateNewLoan: boolean;
 }

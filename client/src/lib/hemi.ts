@@ -22,4 +22,4 @@ export const hemiNetwork = defineChain({
   serializers: undefined,
 });
 
-export const DEBT_VAULT_ADDRESS = '0x72F6185DcBb9c8415f01003ACc872f08B44FC292' as const;
+export const DEBT_VAULT_ADDRESS = '0xB4ED059A662073381e64c1eDE861bC6aBE655FB0' as const;
