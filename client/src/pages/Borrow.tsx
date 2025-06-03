@@ -59,32 +59,24 @@ export function Borrow() {
         selectedTokenDecimals: selectedToken.decimals
       });
       
-      // Calculate expected APR and add tolerance
+      // User input is directly the maximum APR (8% = 800 basis points)
+      const userMaxAPR = parseFloat(maxAPRTolerance);
+      const maxAPRBps = Math.round(userMaxAPR * 100);
+      
+      // Calculate expected APR for display purposes only
       const expectedAPR = parseFloat(calculateAPR(borrowAmount, selectedCredit));
-      const userMaxAPR = parseFloat(maxAPRTolerance); // User wants max 8% APR
-      
-      // User input is the maximum APR they accept, not additional tolerance
-      const maxAcceptableAPR = userMaxAPR;
-      
-      // Convert to basis points (1% = 100 basis points)  
-      const maxAPRBps = Math.round(maxAcceptableAPR * 100);
-      
-      // Safety check: ensure APR is reasonable (less than 100%)
-      const finalMaxAPRBps = Math.min(maxAPRBps, 10000); // Cap at 100%
       
       console.log('DEBUG APR Calculation:', {
         expectedAPR,
         userMaxAPR,
-        maxAcceptableAPR,
-        maxAPRBps,
-        finalMaxAPRBps
+        maxAPRBps
       });
       
       const txHash = await borrow(
         selectedCredit.lender as `0x${string}`, 
         selectedCredit.token as `0x${string}`, 
         amount,
-        BigInt(finalMaxAPRBps)
+        BigInt(maxAPRBps)
       );
       setBorrowAmount('');
       setSelectedCreditLine('');
