@@ -12,22 +12,8 @@ export function usePoolPosition() {
   const allTokens = getAllTokens();
   const { activeTokens } = useActiveTokens();
 
-  // Create a smart list of tokens to show:
-  // 1. Tokens with non-zero balances
-  // 2. Tokens that have been active in credit lines, deposits, or loans
-  const relevantTokens = allTokens.filter(token => {
-    // Always include tokens that have been active in the contract
-    const isActive = activeTokens.some(activeToken => 
-      activeToken.address.toLowerCase() === token.address.toLowerCase()
-    );
-    return isActive;
-  });
-
-  // If no active tokens found, show a minimal default set
-  const tokensToQuery = relevantTokens.length > 0 ? relevantTokens : allTokens.slice(0, 3);
-
-  // Get lender deposits for relevant tokens only
-  const tokenBalances = tokensToQuery.map(token => {
+  // Get lender deposits for all tokens and filter for non-zero balances
+  const allTokenBalances = allTokens.map(token => {
     const { data: balance } = useReadContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
@@ -46,13 +32,11 @@ export function usePoolPosition() {
       balance: balance || BigInt(0),
       formattedBalance: balance ? formatUnits(balance, token.decimals) : '0',
     };
-  }).filter(tokenBalance => {
-    // Only show tokens with non-zero balances or active contract history
-    const hasBalance = tokenBalance.balance > BigInt(0);
-    const hasActivity = activeTokens.some(activeToken => 
-      activeToken.address.toLowerCase() === tokenBalance.token.address.toLowerCase()
-    );
-    return hasBalance || hasActivity;
+  });
+
+  // Only show tokens with non-zero balances
+  const tokenBalances = allTokenBalances.filter(tokenBalance => {
+    return tokenBalance.balance > BigInt(0);
   });
 
   // Calculate totals
