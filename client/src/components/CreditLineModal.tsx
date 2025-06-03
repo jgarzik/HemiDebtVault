@@ -14,9 +14,10 @@ import { type Token } from '@/lib/tokens';
 interface CreditLineModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export function CreditLineModal({ isOpen, onClose }: CreditLineModalProps) {
+export function CreditLineModal({ isOpen, onClose, onSuccess }: CreditLineModalProps) {
   const { updateCreditLine } = useDebtVault();
   const { tokenBalances } = usePoolPosition();
   
@@ -204,6 +205,7 @@ export function CreditLineModal({ isOpen, onClose }: CreditLineModalProps) {
               className="flex-1 bg-blue-600 hover:bg-blue-700"
               actionLabel="Create Credit Line"
               transactionAmount={selectedToken && creditLimit ? `${creditLimit} ${selectedToken.symbol} limit` : undefined}
+              onSuccess={onSuccess}
             >
               Create
             </TransactionButton>

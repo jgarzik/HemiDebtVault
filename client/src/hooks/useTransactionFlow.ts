@@ -129,16 +129,7 @@ export function useTransactionFlow({
       } else if (currentState === 'ready_to_execute') {
         await execution.execute(onExecute);
         setShowModal(false);
-        
-        // Show success toast and call success callback
-        toast({
-          title: `${actionLabel || 'Transaction'} Successful`,
-          description: 'Your transaction has been confirmed on the blockchain.',
-        });
-        
-        if (onSuccess) {
-          onSuccess();
-        }
+        // Success handling moved to useEffect when transaction is actually confirmed
       }
     } catch (error) {
       console.error('Transaction failed:', error);
@@ -169,7 +160,12 @@ export function useTransactionFlow({
           : `${actionLabel || 'Transaction'} completed successfully`,
       });
       
-      // Trigger data refresh after successful transaction
+      // Call success callback for data refresh
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+      // Trigger global data refresh event
       window.dispatchEvent(new CustomEvent('transactionSuccess', { 
         detail: { txHash: execution.txHash, actionLabel } 
       }));

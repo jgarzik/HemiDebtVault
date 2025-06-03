@@ -7,8 +7,13 @@ import { useCreditLines } from '@/hooks/useCreditLines';
 import { CreditLineModal } from '@/components/CreditLineModal';
 
 export function CreditLinesSection() {
-  const { creditLines, isLoading: isCreditLinesLoading } = useCreditLines();
+  const { creditLines, isLoading: isCreditLinesLoading, refetch } = useCreditLines();
   const [showCreditLineModal, setShowCreditLineModal] = useState(false);
+
+  const handleSuccess = () => {
+    console.log('Credit line created successfully, refreshing data...');
+    refetch();
+  };
 
   return (
     <>
@@ -98,6 +103,7 @@ export function CreditLinesSection() {
       <CreditLineModal 
         isOpen={showCreditLineModal}
         onClose={() => setShowCreditLineModal(false)}
+        onSuccess={handleSuccess}
       />
     </>
   );
