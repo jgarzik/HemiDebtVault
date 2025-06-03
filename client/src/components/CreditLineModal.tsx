@@ -121,6 +121,7 @@ export function CreditLineModal({ isOpen, onClose }: CreditLineModalProps) {
               className="bg-slate-900 border-slate-600"
               availableTokens={tokenBalances.map(tb => tb.token)}
               showImportOption={false}
+              tokenBalances={tokenBalances}
             />
           </div>
           

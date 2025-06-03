@@ -40,9 +40,10 @@ interface TokenSelectorProps {
   className?: string;
   availableTokens?: Token[];
   showImportOption?: boolean;
+  tokenBalances?: { token: Token; formattedBalance: string }[];
 }
 
-export function TokenSelector({ selectedToken, onTokenSelect, className, availableTokens, showImportOption = true }: TokenSelectorProps) {
+export function TokenSelector({ selectedToken, onTokenSelect, className, availableTokens, showImportOption = true, tokenBalances }: TokenSelectorProps) {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [customAddress, setCustomAddress] = useState('');
   const [isImporting, setIsImporting] = useState(false);
@@ -50,6 +51,11 @@ export function TokenSelector({ selectedToken, onTokenSelect, className, availab
 
   // Use filtered tokens if provided, otherwise show all tokens
   const tokensToShow = availableTokens || getAllTokens();
+
+  // Helper function to get balance for a token
+  const getTokenBalance = (token: Token) => {
+    return tokenBalances?.find(tb => tb.token.address.toLowerCase() === token.address.toLowerCase())?.formattedBalance;
+  };
 
   // Fetch token metadata for custom import
   const { data: tokenName } = useReadContract({
@@ -151,16 +157,24 @@ export function TokenSelector({ selectedToken, onTokenSelect, className, availab
           )}
         </SelectTrigger>
         <SelectContent>
-          {tokensToShow.map((token) => (
-            <SelectItem key={token.address} value={token.address}>
-              <div className="flex items-center space-x-2">
-                <span className="font-medium">{token.symbol}</span>
-                {token.isCustom && (
-                  <span className="text-xs text-slate-500 bg-slate-700 px-1 rounded">Custom</span>
-                )}
-              </div>
-            </SelectItem>
-          ))}
+          {tokensToShow.map((token) => {
+            const balance = getTokenBalance(token);
+            return (
+              <SelectItem key={token.address} value={token.address}>
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium">{token.symbol}</span>
+                    {token.isCustom && (
+                      <span className="text-xs text-slate-500 bg-slate-700 px-1 rounded">Custom</span>
+                    )}
+                  </div>
+                  {balance && (
+                    <span className="text-xs text-slate-400 ml-auto">{balance}</span>
+                  )}
+                </div>
+              </SelectItem>
+            );
+          })}
           {showImportOption && (
             <SelectItem value="import">
               <div className="flex items-center space-x-2 text-blue-400">
