@@ -1,0 +1,59 @@
+Looking at the contract, event logs are indeed the most efficient approach for discovering deposited token addresses. Here's why and how to optimize it:
+Why Event Logs Are Best
+The contract only stores balances in:
+soliditymapping(address => mapping(address => uint256)) public lenderDeposits;
+There's no enumeration mechanism built into the contract - no array or set tracking which tokens a lender has deposited. The contract designers likely chose this to minimize gas costs and storage complexity.
+Optimized Event Log Strategy
+Your current approach is correct, but here are optimizations:
+1. Efficient Event Filtering
+javascript// Filter events by lender address upfront
+const filter = contract.filters.Deposited(lenderAddress, null, null);
+const depositEvents = await contract.queryFilter(filter, fromBlock, toBlock);
+
+// Extract unique token addresses
+const tokenAddresses = [...new Set(depositEvents.map(event => event.args.token))];
+2. Batch Balance Checking
+Instead of individual calls, use multicall:
+javascript// Using ethers-multicall or similar
+const multicall = new Multicall({ ethersProvider, tryAggregate: true });
+
+const balanceCalls = tokenAddresses.map(token => ({
+  contract: debtVaultContract,
+  name: 'lenderDeposits',
+  params: [lenderAddress, token]
+}));
+
+const balances = await multicall.all(balanceCalls);
+const activeTokens = tokenAddresses.filter((token, i) => balances[i] > 0);
+3. Caching Strategy
+javascript// Cache results and only query recent events
+const lastCachedBlock = getLastCachedBlock(lenderAddress);
+const newEvents = await contract.queryFilter(filter, lastCachedBlock + 1, 'latest');
+// Merge with cached token list
+Alternative: Contract Enhancement
+If you control the contract deployment, you could add enumeration in a future version:
+soliditymapping(address => address[]) public lenderTokens;
+mapping(address => mapping(address => bool)) public hasDeposited;
+
+function deposit(address token, uint256 amount) external {
+    // ... existing logic ...
+    
+    if (!hasDeposited[msg.sender][token]) {
+        lenderTokens[msg.sender].push(token);
+        hasDeposited[msg.sender][token] = true;
+    }
+}
+
+function getLenderTokens(address lender) external view returns (address[] memory) {
+    return lenderTokens[lender];
+}
+But this adds gas costs and complexity.
+Recommended Approach
+Stick with your current event log method but optimize it:
+
+Use indexed event filtering by lender address
+Implement multicall for batch balance checking
+Cache results and query incrementally
+Consider using a subgraph (The Graph) for even faster queries
+
+Your approach is architecturally sound - the contract prioritizes gas efficiency over query convenience, which is the right tradeoff for on-chain operations.
