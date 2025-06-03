@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWaitForTransactionReceipt } from 'wagmi';
 
 export function useTransactionExecution() {
@@ -36,13 +36,20 @@ export function useTransactionExecution() {
     }
   };
 
-  // Reset when transaction is confirmed
-  if (isConfirmed && txHash) {
-    setTimeout(() => {
-      setIsExecuting(false);
-      setTxHash(null);
-    }, 1000);
-  }
+  // Reset when transaction is confirmed with proper cleanup
+  useEffect(() => {
+    if (isConfirmed && txHash) {
+      const timeoutId = setTimeout(() => {
+        setIsExecuting(false);
+        setTxHash(null);
+      }, 1000);
+
+      // Cleanup timeout on unmount or dependency change
+      return () => {
+        clearTimeout(timeoutId);
+      };
+    }
+  }, [isConfirmed, txHash]);
 
   const reset = () => {
     setIsExecuting(false);

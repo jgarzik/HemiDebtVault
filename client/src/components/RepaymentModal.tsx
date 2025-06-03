@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { TransactionButton } from "@/components/TransactionButton";
 import { Loader2, ArrowRight } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
-import { parseUnits, formatUnits, createPublicClient, http } from "viem";
+import { parseUnits, formatUnits, createPublicClient, http, isAddress } from "viem";
 import { type Token, getAllTokens } from "@/lib/tokens";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { useDebtVault } from "@/hooks/useDebtVault";
@@ -153,6 +153,22 @@ export function RepaymentModal({
     };
   }, [paymentAmount, currentPrincipal, currentInterest, tokenInfo]);
   
+  const validatePaymentInput = (value: string): boolean => {
+    if (!value || value.trim() === '') return false;
+    const num = parseFloat(value);
+    // Reject negative, NaN, infinite, or exponential notation
+    if (isNaN(num) || !isFinite(num) || num < 0 || /[eE]/.test(value)) return false;
+    
+    // Check decimal places don't exceed token decimals
+    const decimalIndex = value.indexOf('.');
+    if (decimalIndex !== -1) {
+      const decimals = value.length - decimalIndex - 1;
+      if (decimals > (tokenInfo?.decimals || 18)) return false;
+    }
+    
+    return true;
+  };
+
   const handleMaxPayment = () => {
     if (!tokenInfo || !formattedWalletBalance) {
       const totalOwed = (parseFloat(currentPrincipal) + parseFloat(currentInterest)).toString();

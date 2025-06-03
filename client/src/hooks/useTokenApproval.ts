@@ -90,11 +90,16 @@ export function useTokenApproval(params?: ApprovalParams) {
       // Immediately refetch allowance to update state
       refetchAllowance();
       
-      // Reset approval state after a brief delay
-      setTimeout(() => {
+      // Reset approval state after a brief delay with proper cleanup
+      const timeoutId = setTimeout(() => {
         setApprovalHash(null);
         setIsApproving(false);
       }, 500);
+
+      // Cleanup timeout on unmount or dependency change
+      return () => {
+        clearTimeout(timeoutId);
+      };
     }
   }, [isApprovalSuccess, approvalHash, refetchAllowance]);
 

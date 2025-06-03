@@ -8,7 +8,7 @@ import { TransactionButton } from './TransactionButton';
 import { useDebtVault } from '@/hooks/useDebtVault';
 import { usePoolPosition } from '@/hooks/usePoolPosition';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
-import { parseUnits } from 'viem';
+import { parseUnits, isAddress } from 'viem';
 import { type Token } from '@/lib/tokens';
 
 interface CreditLineModalProps {
@@ -42,12 +42,39 @@ export function CreditLineModal({ isOpen, onClose, onSuccess }: CreditLineModalP
     onClose();
   };
 
+  const validateNumericInput = (value: string): boolean => {
+    if (!value || value.trim() === '') return false;
+    const num = parseFloat(value);
+    return !isNaN(num) && isFinite(num) && num >= 0 && !/[eE]/.test(value);
+  };
+
+  const validateDecimalPlaces = (value: string, maxDecimals: number): boolean => {
+    const decimalIndex = value.indexOf('.');
+    if (decimalIndex === -1) return true;
+    return value.length - decimalIndex - 1 <= maxDecimals;
+  };
+
   const validateForm = () => {
+    // Required fields
     if (!borrowerAddress || !selectedToken || !creditLimit || !minAPR || !maxAPR) {
       return false;
     }
     
-    if (!borrowerAddress.startsWith('0x') || borrowerAddress.length !== 42) {
+    // Address validation using viem's isAddress
+    if (!isAddress(borrowerAddress)) {
+      return false;
+    }
+    
+    // Numeric validation
+    if (!validateNumericInput(creditLimit) || !validateNumericInput(minAPR) || !validateNumericInput(maxAPR) || !validateNumericInput(originationFee)) {
+      return false;
+    }
+    
+    // Decimal places validation (max 18 for token amounts, max 2 for percentages)
+    if (!validateDecimalPlaces(creditLimit, selectedToken.decimals)) {
+      return false;
+    }
+    if (!validateDecimalPlaces(minAPR, 2) || !validateDecimalPlaces(maxAPR, 2) || !validateDecimalPlaces(originationFee, 2)) {
       return false;
     }
     
@@ -55,11 +82,12 @@ export function CreditLineModal({ isOpen, onClose, onSuccess }: CreditLineModalP
     const maxAPRNum = parseFloat(maxAPR);
     const originationFeeNum = parseFloat(originationFee);
     
-    if (minAPRNum < 0 || maxAPRNum < 0 || minAPRNum > maxAPRNum) {
+    // Range validation
+    if (minAPRNum > maxAPRNum) {
       return false;
     }
     
-    if (originationFeeNum < 0 || originationFeeNum > 100) {
+    if (originationFeeNum > 100) {
       return false;
     }
     
