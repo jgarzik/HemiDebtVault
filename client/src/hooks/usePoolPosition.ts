@@ -12,8 +12,12 @@ export function usePoolPosition() {
   const allTokens = getAllTokens();
   const { activeTokens } = useActiveTokens();
 
-  // Get lender deposits for all tokens and filter for non-zero balances
-  const allTokenBalances = allTokens.map(token => {
+  // Get tokens that have been deposited (from events) + query their current balances
+  const tokensToQuery = activeTokens.length > 0 
+    ? activeTokens.map(activeToken => findTokenByAddress(activeToken.address)).filter(Boolean) as Token[]
+    : allTokens.slice(0, 3); // Fallback to first 3 tokens if no events found
+
+  const tokenBalances = tokensToQuery.map(token => {
     const { data: balance } = useReadContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
@@ -32,11 +36,13 @@ export function usePoolPosition() {
       balance: balance || BigInt(0),
       formattedBalance: balance ? formatUnits(balance, token.decimals) : '0',
     };
-  });
-
-  // Only show tokens with non-zero balances
-  const tokenBalances = allTokenBalances.filter(tokenBalance => {
-    return tokenBalance.balance > BigInt(0);
+  }).filter(tokenBalance => {
+    // Show tokens with non-zero balances OR tokens that have event history
+    const hasBalance = tokenBalance.balance > BigInt(0);
+    const hasActivity = activeTokens.some(activeToken => 
+      activeToken.address.toLowerCase() === tokenBalance.token.address.toLowerCase()
+    );
+    return hasBalance || hasActivity;
   });
 
   // Calculate totals

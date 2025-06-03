@@ -96,6 +96,17 @@ export function findTokenByAddress(address: string): Token | undefined {
   );
 }
 
+// Create a token entry for unknown tokens discovered from events
+export function createUnknownToken(address: string): Token {
+  return {
+    symbol: `TOKEN_${address.slice(2, 8).toUpperCase()}`,
+    address: address as `0x${string}`,
+    decimals: 18, // Default to 18 decimals
+    name: `Unknown Token (${address.slice(0, 8)}...)`,
+    isCustom: true,
+  };
+}
+
 // Validate Ethereum address format
 export function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address);

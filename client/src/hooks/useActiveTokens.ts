@@ -22,9 +22,42 @@ export function useActiveTokens() {
     if (!address || !publicClient) return [];
 
     try {
-      // For now, return an empty array to avoid crashes
-      // We'll implement event querying later once the core functionality is stable
-      return [];
+      // Query Deposited events for current user
+      const depositEvents = await publicClient.getLogs({
+        address: DEBT_VAULT_ADDRESS,
+        event: {
+          type: 'event',
+          name: 'Deposited',
+          inputs: [
+            { type: 'address', name: 'lender', indexed: true },
+            { type: 'address', name: 'token', indexed: true },
+            { type: 'uint256', name: 'amount' }
+          ]
+        },
+        args: {
+          lender: address,
+        },
+        fromBlock: 'earliest',
+        toBlock: 'latest',
+      });
+
+      // Extract unique tokens from deposit events
+      const uniqueTokens = [...new Set(depositEvents.map(log => log.args.token as string))];
+      
+      // Convert to ActiveToken format
+      const activeTokens: ActiveToken[] = uniqueTokens.map(tokenAddress => {
+        const token = findTokenByAddress(tokenAddress);
+        return {
+          address: tokenAddress,
+          symbol: token?.symbol || 'UNKNOWN',
+          decimals: token?.decimals || 18,
+          name: token?.name || 'Unknown Token',
+          hasActivity: true,
+          activityTypes: ['deposits'],
+        };
+      });
+
+      return activeTokens;
     } catch (error) {
       console.error('Error fetching active tokens:', error);
       return [];
