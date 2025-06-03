@@ -67,18 +67,22 @@ export function Borrow() {
       // Convert to basis points (1% = 100 basis points)
       const maxAPRBps = Math.round(maxAcceptableAPR * 100);
       
+      // Safety check: ensure APR is reasonable (less than 100%)
+      const finalMaxAPRBps = Math.min(maxAPRBps, 10000); // Cap at 100%
+      
       console.log('DEBUG APR Calculation:', {
         expectedAPR,
         toleranceAmount,
         maxAcceptableAPR,
-        maxAPRBps
+        maxAPRBps,
+        finalMaxAPRBps
       });
       
       const txHash = await borrow(
         selectedCredit.lender as `0x${string}`, 
         selectedCredit.token as `0x${string}`, 
         amount,
-        BigInt(maxAPRBps)
+        BigInt(finalMaxAPRBps)
       );
       setBorrowAmount('');
       setSelectedCreditLine('');
