@@ -69,7 +69,11 @@ export function useLoans() {
           });
 
           // The contract returns a struct with these fields:
-          const [contractBorrower, contractLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAt, lastPayment, isClosed] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
+          const [contractBorrower, contractLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAtTimestamp, lastPaymentTimestamp, isClosed] = loanData as any;
+          
+          // Convert timestamps to bigint for compatibility
+          const createdAt = BigInt(createdAtTimestamp);
+          const lastPayment = BigInt(lastPaymentTimestamp);
           
           // Skip if loan is closed
           if (isClosed) {
@@ -196,7 +200,11 @@ export function useBorrowerLoans() {
             args: [loanId],
           });
 
-          const [contractBorrower, contractLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAt, lastPayment, isClosed] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, number, number, boolean];
+          const [contractBorrower, contractLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAtTimestamp, lastPaymentTimestamp, isClosed] = loanData as any;
+          
+          // Convert timestamps to bigint for compatibility
+          const createdAt = BigInt(createdAtTimestamp);
+          const lastPayment = BigInt(lastPaymentTimestamp);
           
           // Skip if loan is closed
           if (isClosed) {
