@@ -88,7 +88,7 @@ async function debugBorrow() {
     });
     
     console.log(`   Lender deposits: ${lenderDeposits.toString()} raw`);
-    console.log(`   Lender deposits: ${formatUnits(lenderDeposits, 9)} VCRED\n`);
+    console.log(`   Lender deposits: ${formatUnits(lenderDeposits, 6)} VCRED\n`);
 
     // 2. Check credit line configuration
     console.log('2. Checking credit line configuration...');
@@ -100,7 +100,7 @@ async function debugBorrow() {
     });
     
     console.log(`   Credit limit: ${creditLine[0].toString()} raw`);
-    console.log(`   Credit limit: ${formatUnits(creditLine[0], 9)} VCRED`);
+    console.log(`   Credit limit: ${formatUnits(creditLine[0], 6)} VCRED`);
     console.log(`   Min APR: ${creditLine[1].toString()} basis points (${(Number(creditLine[1]) / 100).toFixed(2)}%)`);
     console.log(`   Max APR: ${creditLine[2].toString()} basis points (${(Number(creditLine[2]) / 100).toFixed(2)}%)`);
     console.log(`   Origination fee: ${creditLine[3].toString()} basis points (${(Number(creditLine[3]) / 100).toFixed(2)}%)\n`);
@@ -115,28 +115,28 @@ async function debugBorrow() {
     });
     
     console.log(`   Available credit: ${availableCredit.toString()} raw`);
-    console.log(`   Available credit: ${formatUnits(availableCredit, 9)} VCRED\n`);
+    console.log(`   Available credit: ${formatUnits(availableCredit, 6)} VCRED\n`);
 
     // 4. Test borrow amount
-    const borrowAmount = parseUnits('0.6', 9); // 0.6 VCRED
+    const borrowAmount = parseUnits('0.6', 6); // 0.6 VCRED (6 decimals)
     console.log('4. Testing borrow scenario...');
     console.log(`   Requested amount: ${borrowAmount.toString()} raw`);
-    console.log(`   Requested amount: ${formatUnits(borrowAmount, 9)} VCRED`);
+    console.log(`   Requested amount: ${formatUnits(borrowAmount, 6)} VCRED`);
     
     // Calculate origination fee
     const originationFee = (borrowAmount * creditLine[3]) / BigInt(10000);
     const totalPrincipal = borrowAmount + originationFee;
     
-    console.log(`   Origination fee: ${formatUnits(originationFee, 9)} VCRED`);
-    console.log(`   Total principal: ${formatUnits(totalPrincipal, 9)} VCRED\n`);
+    console.log(`   Origination fee: ${formatUnits(originationFee, 6)} VCRED`);
+    console.log(`   Total principal: ${formatUnits(totalPrincipal, 6)} VCRED\n`);
 
     // 5. Check constraints
     console.log('5. Checking borrow constraints...');
     console.log(`   ✓ Amount > 0: ${borrowAmount > 0}`);
     console.log(`   ✓ Credit line exists: ${creditLine[0] > 0}`);
-    console.log(`   ✓ Sufficient lender balance: ${lenderDeposits >= borrowAmount} (need ${formatUnits(borrowAmount, 9)}, have ${formatUnits(lenderDeposits, 9)})`);
-    console.log(`   ✓ Within credit limit: ${totalPrincipal <= creditLine[0]} (need ${formatUnits(totalPrincipal, 9)}, limit ${formatUnits(creditLine[0], 9)})`);
-    console.log(`   ✓ Within available credit: ${totalPrincipal <= availableCredit} (need ${formatUnits(totalPrincipal, 9)}, available ${formatUnits(availableCredit, 9)})`);
+    console.log(`   ✓ Sufficient lender balance: ${lenderDeposits >= borrowAmount} (need ${formatUnits(borrowAmount, 6)}, have ${formatUnits(lenderDeposits, 6)})`);
+    console.log(`   ✓ Within credit limit: ${totalPrincipal <= creditLine[0]} (need ${formatUnits(totalPrincipal, 6)}, limit ${formatUnits(creditLine[0], 6)})`);
+    console.log(`   ✓ Within available credit: ${totalPrincipal <= availableCredit} (need ${formatUnits(totalPrincipal, 6)}, available ${formatUnits(availableCredit, 6)})`);
 
     // 6. Check if all constraints pass
     const allConstraintsPassed = 
@@ -155,6 +155,30 @@ async function debugBorrow() {
       if (lenderDeposits < borrowAmount) console.log('   - Insufficient lender balance');
       if (totalPrincipal > creditLine[0]) console.log('   - Exceeds credit limit');
       if (totalPrincipal > availableCredit) console.log('   - Exceeds available credit');
+    }
+
+    // 7. Test APR calculation and validation (from frontend error)
+    console.log('\n6. Testing APR calculation like the frontend...');
+    
+    // Simulate utilization calculation from smart contract
+    const currentBorrowing = BigInt(0); // No existing borrowing
+    const utilizationAfterBorrow = ((currentBorrowing + totalPrincipal) * BigInt('1000000000000000000')) / creditLine[0];
+    const calculatedAPR = creditLine[1] + ((utilizationAfterBorrow * (creditLine[2] - creditLine[1])) / BigInt('1000000000000000000'));
+    
+    console.log(`   Current borrowing: ${formatUnits(currentBorrowing, 6)} VCRED`);
+    console.log(`   Utilization after borrow: ${utilizationAfterBorrow.toString()}`);
+    console.log(`   Calculated APR: ${calculatedAPR.toString()} basis points (${(Number(calculatedAPR) / 100).toFixed(2)}%)`);
+    
+    // Test with the exact maxAPR from the frontend error (1640 basis points = 16.40%)
+    const frontendMaxAPR = BigInt(1640);
+    console.log(`   Frontend maxAPR: ${frontendMaxAPR.toString()} basis points (${(Number(frontendMaxAPR) / 100).toFixed(2)}%)`);
+    console.log(`   ✓ APR within tolerance: ${calculatedAPR <= frontendMaxAPR} (${(Number(calculatedAPR) / 100).toFixed(2)}% <= ${(Number(frontendMaxAPR) / 100).toFixed(2)}%)`);
+    
+    if (calculatedAPR > frontendMaxAPR) {
+      console.log(`\n❌ APR TOLERANCE FAILURE:`);
+      console.log(`   - Contract will calculate APR as ${(Number(calculatedAPR) / 100).toFixed(2)}%`);
+      console.log(`   - Frontend maxAPR tolerance is ${(Number(frontendMaxAPR) / 100).toFixed(2)}%`);
+      console.log(`   - This will trigger "APRExceedsLimit" revert`);
     }
 
   } catch (error) {
