@@ -189,8 +189,11 @@ export function useBorrowerLoans() {
           const { loanId } = event.args;
           
           if (!loanId || typeof loanId !== 'bigint') {
+            console.log('DEBUG: useBorrowerLoans skipping invalid loan ID:', loanId);
             continue;
           }
+          
+          console.log('DEBUG: useBorrowerLoans processing loan ID:', loanId.toString());
           
           // Get loan details from contract
           const loanData = await publicClient.readContract({
@@ -202,17 +205,29 @@ export function useBorrowerLoans() {
 
           const [contractBorrower, contractLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAtTimestamp, lastPaymentTimestamp, isClosed] = loanData as any;
           
+          console.log('DEBUG: useBorrowerLoans loan data:', {
+            loanId: loanId.toString(),
+            borrower: contractBorrower,
+            lender: contractLender,
+            token: loanToken,
+            principal: loanPrincipal.toString(),
+            closed: isClosed
+          });
+          
           // Convert timestamps to bigint for compatibility
           const createdAt = BigInt(createdAtTimestamp);
           const lastPayment = BigInt(lastPaymentTimestamp);
           
           // Skip if loan is closed
           if (isClosed) {
+            console.log('DEBUG: useBorrowerLoans skipping closed loan:', loanId.toString());
             continue;
           }
 
           const tokenInfo = findTokenByAddress(loanToken);
+          console.log('DEBUG: useBorrowerLoans token lookup:', loanToken, 'found:', !!tokenInfo);
           if (!tokenInfo) {
+            console.log('DEBUG: useBorrowerLoans skipping loan - token not found:', loanToken);
             continue;
           }
 
@@ -255,12 +270,14 @@ export function useBorrowerLoans() {
           };
 
           loans.push(loan);
+          console.log('DEBUG: useBorrowerLoans successfully added loan:', loanId.toString());
 
         } catch (error) {
           console.error('Error processing borrower loan:', error);
         }
       }
 
+      console.log('DEBUG: useBorrowerLoans returning', loans.length, 'loans');
       return loans;
     } catch (error) {
       console.error('Error fetching borrower loans:', error);
