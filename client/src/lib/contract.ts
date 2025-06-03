@@ -23,21 +23,23 @@ export const DEBT_VAULT_EVENTS = {
     name: 'LoanCreated',
     inputs: [
       { type: 'uint256', name: 'loanId', indexed: true },
-      { type: 'address', name: 'lender', indexed: true },
       { type: 'address', name: 'borrower', indexed: true },
+      { type: 'address', name: 'lender', indexed: true },
       { type: 'address', name: 'token' },
       { type: 'uint256', name: 'amount' },
-      { type: 'uint256', name: 'apr' }
+      { type: 'uint256', name: 'principal' },
+      { type: 'uint256', name: 'apr' },
+      { type: 'uint256', name: 'originationFee' }
     ]
   },
-  Repaid: {
+  LoanRepaid: {
     type: 'event',
-    name: 'Repaid',
+    name: 'LoanRepaid',
     inputs: [
       { type: 'uint256', name: 'loanId', indexed: true },
-      { type: 'address', name: 'borrower', indexed: true },
       { type: 'uint256', name: 'amount' },
-      { type: 'uint256', name: 'interest' }
+      { type: 'uint256', name: 'interestPaid' },
+      { type: 'uint256', name: 'principalPaid' }
     ]
   },
   CreditLineUpdated: {

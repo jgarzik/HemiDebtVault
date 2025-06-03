@@ -89,10 +89,10 @@ export async function queryLoanCreatedEvents(
 
 export async function queryRepaidEvents(
   publicClient: PublicClient,
-  filters: { loanId?: bigint; borrower?: string } = {},
+  filters: { loanId?: bigint } = {},
   options?: EventQueryOptions
 ): Promise<EventQueryResult[]> {
-  return queryContractEvents(publicClient, 'Repaid', filters, options);
+  return queryContractEvents(publicClient, 'LoanRepaid', filters, options);
 }
 
 export async function queryCreditLineUpdatedEvents(
