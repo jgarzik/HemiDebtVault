@@ -64,8 +64,8 @@ export function TransactionButton({
         disabled={isDisabled}
         className={className}
       >
-        {/* Use children for disabled states and ready_to_execute, otherwise use flow-specific labels */}
-        {['disconnected', 'wrong_network', 'needs_approval', 'executing'].includes(modalData?.state) 
+        {/* Use children for disabled/ready states, buttonLabel for wallet/network/approval states */}
+        {['disconnected', 'wrong_network', 'needs_approval', 'executing'].includes(currentState) 
           ? buttonLabel 
           : children}
       </Button>
