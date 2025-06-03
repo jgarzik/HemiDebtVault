@@ -162,14 +162,14 @@ export function TokenSelector({ selectedToken, onTokenSelect, className, availab
             return (
               <SelectItem key={token.address} value={token.address}>
                 <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <span className="font-medium">{token.symbol}</span>
                     {token.isCustom && (
                       <span className="text-xs text-slate-500 bg-slate-700 px-1 rounded">Custom</span>
                     )}
                   </div>
                   {balance && (
-                    <span className="text-xs text-slate-400 ml-auto">{balance}</span>
+                    <span className="text-sm text-slate-400 font-mono ml-4">{balance}</span>
                   )}
                 </div>
               </SelectItem>
