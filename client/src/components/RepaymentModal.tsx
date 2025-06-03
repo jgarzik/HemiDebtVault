@@ -167,11 +167,7 @@ export function RepaymentModal({
     setPaymentAmount(maxPayable.toString());
   };
   
-  const handleConfirm = () => {
-    if (paymentAmount && parseFloat(paymentAmount) > 0) {
-      onConfirm(paymentAmount);
-    }
-  };
+
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
