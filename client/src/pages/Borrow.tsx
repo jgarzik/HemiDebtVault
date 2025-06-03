@@ -412,6 +412,7 @@ export function Borrow() {
                   queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
                   queryClient.invalidateQueries({ queryKey: ['loans'] });
                   queryClient.invalidateQueries({ queryKey: ['borrowerLoans'] });
+                  queryClient.invalidateQueries({ queryKey: ['loanNFTs'] });
                 }}
               >
                 {borrowAmount && selectedCredit 
