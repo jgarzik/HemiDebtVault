@@ -1,10 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Wallet, Plus } from 'lucide-react';
 import { usePoolPosition } from '@/hooks/usePoolPosition';
+import { useActiveTokens } from '@/hooks/useActiveTokens';
 
 export function PoolOverview() {
   const { tokenBalances, totalDeposited, availableForLending, currentlyLent, totalInterestEarned } = usePoolPosition();
+  const { activeTokens } = useActiveTokens();
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -38,25 +40,61 @@ export function PoolOverview() {
         
         {tokenBalances.length === 0 ? (
           <div className="bg-slate-900 p-6 rounded-lg text-center">
-            <p className="text-slate-400">No tokens deposited yet</p>
+            <Wallet className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+            <p className="text-slate-400 mb-2">No active token balances</p>
+            <p className="text-sm text-slate-500">
+              Deposit tokens to start lending or create credit lines
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {tokenBalances.map((balance, index) => (
-              <div key={`${balance.token.address}-${index}`} className="bg-slate-900 p-4 rounded-lg flex justify-between items-center">
-                <div>
-                  <p className="font-medium">{balance.token.symbol}</p>
-                  <p className="text-sm text-slate-400">{balance.formattedBalance} {balance.token.symbol}</p>
+            {tokenBalances.map((balance, index) => {
+              const activeToken = activeTokens.find(t => 
+                t.address.toLowerCase() === balance.token.address.toLowerCase()
+              );
+              const hasBalance = balance.balance > BigInt(0);
+              
+              return (
+                <div key={`${balance.token.address}-${index}`} className="bg-slate-900 p-4 rounded-lg flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">{balance.token.symbol}</p>
+                    <p className="text-sm text-slate-400">
+                      {hasBalance ? `${balance.formattedBalance} ${balance.token.symbol}` : 'No balance'}
+                    </p>
+                    {activeToken && (
+                      <div className="flex gap-1 mt-1">
+                        {activeToken.activityTypes.map(activity => (
+                          <Badge key={activity} variant="outline" className="text-xs">
+                            {activity.replace('_', ' ')}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">
+                      {hasBalance ? `${balance.formattedBalance} ${balance.token.symbol}` : '0'}
+                    </p>
+                    <Badge 
+                      variant={hasBalance ? "default" : "secondary"} 
+                      className="text-xs"
+                    >
+                      {hasBalance ? (
+                        <>
+                          <TrendingUp className="w-3 h-3 mr-1" />
+                          Active
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-3 h-3 mr-1" />
+                          Used
+                        </>
+                      )}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium">{balance.formattedBalance} {balance.token.symbol}</p>
-                  <Badge variant="secondary" className="text-xs">
-                    <TrendingUp className="w-3 h-3 mr-1" />
-                    Active
-                  </Badge>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
