@@ -39,9 +39,10 @@ interface TokenSelectorProps {
   onTokenSelect: (token: Token) => void;
   className?: string;
   availableTokens?: Token[];
+  showImportOption?: boolean;
 }
 
-export function TokenSelector({ selectedToken, onTokenSelect, className, availableTokens }: TokenSelectorProps) {
+export function TokenSelector({ selectedToken, onTokenSelect, className, availableTokens, showImportOption = true }: TokenSelectorProps) {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [customAddress, setCustomAddress] = useState('');
   const [isImporting, setIsImporting] = useState(false);
@@ -160,12 +161,14 @@ export function TokenSelector({ selectedToken, onTokenSelect, className, availab
               </div>
             </SelectItem>
           ))}
-          <SelectItem value="import">
-            <div className="flex items-center space-x-2 text-blue-400">
-              <Plus className="w-4 h-4" />
-              <span>Import custom token</span>
-            </div>
-          </SelectItem>
+          {showImportOption && (
+            <SelectItem value="import">
+              <div className="flex items-center space-x-2 text-blue-400">
+                <Plus className="w-4 h-4" />
+                <span>Import custom token</span>
+              </div>
+            </SelectItem>
+          )}
         </SelectContent>
       </Select>
 

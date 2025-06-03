@@ -140,6 +140,7 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                   onTokenSelect={setSelectedWithdrawToken}
                   className="bg-slate-900 border-slate-600"
                   availableTokens={tokenBalances.map(tb => tb.token)}
+                  showImportOption={false}
                 />
                 
                 <div className="space-y-2">
