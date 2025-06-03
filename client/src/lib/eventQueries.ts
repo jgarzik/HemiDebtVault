@@ -113,9 +113,8 @@ export function extractUniqueTokens(events: EventQueryResult[]): string[] {
     }
   }
 
-  // Get unique tokens using Set
-  const uniqueTokensSet = new Set(tokenAddresses);
-  return Array.from(uniqueTokensSet);
+  // Get unique tokens using filter (avoiding Set spread issue)
+  return tokenAddresses.filter((token, index) => tokenAddresses.indexOf(token) === index);
 }
 
 // Utility function to extract unique loan IDs from events
