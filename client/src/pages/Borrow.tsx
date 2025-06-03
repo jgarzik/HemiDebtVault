@@ -26,6 +26,7 @@ export function Borrow() {
   
   const [selectedCreditLine, setSelectedCreditLine] = useState<string>('');
   const [borrowAmount, setBorrowAmount] = useState('');
+  const [maxAPRTolerance, setMaxAPRTolerance] = useState('1.0'); // 1% above calculated APR by default
   const [showRepayModal, setShowRepayModal] = useState(false);
   const [selectedLoanForRepay, setSelectedLoanForRepay] = useState<any>(null);
   const allTokens = getAllTokens();
@@ -44,9 +45,24 @@ export function Borrow() {
     
     try {
       const amount = parseUnits(borrowAmount, selectedToken.decimals);
-      const txHash = await borrow(selectedCredit.lender as `0x${string}`, selectedCredit.token as `0x${string}`, amount);
+      
+      // Calculate expected APR and add tolerance
+      const expectedAPR = parseFloat(calculateAPR(borrowAmount, selectedCredit));
+      const toleranceAmount = parseFloat(maxAPRTolerance);
+      const maxAcceptableAPR = expectedAPR + toleranceAmount;
+      
+      // Convert to basis points (1% = 100 basis points)
+      const maxAPRBps = Math.round(maxAcceptableAPR * 100);
+      
+      const txHash = await borrow(
+        selectedCredit.lender as `0x${string}`, 
+        selectedCredit.token as `0x${string}`, 
+        amount,
+        BigInt(maxAPRBps)
+      );
       setBorrowAmount('');
       setSelectedCreditLine('');
+      setMaxAPRTolerance('1.0');
       
       // Refresh data after successful transaction
       setTimeout(() => {
@@ -332,6 +348,22 @@ export function Borrow() {
                     {selectedCredit?.tokenSymbol || 'Token'}
                   </div>
                 </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">APR Tolerance (%)</label>
+                <div className="relative">
+                  <Input
+                    type="text"
+                    placeholder="1.0"
+                    value={maxAPRTolerance}
+                    onChange={(e) => setMaxAPRTolerance(e.target.value)}
+                    className="bg-slate-900 border-slate-600"
+                  />
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Maximum APR increase above calculated rate (slippage protection)
+                </p>
               </div>
               
               {selectedCredit && (
