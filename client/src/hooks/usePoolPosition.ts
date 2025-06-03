@@ -12,13 +12,11 @@ export function usePoolPosition() {
   const allTokens = getAllTokens();
   const { activeTokens } = useActiveTokens();
 
-  // Get tokens that have been deposited (from events) + query their current balances
-  const tokensToQuery = activeTokens.length > 0 
-    ? activeTokens.map(activeToken => {
-        const token = findTokenByAddress(activeToken.address);
-        return token;
-      }).filter((token): token is Token => token !== undefined)
-    : allTokens.slice(0, 3); // Fallback to first 3 tokens if no events found
+  // Only query tokens that have been discovered from actual blockchain activity
+  const tokensToQuery = activeTokens.map(activeToken => {
+    const token = findTokenByAddress(activeToken.address);
+    return token;
+  }).filter((token): token is Token => token !== undefined);
 
   // Use multicall to batch all balance queries in a single RPC call
   const { data: balanceResults } = useReadContracts({
