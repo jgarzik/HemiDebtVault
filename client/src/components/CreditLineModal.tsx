@@ -24,6 +24,7 @@ export function CreditLineModal({ isOpen, onClose }: CreditLineModalProps) {
   const [creditLimit, setCreditLimit] = useState('');
   const [minAPR, setMinAPR] = useState('');
   const [maxAPR, setMaxAPR] = useState('');
+  const [originationFee, setOriginationFee] = useState('0');
 
   const resetForm = () => {
     setBorrowerAddress('');
@@ -31,6 +32,7 @@ export function CreditLineModal({ isOpen, onClose }: CreditLineModalProps) {
     setCreditLimit('');
     setMinAPR('');
     setMaxAPR('');
+    setOriginationFee('0');
   };
 
   const handleClose = () => {
@@ -49,8 +51,13 @@ export function CreditLineModal({ isOpen, onClose }: CreditLineModalProps) {
     
     const minAPRNum = parseFloat(minAPR);
     const maxAPRNum = parseFloat(maxAPR);
+    const originationFeeNum = parseFloat(originationFee);
     
     if (minAPRNum < 0 || maxAPRNum < 0 || minAPRNum > maxAPRNum) {
+      return false;
+    }
+    
+    if (originationFeeNum < 0 || originationFeeNum > 100) {
       return false;
     }
     
@@ -64,6 +71,7 @@ export function CreditLineModal({ isOpen, onClose }: CreditLineModalProps) {
       // Convert percentage to basis points (1% = 100 basis points)
       const minAPRBps = Math.round(parseFloat(minAPR) * 100);
       const maxAPRBps = Math.round(parseFloat(maxAPR) * 100);
+      const originationFeeBps = Math.round(parseFloat(originationFee) * 100);
       const creditLimitWei = parseUnits(creditLimit, selectedToken.decimals);
       
       const hash = await updateCreditLine(
@@ -71,7 +79,8 @@ export function CreditLineModal({ isOpen, onClose }: CreditLineModalProps) {
         selectedToken.address,
         creditLimitWei,
         BigInt(minAPRBps),
-        BigInt(maxAPRBps)
+        BigInt(maxAPRBps),
+        BigInt(originationFeeBps)
       );
       
       handleClose();
@@ -168,6 +177,22 @@ export function CreditLineModal({ isOpen, onClose }: CreditLineModalProps) {
               />
               <p className="text-xs text-slate-400 mt-1">At 100% utilization</p>
             </div>
+          </div>
+          
+          <div>
+            <Label htmlFor="originationFee" className="text-slate-300">
+              Origination Fee (%)
+            </Label>
+            <Input
+              id="originationFee"
+              placeholder="0.0"
+              value={originationFee}
+              onChange={(e) => setOriginationFee(e.target.value)}
+              className="bg-slate-900 border-slate-600 text-white"
+            />
+            <p className="text-xs text-slate-400 mt-1">
+              One-time fee added to loan principal (0-100%)
+            </p>
           </div>
           
           <div className="flex gap-3 pt-4">

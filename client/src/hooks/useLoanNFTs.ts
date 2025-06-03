@@ -89,7 +89,7 @@ export function useLoanNFTs() {
   };
 
   useEffect(() => {
-    if (!address || !balance || balance === 0n) {
+    if (!address || !balance || balance === BigInt(0)) {
       setLoanNFTs([]);
       return;
     }
@@ -172,7 +172,7 @@ export function useLoanNFTs() {
   return {
     loanNFTs,
     isLoading,
-    balance: balance || 0n,
+    balance: balance || BigInt(0),
     refetch: () => {
       // Trigger a re-fetch by updating a dependency
       if (address && balance) {

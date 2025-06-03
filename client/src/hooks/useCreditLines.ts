@@ -21,6 +21,8 @@ interface CreditLine {
   maxAPR: bigint;
   minAPRPercent: string;
   maxAPRPercent: string;
+  originationFee: bigint;
+  originationFeePercent: string;
   isActive: boolean;
 }
 
@@ -81,7 +83,11 @@ export function useCreditLines() {
             args: [address, eventData.borrower, eventData.token],
           });
 
-          const [creditLimit, minAPR, maxAPR] = creditLineData as [bigint, bigint, bigint];
+          const result = creditLineData as readonly [bigint, bigint, bigint, bigint];
+          const creditLimit = result[0];
+          const minAPR = result[1];
+          const maxAPR = result[2];
+          const originationFee = result[3] || BigInt(0);
           
           // Skip inactive credit lines (creditLimit = 0)
           if (creditLimit === BigInt(0)) continue;
@@ -116,6 +122,8 @@ export function useCreditLines() {
             maxAPR,
             minAPRPercent: (Number(minAPR) / 100).toFixed(2),
             maxAPRPercent: (Number(maxAPR) / 100).toFixed(2),
+            originationFee: originationFee || BigInt(0),
+            originationFeePercent: (Number(originationFee || 0) / 100).toFixed(2),
             isActive: true,
           };
 
