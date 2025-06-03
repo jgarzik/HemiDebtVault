@@ -86,13 +86,15 @@ export function useTokenApproval(params?: ApprovalParams) {
   useEffect(() => {
     if (isApprovalSuccess && approvalHash) {
       console.log('Approval transaction confirmed, resetting state...');
-      setApprovalHash(null);
-      setIsApproving(false);
       
-      // Refetch allowance after a brief delay to ensure state is updated
+      // Immediately refetch allowance to update state
+      refetchAllowance();
+      
+      // Reset approval state after a brief delay
       setTimeout(() => {
-        refetchAllowance();
-      }, 1000);
+        setApprovalHash(null);
+        setIsApproving(false);
+      }, 500);
     }
   }, [isApprovalSuccess, approvalHash, refetchAllowance]);
 

@@ -16,14 +16,19 @@ export function useTransactionExecution() {
     setError(null);
     
     try {
+      console.log('Starting transaction execution...');
+      
       // Execute transaction and get hash
       const hash = await transactionFn();
+      console.log('Transaction executed successfully, hash:', hash);
+      
       setTxHash(hash);
       
       // Wait for confirmation by setting up the receipt watcher
       // The confirmation will be handled by the useWaitForTransactionReceipt hook
       return hash;
     } catch (err) {
+      console.error('Transaction execution failed:', err);
       const errorMessage = err instanceof Error ? err.message : 'Transaction failed';
       setError(errorMessage);
       setIsExecuting(false);

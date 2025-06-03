@@ -53,12 +53,20 @@ export function useDebtVault() {
   };
 
   const repay = async (loanId: bigint, amount: bigint) => {
+    if (!isConnected || !address) {
+      throw new Error('Wallet not connected');
+    }
+
+    console.log('Executing repay transaction:', { loanId: loanId.toString(), amount: amount.toString() });
+    
     const hash = await writeContractAsync({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'repay',
       args: [loanId, amount],
     });
+    
+    console.log('Repay transaction hash:', hash);
     return hash;
   };
 
