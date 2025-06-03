@@ -294,14 +294,9 @@ export function RepaymentModal({
           </Button>
           <TransactionButton
             onExecute={async () => {
-              if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
-                throw new Error('Invalid payment amount');
-              }
-              if (!tokenInfo) {
-                throw new Error('Token information not found');
-              }
+              if (!tokenInfo || !paymentAmount) return '';
               
-              // Direct repay call - consistent with deposit/withdraw pattern
+              // Direct repay call - consistent with deposit pattern
               const amountBigInt = parseUnits(paymentAmount, tokenInfo.decimals);
               const txHash = await repay(repaymentDetails.loanId, amountBigInt);
               
