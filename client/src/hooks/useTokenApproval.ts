@@ -34,7 +34,7 @@ interface ApprovalParams {
 
 export function useTokenApproval(params?: ApprovalParams) {
   const { address } = useAccount();
-  const { writeContract } = useWriteContract();
+  const { writeContractAsync } = useWriteContract();
   const [approvalHash, setApprovalHash] = useState<string | null>(null);
   const [isApproving, setIsApproving] = useState(false);
 
@@ -66,12 +66,14 @@ export function useTokenApproval(params?: ApprovalParams) {
     try {
       const approvalAmount = parseUnits(params.amount, params.token.decimals);
       
-      await writeContract({
+      const hash = await writeContractAsync({
         address: params.token.address,
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [params.spenderAddress, approvalAmount],
       });
+      
+      setApprovalHash(hash);
       
     } catch (error) {
       console.error('Approval failed:', error);
@@ -80,14 +82,17 @@ export function useTokenApproval(params?: ApprovalParams) {
     }
   };
 
-  // Handle approval success - reset state immediately
+  // Handle approval success - reset state and refetch allowance
   useEffect(() => {
     if (isApprovalSuccess && approvalHash) {
       console.log('Approval transaction confirmed, resetting state...');
       setApprovalHash(null);
       setIsApproving(false);
-      // Refetch allowance in background
-      refetchAllowance();
+      
+      // Refetch allowance after a brief delay to ensure state is updated
+      setTimeout(() => {
+        refetchAllowance();
+      }, 1000);
     }
   }, [isApprovalSuccess, approvalHash, refetchAllowance]);
 
