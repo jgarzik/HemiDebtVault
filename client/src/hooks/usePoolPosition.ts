@@ -14,7 +14,10 @@ export function usePoolPosition() {
 
   // Get tokens that have been deposited (from events) + query their current balances
   const tokensToQuery = activeTokens.length > 0 
-    ? activeTokens.map(activeToken => findTokenByAddress(activeToken.address)).filter(Boolean) as Token[]
+    ? activeTokens.map(activeToken => {
+        const token = findTokenByAddress(activeToken.address);
+        return token;
+      }).filter((token): token is Token => token !== undefined)
     : allTokens.slice(0, 3); // Fallback to first 3 tokens if no events found
 
   const tokenBalances = tokensToQuery.map(token => {
