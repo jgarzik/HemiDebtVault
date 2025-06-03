@@ -28,7 +28,21 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
 
   // Get token balances for selected tokens
   const { balance, formattedBalance, isLoading: isBalanceLoading } = useTokenBalance(selectedToken || undefined);
-  const { balance: withdrawBalance, formattedBalance: formattedWithdrawBalance, isLoading: isWithdrawBalanceLoading } = useTokenBalance(selectedWithdrawToken || undefined);
+  
+  // For withdraw, get the deposited balance from contract, not wallet balance
+  const getDepositedBalance = (token: Token | null) => {
+    if (!token) return { balance: BigInt(0), formattedBalance: '0' };
+    const tokenBalance = tokenBalances.find(tb => 
+      tb.token.address.toLowerCase() === token.address.toLowerCase()
+    );
+    return {
+      balance: tokenBalance?.balance || BigInt(0),
+      formattedBalance: tokenBalance?.formattedBalance || '0'
+    };
+  };
+
+  const { balance: withdrawBalance, formattedBalance: formattedWithdrawBalance } = getDepositedBalance(selectedWithdrawToken);
+  const isWithdrawBalanceLoading = false; // Already loaded via tokenBalances
 
   const handleDeposit = async () => {
     if (!selectedToken || !depositAmount) return '';
