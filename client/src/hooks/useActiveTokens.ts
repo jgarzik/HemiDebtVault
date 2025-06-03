@@ -42,7 +42,8 @@ export function useActiveTokens() {
       });
 
       // Extract unique tokens from deposit events
-      const uniqueTokens = [...new Set(depositEvents.map(log => log.args.token as string))];
+      const tokenSet = new Set(depositEvents.map(log => log.args.token as string));
+      const uniqueTokens = Array.from(tokenSet);
       
       // Convert to ActiveToken format
       const activeTokens: ActiveToken[] = uniqueTokens.map(tokenAddress => {

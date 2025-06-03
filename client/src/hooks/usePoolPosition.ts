@@ -2,7 +2,7 @@ import { useAccount, useReadContract } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
-import { getAllTokens } from '@/lib/tokens';
+import { getAllTokens, findTokenByAddress, Token } from '@/lib/tokens';
 import { formatUnits } from 'viem';
 import { QUERY_CACHE_CONFIG } from '@/lib/constants';
 import { useActiveTokens } from './useActiveTokens';
