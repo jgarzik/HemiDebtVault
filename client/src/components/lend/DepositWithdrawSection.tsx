@@ -189,6 +189,8 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                   onExecute={handleWithdraw}
                   disabled={!selectedWithdrawToken || !withdrawAmount || parseFloat(withdrawAmount) <= 0}
                   className="w-full bg-red-600 hover:bg-red-700"
+                  actionLabel="Withdraw"
+                  transactionAmount={selectedWithdrawToken && withdrawAmount ? `${withdrawAmount} ${selectedWithdrawToken.symbol}` : undefined}
                   onSuccess={onSuccess}
                 >
                   Withdraw {selectedWithdrawToken?.symbol || 'Token'}

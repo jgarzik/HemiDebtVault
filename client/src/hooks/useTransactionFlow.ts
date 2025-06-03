@@ -105,7 +105,9 @@ export function useTransactionFlow({
         case 'ready_to_execute':
           setModalData({
             title: actionLabel || 'Execute Transaction',
-            description: `Confirm your ${actionLabel?.toLowerCase() || 'transaction'}`,
+            description: transactionAmount 
+              ? `Confirm ${actionLabel?.toLowerCase() || 'transaction'} of ${transactionAmount}`
+              : `Confirm your ${actionLabel?.toLowerCase() || 'transaction'}`,
             action: actionLabel || 'Execute',
             amount: transactionAmount,
             gasEstimate: '~$2.00',
