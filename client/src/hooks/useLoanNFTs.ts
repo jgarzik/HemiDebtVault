@@ -150,9 +150,29 @@ export function useLoanNFTs() {
     refetchOnWindowFocus: false,
   });
 
-  // Function to get token ID by index for the user
-  const getTokenOfOwnerByIndex = (index: number) => {
-    return useReadContract({
+  const getLoanById = (loanId: bigint) => {
+    return loanNFTs.find(loan => loan.loanId === loanId);
+  };
+
+  const getOriginalBorrower = (loanId: bigint) => {
+    const loan = getLoanById(loanId);
+    return loan?.originalBorrower;
+  };
+
+  const getOutstandingBalance = (loanId: bigint) => {
+    const loan = getLoanById(loanId);
+    return loan ? loan.outstandingPrincipal : BigInt(0);
+  };
+
+  return {
+    loanNFTs,
+    isLoading,
+    refetch,
+    getLoanById,
+    getOriginalBorrower,
+    getOutstandingBalance,
+  };
+}
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'tokenOfOwnerByIndex',
