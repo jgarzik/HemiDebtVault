@@ -56,7 +56,7 @@ export function useLoans() {
         try {
           const { loanId, borrower, lender, token, amount, apr } = event.args;
           
-          if (!loanId || typeof loanId !== 'bigint') {
+          if (loanId === undefined || loanId === null || typeof loanId !== 'bigint') {
             continue;
           }
           
@@ -188,7 +188,7 @@ export function useBorrowerLoans() {
         try {
           const { loanId } = event.args;
           
-          if (!loanId || typeof loanId !== 'bigint') {
+          if (loanId === undefined || loanId === null || typeof loanId !== 'bigint') {
             console.log('DEBUG: useBorrowerLoans skipping invalid loan ID:', loanId);
             continue;
           }
