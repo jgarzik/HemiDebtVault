@@ -37,10 +37,9 @@ export function useCreditLines() {
   });
 
   const fetchCreditLines = async (): Promise<CreditLine[]> => {
-    if (!address) return [];
-    
+    console.log('DEBUG: useCreditLines disabled for crash investigation');
+    return [];
 
-    
     try {
       // Get CreditLineUpdated events where the current user is the lender
       const logs = await publicClient.getLogs({

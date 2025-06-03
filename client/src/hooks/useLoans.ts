@@ -46,11 +46,8 @@ export function useLoans() {
   });
 
   const fetchLoans = async (): Promise<Loan[]> => {
-    if (!address) return [];
-    
-
-    
-    const loans: Loan[] = [];
+    console.log('DEBUG: useLoans disabled for crash investigation');
+    return [];
 
     try {
       // Get all LoanCreated events where this user is the lender
