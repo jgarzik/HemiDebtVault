@@ -39,9 +39,9 @@ interface Relationship {
 
 export function usePortfolioMetrics() {
   const { address } = useAccount();
-  const { loans: lenderLoans } = useLoans();
-  const { borrowedLoans } = useBorrowerLoans();
-  const { creditLines } = useCreditLines();
+  const { loans: lenderLoans = [] } = useLoans();
+  const { loans: borrowedLoans = [] } = useBorrowerLoans();
+  const { creditLines = [] } = useCreditLines();
   const tokens = getAllTokens();
 
   const publicClient = createPublicClient({
