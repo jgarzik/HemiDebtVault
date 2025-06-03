@@ -185,9 +185,9 @@ export function Borrow() {
                     </div>
                     
                     <div>
-                      <span className="text-slate-400">Principal:</span>
+                      <span className="text-slate-400">Outstanding Principal:</span>
                       <p className="text-orange-400 font-semibold mt-1">
-                        {parseFloat(loan.formattedPrincipal).toLocaleString()} {loan.tokenSymbol}
+                        {parseFloat(loan.formattedOutstandingPrincipal).toLocaleString()} {loan.tokenSymbol}
                       </p>
                     </div>
                     
