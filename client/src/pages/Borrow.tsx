@@ -46,6 +46,18 @@ export function Borrow() {
     try {
       const amount = parseUnits(borrowAmount, selectedToken.decimals);
       
+      console.log('DEBUG Borrow Parameters:', {
+        borrowAmount,
+        selectedCredit,
+        selectedToken,
+        amount: amount.toString(),
+        lender: selectedCredit.lender,
+        token: selectedCredit.token,
+        availableCredit: selectedCredit.formattedAvailableCredit,
+        creditLimit: selectedCredit.formattedCreditLimit,
+        utilizedCredit: selectedCredit.formattedUtilisedCredit
+      });
+      
       // Calculate expected APR and add tolerance
       const expectedAPR = parseFloat(calculateAPR(borrowAmount, selectedCredit));
       const toleranceAmount = parseFloat(maxAPRTolerance);
@@ -53,6 +65,13 @@ export function Borrow() {
       
       // Convert to basis points (1% = 100 basis points)
       const maxAPRBps = Math.round(maxAcceptableAPR * 100);
+      
+      console.log('DEBUG APR Calculation:', {
+        expectedAPR,
+        toleranceAmount,
+        maxAcceptableAPR,
+        maxAPRBps
+      });
       
       const txHash = await borrow(
         selectedCredit.lender as `0x${string}`, 

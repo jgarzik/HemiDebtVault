@@ -73,16 +73,27 @@ export function useBorrowerCreditLines() {
           // Skip inactive credit lines (creditLimit = 0)
           if (creditLimit === BigInt(0)) continue;
 
-          // Query contract for accurate available credit calculation
-          const availableCredit = await publicClient.readContract({
-            address: DEBT_VAULT_ADDRESS,
-            abi: DEBT_VAULT_ABI,
-            functionName: 'getAvailableCredit',
-            args: [address, eventData.lender, eventData.token],
-          }) as bigint;
+          // Query contract for credit limit availability and lender deposits
+          const [creditAvailable, lenderBalance] = await Promise.all([
+            publicClient.readContract({
+              address: DEBT_VAULT_ADDRESS,
+              abi: DEBT_VAULT_ABI,
+              functionName: 'getAvailableCredit',
+              args: [address, eventData.lender, eventData.token],
+            }) as Promise<bigint>,
+            publicClient.readContract({
+              address: DEBT_VAULT_ADDRESS,
+              abi: DEBT_VAULT_ABI,
+              functionName: 'lenderDeposits',
+              args: [eventData.lender, eventData.token],
+            }) as Promise<bigint>
+          ]);
 
-          // Calculate utilized credit (creditLimit - availableCredit)
-          const utilisedCredit = creditLimit - availableCredit;
+          // Available credit is limited by both credit line and lender's actual deposits
+          const availableCredit = creditAvailable < lenderBalance ? creditAvailable : lenderBalance;
+          
+          // Calculate utilized credit (creditLimit - credit line availability)
+          const utilisedCredit = creditLimit - creditAvailable;
 
           // Get token info
           const tokenInfo = findTokenByAddress(eventData.token);
@@ -102,7 +113,7 @@ export function useBorrowerCreditLines() {
             maxAPR,
             minAPRPercent: (Number(minAPR) / 100).toFixed(2),
             maxAPRPercent: (Number(maxAPR) / 100).toFixed(2),
-            isActive: true,
+            isActive: availableCredit > BigInt(0), // Only show as active if there's actually available credit
           };
 
           activeCredits.push(credit);
