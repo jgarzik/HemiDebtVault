@@ -203,7 +203,7 @@ export function CreditLineModal({ isOpen, onClose }: CreditLineModalProps) {
               actionLabel="Create Credit Line"
               transactionAmount={selectedToken && creditLimit ? `${creditLimit} ${selectedToken.symbol} limit` : undefined}
             >
-              Create Credit Line
+              Create
             </TransactionButton>
           </div>
         </div>
