@@ -1,9 +1,12 @@
-import { useAccount, useReadContract } from 'wagmi';
+import { useAccount, usePublicClient } from 'wagmi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { useState, useEffect } from 'react';
 import { formatUnits } from 'viem';
 import { findTokenByAddress } from '@/lib/tokens';
+import { queryLoanCreatedEvents } from '@/lib/eventQueries';
+import { useQuery } from '@tanstack/react-query';
+import { QUERY_CACHE_CONFIG } from '@/lib/constants';
 
 interface LoanNFT {
   loanId: bigint;
@@ -31,18 +34,120 @@ interface LoanNFT {
 
 export function useLoanNFTs() {
   const { address } = useAccount();
-  const [loanNFTs, setLoanNFTs] = useState<LoanNFT[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const publicClient = usePublicClient();
 
-  // Get user's NFT balance
-  const { data: balance } = useReadContract({
-    address: DEBT_VAULT_ADDRESS,
-    abi: DEBT_VAULT_ABI,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: {
-      enabled: !!address,
-    },
+  // Fetch loan NFTs using event-based approach (same as useBorrowerLoans)
+  const fetchLoanNFTs = async (): Promise<LoanNFT[]> => {
+    if (!address || !publicClient) {
+      console.log('DEBUG: No address or publicClient for useLoanNFTs');
+      return [];
+    }
+
+    try {
+      console.log('DEBUG: useLoanNFTs querying for borrower:', address);
+      
+      // Query LoanCreated events for this borrower
+      const loanEvents = await queryLoanCreatedEvents(publicClient, { borrower: address });
+      console.log('DEBUG: useLoanNFTs found loan events:', loanEvents.length);
+
+      const loanNFTs: LoanNFT[] = [];
+
+      // Process each loan (same logic as useBorrowerLoans)
+      for (const event of loanEvents) {
+        try {
+          const { loanId } = event.args;
+          
+          if (!loanId || typeof loanId !== 'bigint') {
+            continue;
+          }
+          
+          // Get loan details from contract
+          const loanData = await publicClient.readContract({
+            address: DEBT_VAULT_ADDRESS,
+            abi: DEBT_VAULT_ABI,
+            functionName: 'loanById',
+            args: [loanId],
+          });
+
+          const [contractBorrower, contractLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAtTimestamp, lastPaymentTimestamp, isClosed] = loanData as any;
+          
+          // Convert timestamps to bigint for compatibility
+          const createdAt = BigInt(createdAtTimestamp);
+          const lastPayment = BigInt(lastPaymentTimestamp);
+          
+          // Skip if loan is closed
+          if (isClosed) {
+            continue;
+          }
+
+          const tokenInfo = findTokenByAddress(loanToken);
+          if (!tokenInfo) {
+            continue;
+          }
+
+          // Get current NFT owner
+          const currentOwner = await publicClient.readContract({
+            address: DEBT_VAULT_ADDRESS,
+            abi: DEBT_VAULT_ABI,
+            functionName: 'ownerOf',
+            args: [loanId],
+          });
+
+          // Get original borrower
+          const originalBorrower = await publicClient.readContract({
+            address: DEBT_VAULT_ADDRESS,
+            abi: DEBT_VAULT_ABI,
+            functionName: 'originalBorrower',
+            args: [loanId],
+          });
+
+          const outstandingPrincipal = loanPrincipal - repaidPrincipal - forgivenPrincipal;
+
+          const loanNFT: LoanNFT = {
+            loanId,
+            borrower: contractBorrower,
+            lender: contractLender,
+            token: loanToken,
+            tokenSymbol: tokenInfo.symbol,
+            principal: loanPrincipal,
+            formattedPrincipal: formatUnits(loanPrincipal, tokenInfo.decimals),
+            repaidPrincipal,
+            formattedRepaidPrincipal: formatUnits(repaidPrincipal, tokenInfo.decimals),
+            forgivenPrincipal,
+            formattedForgivenPrincipal: formatUnits(forgivenPrincipal, tokenInfo.decimals),
+            outstandingPrincipal,
+            formattedOutstandingPrincipal: formatUnits(outstandingPrincipal, tokenInfo.decimals),
+            apr: loanInterestRate,
+            aprPercent: (Number(loanInterestRate) / 100).toFixed(2),
+            startTimestamp: createdAt,
+            lastPaymentTimestamp: lastPayment,
+            closed: isClosed,
+            originalBorrower: originalBorrower as string,
+            isOwner: currentOwner === address,
+            isOriginalBorrower: originalBorrower === address,
+          };
+
+          loanNFTs.push(loanNFT);
+
+        } catch (error) {
+          console.error('Error processing loan NFT:', error);
+        }
+      }
+
+      return loanNFTs;
+    } catch (error) {
+      console.error('Error fetching loan NFTs:', error);
+      return [];
+    }
+  };
+
+  const { data: loanNFTs = [], isLoading, refetch } = useQuery({
+    queryKey: ['loanNFTs', address],
+    queryFn: fetchLoanNFTs,
+    enabled: !!address && !!publicClient,
+    staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
+    gcTime: QUERY_CACHE_CONFIG.GC_TIME,
+    refetchOnWindowFocus: false,
   });
 
   // Function to get token ID by index for the user
