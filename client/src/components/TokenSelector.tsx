@@ -38,15 +38,17 @@ interface TokenSelectorProps {
   selectedToken?: string;
   onTokenSelect: (token: Token) => void;
   className?: string;
+  availableTokens?: Token[];
 }
 
-export function TokenSelector({ selectedToken, onTokenSelect, className }: TokenSelectorProps) {
+export function TokenSelector({ selectedToken, onTokenSelect, className, availableTokens }: TokenSelectorProps) {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [customAddress, setCustomAddress] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const { toast } = useToast();
 
-  const allTokens = getAllTokens();
+  // Use filtered tokens if provided, otherwise show all tokens
+  const tokensToShow = availableTokens || getAllTokens();
 
   // Fetch token metadata for custom import
   const { data: tokenName } = useReadContract({
@@ -124,13 +126,13 @@ export function TokenSelector({ selectedToken, onTokenSelect, className }: Token
       return;
     }
 
-    const token = allTokens.find(t => t.address === value);
+    const token = tokensToShow.find(t => t.address === value);
     if (token) {
       onTokenSelect(token);
     }
   };
 
-  const selectedTokenObj = allTokens.find(t => t.address === selectedToken);
+  const selectedTokenObj = tokensToShow.find(t => t.address === selectedToken);
 
   return (
     <>
@@ -148,7 +150,7 @@ export function TokenSelector({ selectedToken, onTokenSelect, className }: Token
           )}
         </SelectTrigger>
         <SelectContent>
-          {allTokens.map((token) => (
+          {tokensToShow.map((token) => (
             <SelectItem key={token.address} value={token.address}>
               <div className="flex items-center space-x-2">
                 <span className="font-medium">{token.symbol}</span>

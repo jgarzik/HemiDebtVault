@@ -6,10 +6,10 @@ import { Label } from '@/components/ui/label';
 import { TokenSelector } from './TokenSelector';
 import { TransactionButton } from './TransactionButton';
 import { useDebtVault } from '@/hooks/useDebtVault';
+import { usePoolPosition } from '@/hooks/usePoolPosition';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { parseUnits } from 'viem';
 import { type Token } from '@/lib/tokens';
-import { X } from 'lucide-react';
 
 interface CreditLineModalProps {
   isOpen: boolean;
@@ -18,6 +18,7 @@ interface CreditLineModalProps {
 
 export function CreditLineModal({ isOpen, onClose }: CreditLineModalProps) {
   const { updateCreditLine } = useDebtVault();
+  const { tokenBalances } = usePoolPosition();
   
   const [borrowerAddress, setBorrowerAddress] = useState('');
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
@@ -95,17 +96,7 @@ export function CreditLineModal({ isOpen, onClose }: CreditLineModalProps) {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md bg-slate-800 border-slate-700">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-white">Create Credit Line</DialogTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="h-6 w-6 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-white">Create Credit Line</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -128,6 +119,7 @@ export function CreditLineModal({ isOpen, onClose }: CreditLineModalProps) {
               selectedToken={selectedToken?.address}
               onTokenSelect={setSelectedToken}
               className="bg-slate-900 border-slate-600"
+              availableTokens={tokenBalances.map(tb => tb.token)}
             />
           </div>
           
