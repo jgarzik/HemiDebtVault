@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
 import { TRANSACTION_CONFIG } from '@/lib/constants';
@@ -80,13 +80,7 @@ export function Borrow() {
       );
       setBorrowAmount('');
       setSelectedCreditLine('');
-      setMaxAPRTolerance('8.0');
-      
-      // Refresh data after successful transaction
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
-        queryClient.invalidateQueries({ queryKey: ['borrowedLoans'] });
-      }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
+      // Note: Data refresh is handled by TransactionButton onSuccess callback
       
       return txHash;
     } catch (error) {
@@ -126,8 +120,15 @@ export function Borrow() {
     return daily.toFixed(6);
   };
 
-  // Get current calculated APR
+  // Get current calculated APR and set default maxAPR from credit line
   const currentAPR = selectedCredit ? calculateAPR(borrowAmount, selectedCredit) : '0.00';
+  
+  // Set default maxAPR to credit line's maxAPR when credit line changes
+  useEffect(() => {
+    if (selectedCredit && selectedCredit.maxAPRPercent) {
+      setMaxAPRTolerance(selectedCredit.maxAPRPercent);
+    }
+  }, [selectedCredit]);
 
   return (
     <div className="space-y-8 pb-20 md:pb-8">
@@ -407,6 +408,11 @@ export function Borrow() {
                   utilization: ((parseFloat(borrowAmount) / parseFloat(selectedCredit.formattedAvailableCredit)) * 100).toFixed(1),
                   dailyInterest: calculateDailyInterest(borrowAmount, currentAPR)
                 } : undefined}
+                onSuccess={() => {
+                  queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
+                  queryClient.invalidateQueries({ queryKey: ['loans'] });
+                  queryClient.invalidateQueries({ queryKey: ['borrowerLoans'] });
+                }}
               >
                 {borrowAmount && selectedCredit 
                   ? `Borrow ${borrowAmount} ${selectedCredit.tokenSymbol}` 
