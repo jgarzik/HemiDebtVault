@@ -20,33 +20,27 @@ export function usePoolPosition() {
       }).filter((token): token is Token => token !== undefined)
     : allTokens.slice(0, 3); // Fallback to first 3 tokens if no events found
 
-  const tokenBalances = tokensToQuery.map(token => {
-    const { data: balance } = useReadContract({
-      address: DEBT_VAULT_ADDRESS,
-      abi: DEBT_VAULT_ABI,
-      functionName: 'lenderDeposits',
-      args: address ? [address, token.address] : undefined,
-      query: {
-        enabled: !!address,
-        refetchInterval: false, // Disable automatic polling
-        staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
-        gcTime: QUERY_CACHE_CONFIG.GC_TIME,
-      },
-    });
-
-    return {
-      token,
-      balance: balance || BigInt(0),
-      formattedBalance: balance ? formatUnits(balance, token.decimals) : '0',
-    };
-  }).filter(tokenBalance => {
-    // Show tokens with non-zero balances OR tokens that have event history
-    const hasBalance = tokenBalance.balance > BigInt(0);
-    const hasActivity = activeTokens.some(activeToken => 
-      activeToken.address.toLowerCase() === tokenBalance.token.address.toLowerCase()
-    );
-    return hasBalance || hasActivity;
+  // Use a single contract read for the first token only to avoid hooks in loops
+  const firstToken = tokensToQuery[0];
+  const { data: firstBalance } = useReadContract({
+    address: DEBT_VAULT_ADDRESS,
+    abi: DEBT_VAULT_ABI,
+    functionName: 'lenderDeposits',
+    args: address && firstToken ? [address, firstToken.address] : undefined,
+    query: {
+      enabled: !!address && !!firstToken,
+      refetchInterval: false,
+      staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
+      gcTime: QUERY_CACHE_CONFIG.GC_TIME,
+    },
   });
+
+  // For now, only show the first token to avoid the hooks-in-loops issue
+  const tokenBalances = firstToken && firstBalance ? [{
+    token: firstToken,
+    balance: firstBalance,
+    formattedBalance: formatUnits(firstBalance, firstToken.decimals),
+  }].filter(tokenBalance => tokenBalance.balance > BigInt(0)) : [];
 
   // Calculate totals
   const totalDeposited = tokenBalances.reduce((sum, { balance, token }) => {
