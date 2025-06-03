@@ -6,6 +6,7 @@ import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { getAllTokens, findTokenByAddress } from '@/lib/tokens';
 import { QUERY_CACHE_CONFIG } from '@/lib/constants';
 import { queryLoanCreatedEvents, queryRepaidEvents } from '@/lib/eventQueries';
+import { isValidLoanId, processLoanFromEvent } from '@/lib/loanHelpers';
 
 interface Loan {
   loanId: bigint;
@@ -183,94 +184,53 @@ export function useBorrowerLoans() {
 
       const loans: Loan[] = [];
 
-      // Process each loan (same logic as useLoans but for borrower)
+      // Process each loan using consolidated helper function
       for (const event of loanEvents) {
         try {
           const { loanId } = event.args;
           
-          if (loanId === undefined || loanId === null || typeof loanId !== 'bigint') {
+          if (!isValidLoanId(loanId)) {
             console.log('DEBUG: useBorrowerLoans skipping invalid loan ID:', loanId);
             continue;
           }
           
-          console.log('DEBUG: useBorrowerLoans processing loan ID:', loanId.toString());
+          // Use helper function to process loan data
+          const processedLoan = await processLoanFromEvent(publicClient, loanId, address);
           
-          // Get loan details from contract
-          const loanData = await publicClient.readContract({
-            address: DEBT_VAULT_ADDRESS,
-            abi: DEBT_VAULT_ABI,
-            functionName: 'loanById',
-            args: [loanId],
-          });
+          if (processedLoan) {
+            // Convert ProcessedLoanData to Loan interface
+            const loan: Loan = {
+              loanId: processedLoan.loanId,
+              borrower: processedLoan.borrower,
+              lender: processedLoan.lender,
+              token: processedLoan.token,
+              tokenSymbol: processedLoan.tokenSymbol,
+              principal: processedLoan.principal,
+              formattedPrincipal: processedLoan.formattedPrincipal,
+              repaidPrincipal: processedLoan.repaidPrincipal,
+              formattedRepaidPrincipal: processedLoan.formattedRepaidPrincipal,
+              forgivenPrincipal: processedLoan.forgivenPrincipal,
+              formattedForgivenPrincipal: processedLoan.formattedForgivenPrincipal,
+              interestRate: processedLoan.interestRate,
+              interestRatePercent: processedLoan.interestRatePercent,
+              createdAt: processedLoan.createdAt,
+              createdAtDate: processedLoan.createdAtDate,
+              lastPayment: processedLoan.lastPayment,
+              lastPaymentDate: processedLoan.lastPaymentDate,
+              isActive: processedLoan.isActive,
+              accruedInterest: processedLoan.accruedInterest,
+              formattedAccruedInterest: processedLoan.formattedAccruedInterest,
+              outstandingPrincipal: processedLoan.outstandingPrincipal,
+              formattedOutstandingPrincipal: processedLoan.formattedOutstandingPrincipal,
+              outstandingBalance: processedLoan.outstandingBalance,
+              formattedOutstandingBalance: processedLoan.formattedOutstandingBalance,
+              totalInterestEarned: processedLoan.totalInterestEarned,
+              formattedTotalInterestEarned: processedLoan.formattedTotalInterestEarned,
+            };
 
-          const [contractBorrower, contractLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAtTimestamp, lastPaymentTimestamp, isClosed] = loanData as any;
-          
-          console.log('DEBUG: useBorrowerLoans loan data:', {
-            loanId: loanId.toString(),
-            borrower: contractBorrower,
-            lender: contractLender,
-            token: loanToken,
-            principal: loanPrincipal.toString(),
-            closed: isClosed
-          });
-          
-          // Convert timestamps to bigint for compatibility
-          const createdAt = BigInt(createdAtTimestamp);
-          const lastPayment = BigInt(lastPaymentTimestamp);
-          
-          // Skip if loan is closed
-          if (isClosed) {
-            console.log('DEBUG: useBorrowerLoans skipping closed loan:', loanId.toString());
-            continue;
+            loans.push(loan);
+            console.log('DEBUG: useBorrowerLoans successfully added loan:', loanId.toString());
           }
-
-          const tokenInfo = findTokenByAddress(loanToken);
-          console.log('DEBUG: useBorrowerLoans token lookup:', loanToken, 'found:', !!tokenInfo);
-          if (!tokenInfo) {
-            console.log('DEBUG: useBorrowerLoans skipping loan - token not found:', loanToken);
-            continue;
-          }
-
-          const outstandingBalanceResult = await publicClient.readContract({
-            address: DEBT_VAULT_ADDRESS,
-            abi: DEBT_VAULT_ABI,
-            functionName: 'getOutstandingBalance',
-            args: [loanId],
-          });
-          const [contractOutstandingPrincipal, accruedInterest] = outstandingBalanceResult as readonly [bigint, bigint];
-          const outstandingBalance = contractOutstandingPrincipal + accruedInterest;
-
-          const loan: Loan = {
-            loanId,
-            borrower: contractBorrower,
-            lender: contractLender,
-            token: loanToken,
-            tokenSymbol: tokenInfo.symbol,
-            principal: loanPrincipal,
-            formattedPrincipal: formatUnits(loanPrincipal, tokenInfo.decimals),
-            repaidPrincipal,
-            formattedRepaidPrincipal: formatUnits(repaidPrincipal, tokenInfo.decimals),
-            forgivenPrincipal,
-            formattedForgivenPrincipal: formatUnits(forgivenPrincipal, tokenInfo.decimals),
-            interestRate: loanInterestRate,
-            interestRatePercent: (Number(loanInterestRate) / 100).toFixed(2),
-            createdAt,
-            createdAtDate: new Date(Number(createdAt) * 1000).toLocaleDateString(),
-            lastPayment,
-            lastPaymentDate: lastPayment > 0 ? new Date(Number(lastPayment) * 1000).toLocaleDateString() : 'No payments yet',
-            isActive: true,
-            accruedInterest,
-            formattedAccruedInterest: formatUnits(accruedInterest, tokenInfo.decimals),
-            outstandingPrincipal: contractOutstandingPrincipal,
-            formattedOutstandingPrincipal: formatUnits(contractOutstandingPrincipal, tokenInfo.decimals),
-            outstandingBalance,
-            formattedOutstandingBalance: formatUnits(outstandingBalance, tokenInfo.decimals),
-            totalInterestEarned: BigInt(0),
-            formattedTotalInterestEarned: '0',
-          };
-
-          loans.push(loan);
-          console.log('DEBUG: useBorrowerLoans successfully added loan:', loanId.toString());
 
         } catch (error) {
           console.error('Error processing borrower loan:', error);
