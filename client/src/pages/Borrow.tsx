@@ -15,7 +15,8 @@ import { TokenSelector } from '@/components/TokenSelector';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { type Token, getAllTokens } from '@/lib/tokens';
 import { Search, Plus, Info } from 'lucide-react';
-import { parseUnits } from 'viem';
+import { parseUnits, formatUnits } from 'viem';
+import { DEBT_VAULT_ABI } from '@/lib/contract';
 
 export function Borrow() {
   const { address } = useAccount();
@@ -48,14 +49,14 @@ export function Borrow() {
       
       console.log('DEBUG Borrow Parameters:', {
         borrowAmount,
-        selectedCredit,
-        selectedToken,
         amount: amount.toString(),
         lender: selectedCredit.lender,
         token: selectedCredit.token,
+        tokenSymbol: selectedCredit.tokenSymbol,
         availableCredit: selectedCredit.formattedAvailableCredit,
         creditLimit: selectedCredit.formattedCreditLimit,
-        utilizedCredit: selectedCredit.formattedUtilisedCredit
+        utilizedCredit: selectedCredit.formattedUtilisedCredit,
+        selectedTokenDecimals: selectedToken.decimals
       });
       
       // Calculate expected APR and add tolerance

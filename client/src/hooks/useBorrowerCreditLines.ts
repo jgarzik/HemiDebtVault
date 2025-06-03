@@ -92,6 +92,15 @@ export function useBorrowerCreditLines() {
           // Available credit is limited by both credit line and lender's actual deposits
           const availableCredit = creditAvailable < lenderBalance ? creditAvailable : lenderBalance;
           
+          console.log('DEBUG Credit calculation:', {
+            lender: eventData.lender,
+            token: eventData.token,
+            creditAvailable: creditAvailable.toString(),
+            lenderBalance: lenderBalance.toString(),
+            finalAvailableCredit: availableCredit.toString(),
+            creditLimit: creditLimit.toString()
+          });
+          
           // Calculate utilized credit (creditLimit - credit line availability)
           const utilisedCredit = creditLimit - creditAvailable;
 
