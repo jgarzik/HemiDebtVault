@@ -2,14 +2,13 @@ import { useAccount, useReadContracts } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
-import { getAllTokens, findTokenByAddress, Token } from '@/lib/tokens';
+import { findTokenByAddress, Token } from '@/lib/tokens';
 import { formatUnits } from 'viem';
 import { QUERY_CACHE_CONFIG } from '@/lib/constants';
 import { useActiveTokens } from './useActiveTokens';
 
 export function usePoolPosition() {
   const { address } = useAccount();
-  const allTokens = getAllTokens();
   const { activeTokens } = useActiveTokens();
 
   // Only query tokens that have been discovered from actual blockchain activity
