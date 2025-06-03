@@ -1,3 +1,60 @@
+// Event definitions for consistent usage across the app
+export const DEBT_VAULT_EVENTS = {
+  Deposited: {
+    type: 'event',
+    name: 'Deposited',
+    inputs: [
+      { type: 'address', name: 'lender', indexed: true },
+      { type: 'address', name: 'token', indexed: true },
+      { type: 'uint256', name: 'amount' }
+    ]
+  },
+  Withdrawn: {
+    type: 'event',
+    name: 'Withdrawn',
+    inputs: [
+      { type: 'address', name: 'lender', indexed: true },
+      { type: 'address', name: 'token', indexed: true },
+      { type: 'uint256', name: 'amount' }
+    ]
+  },
+  LoanCreated: {
+    type: 'event',
+    name: 'LoanCreated',
+    inputs: [
+      { type: 'uint256', name: 'loanId', indexed: true },
+      { type: 'address', name: 'lender', indexed: true },
+      { type: 'address', name: 'borrower', indexed: true },
+      { type: 'address', name: 'token' },
+      { type: 'uint256', name: 'amount' },
+      { type: 'uint256', name: 'apr' }
+    ]
+  },
+  Repaid: {
+    type: 'event',
+    name: 'Repaid',
+    inputs: [
+      { type: 'uint256', name: 'loanId', indexed: true },
+      { type: 'address', name: 'borrower', indexed: true },
+      { type: 'uint256', name: 'amount' },
+      { type: 'uint256', name: 'interest' }
+    ]
+  },
+  CreditLineUpdated: {
+    type: 'event',
+    name: 'CreditLineUpdated',
+    inputs: [
+      { type: 'address', name: 'lender', indexed: true },
+      { type: 'address', name: 'borrower', indexed: true },
+      { type: 'address', name: 'token', indexed: true },
+      { type: 'uint256', name: 'creditLimit' },
+      { type: 'uint256', name: 'minAPR' },
+      { type: 'uint256', name: 'maxAPR' },
+      { type: 'uint256', name: 'originationFee' }
+    ]
+  }
+} as const;
+
 export const DEBT_VAULT_ABI = [
   // Constants
   {
