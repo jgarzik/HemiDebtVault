@@ -16,6 +16,7 @@ import { useState, useMemo, useEffect } from "react";
 import { parseUnits, formatUnits, createPublicClient, http } from "viem";
 import { type Token, getAllTokens } from "@/lib/tokens";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
+import { useDebtVault } from "@/hooks/useDebtVault";
 import { DEBT_VAULT_ADDRESS, hemiNetwork } from "@/lib/hemi";
 import { DEBT_VAULT_ABI } from "@/lib/contract";
 
@@ -40,7 +41,6 @@ interface PaymentBreakdown {
 interface RepaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (amount: string) => Promise<string>;
   repaymentDetails: RepaymentDetails;
   isLoading?: boolean;
 }
@@ -48,10 +48,10 @@ interface RepaymentModalProps {
 export function RepaymentModal({
   isOpen,
   onClose,
-  onConfirm,
   repaymentDetails,
   isLoading = false
 }: RepaymentModalProps) {
+  const { repay } = useDebtVault();
   const [paymentAmount, setPaymentAmount] = useState('');
   const [currentPrincipal, setCurrentPrincipal] = useState<string>('0');
   const [currentInterest, setCurrentInterest] = useState<string>('0');
@@ -298,10 +298,21 @@ export function RepaymentModal({
           </Button>
           <TransactionButton
             onExecute={async () => {
-              if (paymentAmount && parseFloat(paymentAmount) > 0) {
-                return await onConfirm(paymentAmount);
+              if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
+                throw new Error('Invalid payment amount');
               }
-              throw new Error('Invalid payment amount');
+              if (!tokenInfo) {
+                throw new Error('Token information not found');
+              }
+              
+              // Direct repay call - consistent with deposit/withdraw pattern
+              const amountBigInt = parseUnits(paymentAmount, tokenInfo.decimals);
+              const txHash = await repay(repaymentDetails.loanId, amountBigInt);
+              
+              // Reset form on success
+              setPaymentAmount('');
+              
+              return txHash;
             }}
             disabled={!paymentAmount || parseFloat(paymentAmount) === 0}
             className="flex-1 bg-green-600 hover:bg-green-700"

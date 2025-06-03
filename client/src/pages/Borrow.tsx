@@ -473,15 +473,6 @@ export function Borrow() {
             setShowRepayModal(false);
             setSelectedLoanForRepay(null);
           }}
-          onConfirm={async (amount) => {
-            const token = allTokens.find(t => t.symbol === selectedLoanForRepay.tokenSymbol);
-            if (!token) throw new Error('Token not found');
-            
-            const amountBigInt = parseUnits(amount, token.decimals);
-            const txHash = await repay(selectedLoanForRepay.loanId, amountBigInt);
-            
-            return txHash;
-          }}
           repaymentDetails={{
             loanId: selectedLoanForRepay.loanId,
             token: selectedLoanForRepay.token,
