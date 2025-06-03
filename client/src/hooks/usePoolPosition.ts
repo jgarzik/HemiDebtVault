@@ -1,4 +1,4 @@
-import { useAccount, useReadContract } from 'wagmi';
+import { useAccount, useReadContracts } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
@@ -20,27 +20,40 @@ export function usePoolPosition() {
       }).filter((token): token is Token => token !== undefined)
     : allTokens.slice(0, 3); // Fallback to first 3 tokens if no events found
 
-  // Use a single contract read for the first token only to avoid hooks in loops
-  const firstToken = tokensToQuery[0];
-  const { data: firstBalance } = useReadContract({
-    address: DEBT_VAULT_ADDRESS,
-    abi: DEBT_VAULT_ABI,
-    functionName: 'lenderDeposits',
-    args: address && firstToken ? [address, firstToken.address] : undefined,
+  // Use multicall to batch all balance queries in a single RPC call
+  const { data: balanceResults } = useReadContracts({
+    contracts: tokensToQuery.map(token => ({
+      address: DEBT_VAULT_ADDRESS,
+      abi: DEBT_VAULT_ABI,
+      functionName: 'lenderDeposits',
+      args: [address, token.address],
+    })),
     query: {
-      enabled: !!address && !!firstToken,
+      enabled: !!address && tokensToQuery.length > 0,
       refetchInterval: false,
       staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
       gcTime: QUERY_CACHE_CONFIG.GC_TIME,
     },
   });
 
-  // For now, only show the first token to avoid the hooks-in-loops issue
-  const tokenBalances = firstToken && firstBalance ? [{
-    token: firstToken,
-    balance: firstBalance,
-    formattedBalance: formatUnits(firstBalance, firstToken.decimals),
-  }].filter(tokenBalance => tokenBalance.balance > BigInt(0)) : [];
+  // Process the multicall results and filter for non-zero balances
+  const tokenBalances = tokensToQuery.map((token, index) => {
+    const result = balanceResults?.[index];
+    const balance = result?.status === 'success' ? result.result as bigint : BigInt(0);
+    
+    return {
+      token,
+      balance,
+      formattedBalance: formatUnits(balance, token.decimals),
+    };
+  }).filter(tokenBalance => {
+    // Show tokens with non-zero balances OR tokens that have event history
+    const hasBalance = tokenBalance.balance > BigInt(0);
+    const hasActivity = activeTokens.some(activeToken => 
+      activeToken.address.toLowerCase() === tokenBalance.token.address.toLowerCase()
+    );
+    return hasBalance || hasActivity;
+  });
 
   // Calculate totals
   const totalDeposited = tokenBalances.reduce((sum, { balance, token }) => {
