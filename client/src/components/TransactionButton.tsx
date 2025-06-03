@@ -46,7 +46,8 @@ export function TransactionButton({
     modalData,
     handleClick,
     handleConfirm,
-    closeModal
+    closeModal,
+    currentState
   } = useTransactionFlow({
     onExecute,
     requiresApproval,
@@ -63,7 +64,10 @@ export function TransactionButton({
         disabled={isDisabled}
         className={className}
       >
-        {buttonLabel}
+        {/* Use children for disabled states and ready_to_execute, otherwise use flow-specific labels */}
+        {['disconnected', 'wrong_network', 'needs_approval', 'executing'].includes(modalData?.state) 
+          ? buttonLabel 
+          : children}
       </Button>
 
       {loanDetails ? (

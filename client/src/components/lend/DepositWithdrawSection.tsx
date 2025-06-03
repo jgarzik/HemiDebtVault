@@ -7,6 +7,7 @@ import { TokenSelector } from '@/components/TokenSelector';
 import { TransactionButton } from '@/components/TransactionButton';
 import { useTokenBalance } from '@/hooks/useTokenBalance';
 import { useDebtVault } from '@/hooks/useDebtVault';
+import { usePoolPosition } from '@/hooks/usePoolPosition';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { parseUnits } from 'viem';
 import { type Token } from '@/lib/tokens';
@@ -17,6 +18,7 @@ interface DepositWithdrawSectionProps {
 
 export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProps) {
   const { deposit, withdraw } = useDebtVault();
+  const { tokenBalances } = usePoolPosition();
   
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [selectedWithdrawToken, setSelectedWithdrawToken] = useState<Token | null>(null);
@@ -137,6 +139,7 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                   selectedToken={selectedWithdrawToken?.address}
                   onTokenSelect={setSelectedWithdrawToken}
                   className="bg-slate-900 border-slate-600"
+                  availableTokens={tokenBalances.map(tb => tb.token)}
                 />
                 
                 <div className="space-y-2">

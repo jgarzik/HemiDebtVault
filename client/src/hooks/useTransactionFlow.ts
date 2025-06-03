@@ -73,7 +73,7 @@ export function useTransactionFlow({
       case 'ready_to_execute':
         return actionLabel || 'Execute Transaction';
       default:
-        return 'Execute Transaction';
+        return actionLabel || 'Execute Transaction';
     }
   };
 
