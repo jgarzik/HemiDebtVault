@@ -1,10 +1,11 @@
-import { useAccount } from 'wagmi';
+import { useAccount, usePublicClient } from 'wagmi';
 import { useQuery } from '@tanstack/react-query';
-import { createPublicClient, http, parseAbiItem, formatUnits } from 'viem';
-import { DEBT_VAULT_ADDRESS, hemiNetwork } from '@/lib/hemi';
+import { formatUnits } from 'viem';
+import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
-import { getAllTokens } from '@/lib/tokens';
+import { getAllTokens, findTokenByAddress } from '@/lib/tokens';
 import { QUERY_CACHE_CONFIG } from '@/lib/constants';
+import { queryCreditLineUpdatedEvents } from '@/lib/eventQueries';
 
 interface CreditLine {
   borrower: string;
@@ -28,45 +29,32 @@ interface CreditLine {
 
 export function useCreditLines() {
   const { address } = useAccount();
+  const publicClient = usePublicClient();
   const tokens = getAllTokens();
 
-  // Create public client for event fetching
-  const publicClient = createPublicClient({
-    chain: hemiNetwork,
-    transport: http(),
-  });
-
   const fetchCreditLines = async (): Promise<CreditLine[]> => {
-    console.log('DEBUG: useCreditLines disabled for crash investigation');
-    return [];
+    if (!address || !publicClient) return [];
 
     try {
-      // Get CreditLineUpdated events where the current user is the lender
-      const logs = await publicClient.getLogs({
-        address: DEBT_VAULT_ADDRESS,
-        event: parseAbiItem('event CreditLineUpdated(address indexed lender, address indexed borrower, address indexed token, uint256 creditLimit, uint256 minAPR, uint256 maxAPR)'),
-        args: {
-          lender: address,
-        },
-        fromBlock: 'earliest',
-        toBlock: 'latest',
-      });
-
-
+      // Use shared event querying system
+      const events = await queryCreditLineUpdatedEvents(publicClient, { lender: address });
+      console.log('DEBUG: useCreditLines found events:', events.length);
 
       // For each unique borrower-token combination, get the latest credit line data
       const uniqueCreditLines = new Map<string, any>();
       
-      for (const log of logs) {
-        const { borrower, token, creditLimit, minAPR, maxAPR } = log.args;
-        const key = `${borrower}-${token}`;
-        uniqueCreditLines.set(key, {
-          borrower,
-          token,
-          creditLimit,
-          minAPR,
-          maxAPR,
-        });
+      for (const event of events) {
+        const { borrower, token, creditLimit, minAPR, maxAPR } = event.args;
+        if (borrower && token) {
+          const key = `${borrower}-${token}`;
+          uniqueCreditLines.set(key, {
+            borrower,
+            token,
+            creditLimit,
+            minAPR,
+            maxAPR,
+          });
+        }
       }
 
       // Fetch current state for each credit line and format data
@@ -103,7 +91,7 @@ export function useCreditLines() {
           const utilisedCredit = creditLimit - availableCredit;
 
           // Get token info
-          const tokenInfo = tokens.find(t => t.address.toLowerCase() === eventData.token.toLowerCase());
+          const tokenInfo = findTokenByAddress(eventData.token);
           if (!tokenInfo) continue;
 
           const creditLine: CreditLine = {
@@ -132,7 +120,6 @@ export function useCreditLines() {
         }
       }
 
-
       return activeCreditLines;
     } catch (error) {
       console.error('Error fetching credit lines:', error);
@@ -143,7 +130,7 @@ export function useCreditLines() {
   const { data: creditLines = [], isLoading, refetch } = useQuery({
     queryKey: ['creditLines', address],
     queryFn: fetchCreditLines,
-    enabled: !!address,
+    enabled: !!address && !!publicClient,
     staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
     gcTime: QUERY_CACHE_CONFIG.GC_TIME,
     refetchOnWindowFocus: false,

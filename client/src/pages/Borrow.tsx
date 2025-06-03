@@ -22,7 +22,7 @@ export function Borrow() {
   const { borrow, repay } = useDebtVault();
   const queryClient = useQueryClient();
   const { availableCredits, isLoading: isCreditsLoading } = useBorrowerCreditLines();
-  const { borrowedLoans, isLoading: isLoansLoading } = useBorrowerLoans();
+  const { loans: borrowedLoans, isLoading: isLoansLoading } = useBorrowerLoans();
   
   const [selectedCreditLine, setSelectedCreditLine] = useState<string>('');
   const [borrowAmount, setBorrowAmount] = useState('');

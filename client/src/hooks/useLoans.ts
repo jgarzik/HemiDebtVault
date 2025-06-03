@@ -1,10 +1,11 @@
-import { useAccount } from 'wagmi';
+import { useAccount, usePublicClient } from 'wagmi';
 import { useQuery } from '@tanstack/react-query';
-import { createPublicClient, http, parseAbiItem, formatUnits } from 'viem';
-import { DEBT_VAULT_ADDRESS, hemiNetwork } from '@/lib/hemi';
+import { formatUnits } from 'viem';
+import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
-import { getAllTokens } from '@/lib/tokens';
+import { getAllTokens, findTokenByAddress } from '@/lib/tokens';
 import { QUERY_CACHE_CONFIG } from '@/lib/constants';
+import { queryLoanCreatedEvents, queryRepaidEvents } from '@/lib/eventQueries';
 
 interface Loan {
   loanId: bigint;
@@ -37,37 +38,25 @@ interface Loan {
 
 export function useLoans() {
   const { address } = useAccount();
+  const publicClient = usePublicClient();
   const tokens = getAllTokens();
 
-  // Create public client for event fetching
-  const publicClient = createPublicClient({
-    chain: hemiNetwork,
-    transport: http(),
-  });
-
   const fetchLoans = async (): Promise<Loan[]> => {
-    console.log('DEBUG: useLoans disabled for crash investigation');
-    return [];
+    if (!address || !publicClient) return [];
 
     try {
-      // Get all LoanCreated events where this user is the lender
-      const logs = await publicClient.getLogs({
-        address: DEBT_VAULT_ADDRESS,
-        event: parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed borrower, address indexed lender, address token, uint256 amount, uint256 apr)'),
-        args: {
-          lender: address
-        },
-        fromBlock: 'earliest',
-      });
+      // Use shared event querying system
+      const loanEvents = await queryLoanCreatedEvents(publicClient, { lender: address });
+      console.log('DEBUG: useLoans found loan events:', loanEvents.length);
 
-
+      const loans: Loan[] = [];
 
       // Process each loan
-      for (const log of logs) {
+      for (const event of loanEvents) {
         try {
-          const { loanId, borrower, lender, token, amount, apr } = log.args;
+          const { loanId, borrower, lender, token, amount, apr } = event.args;
           
-          if (loanId === undefined || loanId === null) {
+          if (!loanId || typeof loanId !== 'bigint') {
             continue;
           }
           
@@ -79,10 +68,7 @@ export function useLoans() {
             args: [loanId],
           });
 
-
-          
           // The contract returns a struct with these fields:
-          // borrower, lender, token, principal, repaidPrincipal, forgivenPrincipal, apr, startTimestamp, lastPaymentTimestamp, closed
           const [contractBorrower, contractLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAt, lastPayment, isClosed] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
           
           // Skip if loan is closed
@@ -91,7 +77,7 @@ export function useLoans() {
           }
 
           // Get token info
-          const tokenInfo = tokens.find(t => t.address.toLowerCase() === loanToken.toLowerCase());
+          const tokenInfo = findTokenByAddress(loanToken);
           if (!tokenInfo) {
             continue;
           }
@@ -106,28 +92,13 @@ export function useLoans() {
           const [contractOutstandingPrincipal, accruedInterest] = outstandingBalanceResult as readonly [bigint, bigint];
           const outstandingBalance = contractOutstandingPrincipal + accruedInterest;
 
-          // Calculate total interest earned by aggregating LoanRepaid event data
+          // Calculate total interest earned by aggregating repayment events
           let totalInterestEarned = BigInt(0);
           try {
-            const repaymentEvents = await publicClient.getLogs({
-              address: DEBT_VAULT_ADDRESS,
-              event: {
-                type: 'event',
-                name: 'LoanRepaid',
-                inputs: [
-                  { name: 'loanId', type: 'uint256', indexed: true },
-                  { name: 'amount', type: 'uint256', indexed: false },
-                  { name: 'interestPaid', type: 'uint256', indexed: false },
-                  { name: 'principalPaid', type: 'uint256', indexed: false }
-                ]
-              },
-              args: { loanId },
-              fromBlock: BigInt(0),
-            });
-
-            for (const event of repaymentEvents) {
-              if (event.args && typeof event.args.interestPaid === 'bigint') {
-                totalInterestEarned += event.args.interestPaid;
+            const repaymentEvents = await queryRepaidEvents(publicClient, { loanId });
+            for (const repayEvent of repaymentEvents) {
+              if (repayEvent.args?.interestPaid && typeof repayEvent.args.interestPaid === 'bigint') {
+                totalInterestEarned += repayEvent.args.interestPaid;
               }
             }
           } catch (error) {
@@ -170,7 +141,6 @@ export function useLoans() {
         }
       }
 
-
       return loans;
     } catch (error) {
       console.error('Error fetching loans:', error);
@@ -181,7 +151,7 @@ export function useLoans() {
   const { data: loans = [], isLoading, refetch } = useQuery({
     queryKey: ['loans', address],
     queryFn: fetchLoans,
-    enabled: !!address,
+    enabled: !!address && !!publicClient,
     staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
     gcTime: QUERY_CACHE_CONFIG.GC_TIME,
     refetchOnWindowFocus: false,
@@ -196,44 +166,29 @@ export function useLoans() {
 
 export function useBorrowerLoans() {
   const { address } = useAccount();
+  const publicClient = usePublicClient();
   const tokens = getAllTokens();
 
-  // Create public client for event fetching
-  const publicClient = createPublicClient({
-    chain: hemiNetwork,
-    transport: http(),
-  });
+  const fetchBorrowerLoans = async (): Promise<Loan[]> => {
+    if (!address || !publicClient) return [];
 
-  const fetchBorrowedLoans = async (): Promise<Loan[]> => {
-    if (!address) return [];
-    
-
-    
-    const activeLoans: Loan[] = [];
-    
     try {
-      // Fetch LoanCreated events where current user is borrower
-      const logs = await publicClient.getLogs({
-        address: DEBT_VAULT_ADDRESS,
-        event: parseAbiItem('event LoanCreated(uint256 indexed loanId, address indexed borrower, address indexed lender, address token, uint256 amount, uint256 apr)'),
-        args: {
-          borrower: address,
-        },
-        fromBlock: 'earliest',
-      });
+      // Use shared event querying system for borrower loans
+      const loanEvents = await queryLoanCreatedEvents(publicClient, { borrower: address });
+      console.log('DEBUG: useBorrowerLoans found loan events:', loanEvents.length);
 
+      const loans: Loan[] = [];
 
-
-      // Process each loan
-      for (const log of logs) {
+      // Process each loan (same logic as useLoans but for borrower)
+      for (const event of loanEvents) {
         try {
-          const { loanId, borrower, lender, token, amount, apr } = log.args;
+          const { loanId } = event.args;
           
-          if (loanId === undefined || loanId === null) {
+          if (!loanId || typeof loanId !== 'bigint') {
             continue;
           }
           
-          // Get current loan state from contract
+          // Get loan details from contract
           const loanData = await publicClient.readContract({
             address: DEBT_VAULT_ADDRESS,
             abi: DEBT_VAULT_ABI,
@@ -241,9 +196,6 @@ export function useBorrowerLoans() {
             args: [loanId],
           });
 
-
-          
-          // Parse loan data
           const [contractBorrower, contractLender, loanToken, loanPrincipal, repaidPrincipal, forgivenPrincipal, loanInterestRate, createdAt, lastPayment, isClosed] = loanData as readonly [string, string, string, bigint, bigint, bigint, bigint, bigint, bigint, boolean];
           
           // Skip if loan is closed
@@ -251,21 +203,19 @@ export function useBorrowerLoans() {
             continue;
           }
 
-          // Get token info
-          const tokenInfo = tokens.find(t => t.address.toLowerCase() === loanToken.toLowerCase());
+          const tokenInfo = findTokenByAddress(loanToken);
           if (!tokenInfo) {
             continue;
           }
 
-          // Get accurate outstanding balance from contract
-          const outstandingBalance = await publicClient.readContract({
+          const outstandingBalanceResult = await publicClient.readContract({
             address: DEBT_VAULT_ADDRESS,
             abi: DEBT_VAULT_ABI,
             functionName: 'getOutstandingBalance',
             args: [loanId],
           });
-
-          const [outstandingPrincipal, accruedInterest] = outstandingBalance as [bigint, bigint];
+          const [contractOutstandingPrincipal, accruedInterest] = outstandingBalanceResult as readonly [bigint, bigint];
+          const outstandingBalance = contractOutstandingPrincipal + accruedInterest;
 
           const loan: Loan = {
             loanId,
@@ -279,10 +229,6 @@ export function useBorrowerLoans() {
             formattedRepaidPrincipal: formatUnits(repaidPrincipal, tokenInfo.decimals),
             forgivenPrincipal,
             formattedForgivenPrincipal: formatUnits(forgivenPrincipal, tokenInfo.decimals),
-            outstandingPrincipal: outstandingPrincipal,
-            formattedOutstandingPrincipal: formatUnits(outstandingPrincipal, tokenInfo.decimals),
-            outstandingBalance: outstandingPrincipal + accruedInterest,
-            formattedOutstandingBalance: formatUnits(outstandingPrincipal + accruedInterest, tokenInfo.decimals),
             interestRate: loanInterestRate,
             interestRatePercent: (Number(loanInterestRate) / 100).toFixed(2),
             createdAt,
@@ -292,36 +238,39 @@ export function useBorrowerLoans() {
             isActive: true,
             accruedInterest,
             formattedAccruedInterest: formatUnits(accruedInterest, tokenInfo.decimals),
+            outstandingPrincipal: contractOutstandingPrincipal,
+            formattedOutstandingPrincipal: formatUnits(contractOutstandingPrincipal, tokenInfo.decimals),
+            outstandingBalance,
+            formattedOutstandingBalance: formatUnits(outstandingBalance, tokenInfo.decimals),
             totalInterestEarned: BigInt(0),
-            formattedTotalInterestEarned: '0.00',
+            formattedTotalInterestEarned: '0',
           };
 
-          activeLoans.push(loan);
+          loans.push(loan);
 
         } catch (error) {
-          console.error('Error processing borrowed loan:', error);
+          console.error('Error processing borrower loan:', error);
         }
       }
 
-
-      return activeLoans;
+      return loans;
     } catch (error) {
-      console.error('Error fetching borrowed loans:', error);
+      console.error('Error fetching borrower loans:', error);
       return [];
     }
   };
 
-  const { data: borrowedLoans = [], isLoading, refetch } = useQuery({
-    queryKey: ['borrowedLoans', address],
-    queryFn: fetchBorrowedLoans,
-    enabled: !!address,
+  const { data: loans = [], isLoading, refetch } = useQuery({
+    queryKey: ['borrowerLoans', address],
+    queryFn: fetchBorrowerLoans,
+    enabled: !!address && !!publicClient,
     staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
     gcTime: QUERY_CACHE_CONFIG.GC_TIME,
     refetchOnWindowFocus: false,
   });
 
   return {
-    borrowedLoans,
+    loans,
     isLoading,
     refetch,
   };
