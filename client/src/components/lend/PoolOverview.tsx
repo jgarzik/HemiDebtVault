@@ -1,11 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Wallet, Plus } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TrendingUp, Wallet, Plus, AlertTriangle } from 'lucide-react';
 import { usePoolPosition } from '@/hooks/usePoolPosition';
 import { useActiveTokens } from '@/hooks/useActiveTokens';
 
 export function PoolOverview() {
-  const { tokenBalances, totalDeposited, availableForLending, currentlyLent, totalInterestEarned } = usePoolPosition();
+  const { 
+    tokenBalances, 
+    totalDeposited, 
+    availableForLending, 
+    currentlyLent, 
+    totalInterestEarned,
+    hasUnknownValueTokens,
+    knownValueTokens
+  } = usePoolPosition();
   const { activeTokens } = useActiveTokens();
 
   return (
@@ -17,21 +26,30 @@ export function PoolOverview() {
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-slate-900 p-4 rounded-lg">
             <p className="text-sm text-slate-400">Total Deposited</p>
-            <p className="text-xl font-bold">${totalDeposited}</p>
+            <p className="text-xl font-bold">{totalDeposited}</p>
           </div>
           <div className="bg-slate-900 p-4 rounded-lg">
             <p className="text-sm text-slate-400">Available to Lend</p>
-            <p className="text-xl font-bold text-green-400">${availableForLending}</p>
+            <p className="text-xl font-bold text-green-400">{availableForLending}</p>
           </div>
           <div className="bg-slate-900 p-4 rounded-lg">
             <p className="text-sm text-slate-400">Currently Lent</p>
-            <p className="text-xl font-bold text-blue-400">${currentlyLent}</p>
+            <p className="text-xl font-bold text-blue-400">{currentlyLent}</p>
           </div>
           <div className="bg-slate-900 p-4 rounded-lg">
             <p className="text-sm text-slate-400">Interest Earned</p>
-            <p className="text-xl font-bold text-yellow-400">${totalInterestEarned}</p>
+            <p className="text-xl font-bold text-yellow-400">{totalInterestEarned}</p>
           </div>
         </div>
+
+        {hasUnknownValueTokens && (
+          <Alert className="bg-orange-900/20 border-orange-700">
+            <AlertTriangle className="h-4 w-4 text-orange-400" />
+            <AlertDescription className="text-orange-200">
+              Some tokens don't have USD price data available. Values marked with "+" indicate additional non-USD tokens are present.
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
 
       {/* Token Breakdown */}

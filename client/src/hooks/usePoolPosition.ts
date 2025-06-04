@@ -1,11 +1,12 @@
 import { useAccount, useReadContracts } from 'wagmi';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { findTokenByAddress, Token } from '@/lib/tokens';
 import { formatUnits } from 'viem';
 import { QUERY_CACHE_CONFIG } from '@/lib/constants';
 import { useActiveTokens } from './useActiveTokens';
+import { calculateUSDValue, formatUSDValue } from '@/lib/tokenPrices';
 
 export function usePoolPosition() {
   const { address } = useAccount();
@@ -52,12 +53,13 @@ export function usePoolPosition() {
     return hasBalance || hasActivity;
   });
 
-  // Calculate totals
-  const totalDeposited = tokenBalances.reduce((sum, { balance, token }) => {
-    // For simplicity, treat all tokens as $1 each for now
-    // In a real app, you'd fetch USD prices from an oracle
-    return sum + parseFloat(formatUnits(balance, token.decimals));
-  }, 0);
+  // Calculate USD values using proper price conversion
+  const { data: usdCalculation } = useQuery({
+    queryKey: ['usdCalculation', tokenBalances.map(tb => `${tb.token.symbol}:${tb.formattedBalance}`)],
+    queryFn: () => calculateUSDValue(tokenBalances),
+    enabled: tokenBalances.length > 0,
+    staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
+  });
 
   const queryClient = useQueryClient();
 
@@ -75,12 +77,17 @@ export function usePoolPosition() {
     }
   };
 
+  const totalDepositedUSD = usdCalculation?.totalUSD || 0;
+  const unknownValueTokens = usdCalculation?.unknownValueTokens || 0;
+
   return {
     tokenBalances,
-    totalDeposited,
-    availableForLending: totalDeposited, // Simplified - would subtract actively lent amounts
-    currentlyLent: 0, // Would calculate from active loans
-    totalInterestEarned: 0, // Would calculate from loan history
+    totalDeposited: formatUSDValue(totalDepositedUSD, unknownValueTokens),
+    availableForLending: formatUSDValue(totalDepositedUSD, unknownValueTokens), // Simplified - would subtract actively lent amounts
+    currentlyLent: '$0.00', // Would calculate from active loans
+    totalInterestEarned: '$0.00', // Would calculate from loan history
     invalidatePoolData, // Expose this function to trigger manual refreshes
+    hasUnknownValueTokens: unknownValueTokens > 0,
+    knownValueTokens: usdCalculation?.knownValueTokens || 0,
   };
 }
