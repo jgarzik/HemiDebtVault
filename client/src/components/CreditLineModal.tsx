@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,7 @@ import { TransactionButton } from './TransactionButton';
 import { useDebtVault } from '@/hooks/useDebtVault';
 import { usePoolPosition } from '@/hooks/usePoolPosition';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
+import { TRANSACTION_CONFIG } from '@/lib/constants';
 import { parseUnits, isAddress } from 'viem';
 import { type Token, findTokenByAddress } from '@/lib/tokens';
 
@@ -21,6 +23,7 @@ interface CreditLineModalProps {
 export function CreditLineModal({ isOpen, onClose, onSuccess, editingCreditLine }: CreditLineModalProps) {
   const { updateCreditLine } = useDebtVault();
   const { tokenBalances } = usePoolPosition();
+  const queryClient = useQueryClient();
   
   const [borrowerAddress, setBorrowerAddress] = useState('');
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
@@ -257,7 +260,16 @@ export function CreditLineModal({ isOpen, onClose, onSuccess, editingCreditLine 
               className="flex-1 bg-blue-600 hover:bg-blue-700"
               actionLabel={editingCreditLine ? "Update Credit Line" : "Create Credit Line"}
               transactionAmount={selectedToken && creditLimit ? `${creditLimit} ${selectedToken.symbol} limit` : undefined}
-              onSuccess={onSuccess}
+              onSuccess={() => {
+                // Invalidate credit lines cache after transaction confirmation
+                setTimeout(() => {
+                  queryClient.invalidateQueries({ queryKey: ['creditLines'] });
+                  queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
+                }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
+                
+                // Call the parent onSuccess callback
+                onSuccess?.();
+              }}
             >
               {editingCreditLine ? 'Update' : 'Create'}
             </TransactionButton>
