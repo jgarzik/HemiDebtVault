@@ -8,7 +8,9 @@ import { TransactionButton } from '@/components/TransactionButton';
 import { useTokenBalance } from '@/hooks/useTokenBalance';
 import { useDebtVault } from '@/hooks/useDebtVault';
 import { usePoolPosition } from '@/hooks/usePoolPosition';
+import { useQueryClient } from '@tanstack/react-query';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
+import { TRANSACTION_CONFIG } from '@/lib/constants';
 import { parseUnits } from 'viem';
 import { type Token } from '@/lib/tokens';
 
@@ -19,6 +21,7 @@ interface DepositWithdrawSectionProps {
 export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProps) {
   const { deposit, withdraw } = useDebtVault();
   const { tokenBalances } = usePoolPosition();
+  const queryClient = useQueryClient();
   
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [selectedWithdrawToken, setSelectedWithdrawToken] = useState<Token | null>(null);
@@ -144,7 +147,16 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                   actionLabel="Deposit to Liquidity Pool"
                   transactionAmount={selectedToken && depositAmount ? `${depositAmount} ${selectedToken.symbol}` : undefined}
                   className="w-full bg-blue-600 hover:bg-blue-700"
-                  onSuccess={onSuccess}
+                  onSuccess={() => {
+                    // Invalidate pool position and token balance queries to refresh data
+                    setTimeout(() => {
+                      queryClient.invalidateQueries({ queryKey: ['poolPosition'] });
+                      queryClient.invalidateQueries({ queryKey: ['tokenBalance'] });
+                      queryClient.invalidateQueries({ queryKey: ['creditLines'] });
+                    }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
+                    
+                    onSuccess?.();
+                  }}
                 >
                   Deposit {selectedToken?.symbol || 'Token'}
                 </TransactionButton>
@@ -193,7 +205,16 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                   className="w-full bg-red-600 hover:bg-red-700"
                   actionLabel="Withdraw from Liquidity Pool"
                   transactionAmount={selectedWithdrawToken && withdrawAmount ? `${withdrawAmount} ${selectedWithdrawToken.symbol}` : undefined}
-                  onSuccess={onSuccess}
+                  onSuccess={() => {
+                    // Invalidate pool position and token balance queries to refresh data
+                    setTimeout(() => {
+                      queryClient.invalidateQueries({ queryKey: ['poolPosition'] });
+                      queryClient.invalidateQueries({ queryKey: ['tokenBalance'] });
+                      queryClient.invalidateQueries({ queryKey: ['creditLines'] });
+                    }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
+                    
+                    onSuccess?.();
+                  }}
                 >
                   Withdraw {selectedWithdrawToken?.symbol || 'Token'}
                 </TransactionButton>
