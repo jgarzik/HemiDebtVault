@@ -35,8 +35,8 @@ export function useBorrowerCreditLines() {
     if (!address || !publicClient) return [];
 
     try {
-      // Use shared event querying system starting from deployment block
-      const events = await queryCreditLineUpdatedEvents(publicClient, { borrower: address }, { fromBlock: DEBT_VAULT_DEPLOYMENT_BLOCK });
+      // Use shared event querying system (automatically starts from deployment block)
+      const events = await queryCreditLineUpdatedEvents(publicClient, { borrower: address });
       console.log('DEBUG: useBorrowerCreditLines found events:', events.length);
 
       // Process unique lender-token combinations to avoid duplicates

@@ -22,8 +22,8 @@ export function useActiveTokens() {
     if (!address || !publicClient) return [];
 
     try {
-      // Use shared event querying system starting from deployment block
-      const depositEvents = await queryDepositedEvents(publicClient, address, { fromBlock: DEBT_VAULT_DEPLOYMENT_BLOCK });
+      // Use shared event querying system (automatically starts from deployment block)
+      const depositEvents = await queryDepositedEvents(publicClient, address);
       
       // Extract unique tokens using shared utility
       const uniqueTokens = extractUniqueTokens(depositEvents);

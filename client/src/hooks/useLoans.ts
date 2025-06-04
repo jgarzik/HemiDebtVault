@@ -46,8 +46,8 @@ export function useLoans() {
     if (!address || !publicClient) return [];
 
     try {
-      // Use shared event querying system starting from deployment block
-      const loanEvents = await queryLoanCreatedEvents(publicClient, { lender: address }, { fromBlock: DEBT_VAULT_DEPLOYMENT_BLOCK });
+      // Use shared event querying system (automatically starts from deployment block)
+      const loanEvents = await queryLoanCreatedEvents(publicClient, { lender: address });
       console.log('DEBUG: useLoans found loan events:', loanEvents.length);
 
       const loans: Loan[] = [];
@@ -178,8 +178,8 @@ export function useBorrowerLoans() {
     if (!address || !publicClient) return [];
 
     try {
-      // Use shared event querying system for borrower loans starting from deployment block
-      const loanEvents = await queryLoanCreatedEvents(publicClient, { borrower: address }, { fromBlock: DEBT_VAULT_DEPLOYMENT_BLOCK });
+      // Use shared event querying system (automatically starts from deployment block)
+      const loanEvents = await queryLoanCreatedEvents(publicClient, { borrower: address });
       console.log('DEBUG: useBorrowerLoans found loan events:', loanEvents.length);
 
       const loans: Loan[] = [];
