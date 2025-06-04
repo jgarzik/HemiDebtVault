@@ -30,7 +30,7 @@ const SUSHI_V2_ROUTER_ABI = [
   }
 ] as const;
 
-// SushiSwap V2 Router address on Hemi network
+// SushiSwap V2 Router address on Hemi network (needs verification)
 const SUSHI_V2_ROUTER_ADDRESS = '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506' as const;
 
 // USDC.e address on Hemi (bridged USDC - our price reference)
