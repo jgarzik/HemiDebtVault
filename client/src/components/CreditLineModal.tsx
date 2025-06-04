@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,15 +9,16 @@ import { useDebtVault } from '@/hooks/useDebtVault';
 import { usePoolPosition } from '@/hooks/usePoolPosition';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { parseUnits, isAddress } from 'viem';
-import { type Token } from '@/lib/tokens';
+import { type Token, findTokenByAddress } from '@/lib/tokens';
 
 interface CreditLineModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  editingCreditLine?: any;
 }
 
-export function CreditLineModal({ isOpen, onClose, onSuccess }: CreditLineModalProps) {
+export function CreditLineModal({ isOpen, onClose, onSuccess, editingCreditLine }: CreditLineModalProps) {
   const { updateCreditLine } = useDebtVault();
   const { tokenBalances } = usePoolPosition();
   
@@ -27,6 +28,25 @@ export function CreditLineModal({ isOpen, onClose, onSuccess }: CreditLineModalP
   const [minAPR, setMinAPR] = useState('');
   const [maxAPR, setMaxAPR] = useState('');
   const [originationFee, setOriginationFee] = useState('0');
+
+  // Pre-fill form when editing an existing credit line
+  useEffect(() => {
+    if (editingCreditLine) {
+      setBorrowerAddress(editingCreditLine.borrower);
+      setCreditLimit(editingCreditLine.formattedCreditLimit);
+      setMinAPR(editingCreditLine.minAPRPercent);
+      setMaxAPR(editingCreditLine.maxAPRPercent);
+      setOriginationFee(editingCreditLine.originationFeePercent);
+      
+      // Find and set the token
+      const token = findTokenByAddress(editingCreditLine.token);
+      if (token) {
+        setSelectedToken(token);
+      }
+    } else {
+      resetForm();
+    }
+  }, [editingCreditLine]);
 
   const resetForm = () => {
     setBorrowerAddress('');
@@ -125,7 +145,9 @@ export function CreditLineModal({ isOpen, onClose, onSuccess }: CreditLineModalP
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md bg-slate-800 border-slate-700">
         <DialogHeader>
-          <DialogTitle className="text-white">Create Credit Line</DialogTitle>
+          <DialogTitle className="text-white">
+            {editingCreditLine ? 'Edit Credit Line' : 'Create Credit Line'}
+          </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -139,6 +161,7 @@ export function CreditLineModal({ isOpen, onClose, onSuccess }: CreditLineModalP
               value={borrowerAddress}
               onChange={(e) => setBorrowerAddress(e.target.value)}
               className="bg-slate-900 border-slate-600 text-white"
+              disabled={!!editingCreditLine}
             />
           </div>
           

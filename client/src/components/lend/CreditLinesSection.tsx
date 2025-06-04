@@ -9,10 +9,22 @@ import { CreditLineModal } from '@/components/CreditLineModal';
 export function CreditLinesSection() {
   const { creditLines, isLoading: isCreditLinesLoading, refetch } = useCreditLines();
   const [showCreditLineModal, setShowCreditLineModal] = useState(false);
+  const [editingCreditLine, setEditingCreditLine] = useState<any>(null);
 
   const handleSuccess = () => {
-    console.log('Credit line created successfully, refreshing data...');
+    console.log('Credit line updated successfully, refreshing data...');
     refetch();
+    setEditingCreditLine(null);
+  };
+
+  const handleEditCreditLine = (creditLine: any) => {
+    setEditingCreditLine(creditLine);
+    setShowCreditLineModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowCreditLineModal(false);
+    setEditingCreditLine(null);
   };
 
   return (
@@ -66,7 +78,12 @@ export function CreditLinesSection() {
                         Borrower: {creditLine.borrower.slice(0, 6)}...{creditLine.borrower.slice(-4)}
                       </p>
                     </div>
-                    <Button size="sm" variant="outline" className="border-slate-600">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="border-slate-600"
+                      onClick={() => handleEditCreditLine(creditLine)}
+                    >
                       <Edit2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -106,8 +123,9 @@ export function CreditLinesSection() {
 
       <CreditLineModal 
         isOpen={showCreditLineModal}
-        onClose={() => setShowCreditLineModal(false)}
+        onClose={handleCloseModal}
         onSuccess={handleSuccess}
+        editingCreditLine={editingCreditLine}
       />
     </>
   );
