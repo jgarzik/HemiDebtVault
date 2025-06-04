@@ -386,11 +386,25 @@ export function Borrow() {
               </div>
               
               {selectedCredit && (
-                <div className="flex justify-between text-sm mt-2">
-                  <span className="text-slate-400">Available Credit:</span>
-                  <span className="font-mono text-green-400">
-                    {parseFloat(selectedCredit.formattedAvailableCredit).toLocaleString()} {selectedCredit.tokenSymbol}
-                  </span>
+                <div className="space-y-2 text-sm mt-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Available Credit:</span>
+                    <span className="font-mono text-green-400">
+                      {parseFloat(selectedCredit.formattedAvailableCredit).toLocaleString()} {selectedCredit.tokenSymbol}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Origination Fee:</span>
+                    <span className="font-mono text-orange-400">
+                      {selectedCredit.originationFeePercent}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">APR Range:</span>
+                    <span className="font-mono text-yellow-400">
+                      {selectedCredit.minAPRPercent}% - {selectedCredit.maxAPRPercent}%
+                    </span>
+                  </div>
                 </div>
               )}
               
