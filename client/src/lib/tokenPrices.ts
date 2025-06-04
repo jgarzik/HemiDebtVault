@@ -1,4 +1,6 @@
 import { Token } from './tokens';
+import { createPublicClient, http, formatUnits } from 'viem';
+import { hemiNetwork } from './hemi';
 
 // Token price cache interface
 interface TokenPrice {
@@ -12,15 +14,46 @@ const PRICE_CACHE_DURATION = 5 * 60 * 1000;
 const priceCache = new Map<string, TokenPrice>();
 
 // Known stablecoin mappings (always $1)
-const STABLECOINS = new Set(['USDC', 'USDT', 'DAI', 'BUSD']);
+const STABLECOINS = new Set(['USDC', 'USDC.e', 'USDT', 'DAI', 'BUSD', 'VUSD']);
+
+// Sushi V2 Router ABI for price queries
+const SUSHI_V2_ROUTER_ABI = [
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'amountIn', type: 'uint256' },
+      { internalType: 'address[]', name: 'path', type: 'address[]' }
+    ],
+    name: 'getAmountsOut',
+    outputs: [{ internalType: 'uint256[]', name: 'amounts', type: 'uint256[]' }],
+    stateMutability: 'view',
+    type: 'function'
+  }
+] as const;
+
+// SushiSwap V2 Router address on Hemi network
+const SUSHI_V2_ROUTER_ADDRESS = '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506' as const;
+
+// USDC.e address on Hemi (bridged USDC - our price reference)
+const USDC_ADDRESS = '0xad11a8BEb98bbf61dbb1aa0F6d6F2ECD87b35afA' as const;
+
+// Create public client for Hemi network
+const publicClient = createPublicClient({
+  chain: hemiNetwork,
+  transport: http()
+});
 
 /**
- * Get USD price for a token
+ * Get USD price for a token using Sushi DEX on Hemi network
  * Returns null if price cannot be determined
  */
 export async function getTokenUSDPrice(token: Token): Promise<number | null> {
   // Stablecoins are always $1
   if (STABLECOINS.has(token.symbol)) {
+    return 1.0;
+  }
+
+  // USDC is our reference, always $1
+  if (token.address.toLowerCase() === USDC_ADDRESS.toLowerCase()) {
     return 1.0;
   }
 
@@ -31,60 +64,71 @@ export async function getTokenUSDPrice(token: Token): Promise<number | null> {
   }
 
   try {
-    // Use CoinGecko API to fetch token prices
-    // This is a free API that provides reliable cryptocurrency price data
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${getCoingeckoId(token.symbol)}&vs_currencies=usd`,
-      {
-        headers: {
-          'Accept': 'application/json',
-        },
-      }
-    );
+    // Query Sushi router for token/USDC price
+    // We'll swap 1 token unit to see how much USDC we get
+    const amountIn = BigInt(10 ** token.decimals); // 1 token unit
+    const path = [token.address as `0x${string}`, USDC_ADDRESS];
 
-    if (!response.ok) {
-      throw new Error(`Price API error: ${response.status}`);
+    const result = await publicClient.readContract({
+      address: SUSHI_V2_ROUTER_ADDRESS,
+      abi: SUSHI_V2_ROUTER_ABI,
+      functionName: 'getAmountsOut',
+      args: [amountIn, path],
+    });
+
+    if (result && result.length >= 2) {
+      const usdcOut = result[1]; // Amount of USDC we'd get
+      
+      // Ensure we got a meaningful amount (not zero)
+      if (usdcOut > BigInt(0)) {
+        const price = parseFloat(formatUnits(usdcOut, 6)); // USDC.e has 6 decimals
+        
+        // Cache the price
+        priceCache.set(token.symbol, {
+          symbol: token.symbol,
+          price,
+          lastUpdated: Date.now(),
+        });
+        
+        return price;
+      }
     }
 
-    const data = await response.json();
-    const coingeckoId = getCoingeckoId(token.symbol);
+    // Try reverse path if direct path fails (USDC -> Token)
+    const reversePath = [USDC_ADDRESS, token.address as `0x${string}`];
+    const reverseAmountIn = BigInt(10 ** 6); // 1 USDC
     
-    if (data[coingeckoId]?.usd) {
-      const price = data[coingeckoId].usd;
+    const reverseResult = await publicClient.readContract({
+      address: SUSHI_V2_ROUTER_ADDRESS,
+      abi: SUSHI_V2_ROUTER_ABI,
+      functionName: 'getAmountsOut',
+      args: [reverseAmountIn, reversePath],
+    });
+
+    if (reverseResult && reverseResult.length >= 2) {
+      const tokenOut = reverseResult[1];
       
-      // Cache the price
-      priceCache.set(token.symbol, {
-        symbol: token.symbol,
-        price,
-        lastUpdated: Date.now(),
-      });
-      
-      return price;
+      if (tokenOut > BigInt(0)) {
+        // Calculate price as 1 / (tokens per USDC)
+        const tokensPerUSDC = parseFloat(formatUnits(tokenOut, token.decimals));
+        const price = 1 / tokensPerUSDC;
+        
+        // Cache the price
+        priceCache.set(token.symbol, {
+          symbol: token.symbol,
+          price,
+          lastUpdated: Date.now(),
+        });
+        
+        return price;
+      }
     }
 
     return null;
   } catch (error) {
-    console.warn(`Failed to fetch price for ${token.symbol}:`, error);
+    console.warn(`Failed to fetch price for ${token.symbol} from Sushi:`, error);
     return null;
   }
-}
-
-/**
- * Map token symbols to CoinGecko IDs
- */
-function getCoingeckoId(symbol: string): string {
-  const symbolMap: Record<string, string> = {
-    'BTC': 'bitcoin',
-    'ETH': 'ethereum',
-    'USDC': 'usd-coin',
-    'USDT': 'tether',
-    'DAI': 'dai',
-    'WBTC': 'wrapped-bitcoin',
-    'WETH': 'weth',
-    'MAX': 'maxi-protocol', // Update this with correct CoinGecko ID for MAX token
-  };
-
-  return symbolMap[symbol] || symbol.toLowerCase();
 }
 
 /**
