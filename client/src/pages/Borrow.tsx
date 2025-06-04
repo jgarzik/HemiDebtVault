@@ -99,8 +99,13 @@ export function Borrow() {
     const minAPR = Number(creditLine.minAPR); // basis points
     const maxAPR = Number(creditLine.maxAPR); // basis points
     
-    // Current borrowing = existing utilised credit + new requested amount
-    const currentBorrowing = utilisedCredit + requestedAmount;
+    // Calculate origination fee to match contract behavior
+    const originationFeeBasisPoints = parseFloat(creditLine.originationFeePercent) * 100;
+    const originationFee = (requestedAmount * originationFeeBasisPoints) / 10000;
+    const totalPrincipal = requestedAmount + originationFee;
+    
+    // Contract uses post-borrow utilization including total principal
+    const currentBorrowing = utilisedCredit + totalPrincipal;
     
     // Solidity calculation: utilization = (currentBorrowing * PRECISION_FACTOR) / creditLimit
     // PRECISION_FACTOR is 10^18 in the contract
@@ -116,13 +121,25 @@ export function Borrow() {
 
   const calculateDailyInterest = (amount: string, apr: string) => {
     if (!amount || !apr || parseFloat(amount) === 0) return '0.000000';
-    const daily = (parseFloat(amount) * parseFloat(apr)) / 100 / 365;
-    return daily.toFixed(6);
+    // Contract calculation: (principal * apr * seconds) / (SECONDS_IN_YEAR * BASIS_POINTS)
+    // For daily interest: seconds = 86400 (24 * 60 * 60)
+    const SECONDS_IN_YEAR = 31536000; // 365 * 24 * 60 * 60
+    const BASIS_POINTS = 10000;
+    const SECONDS_PER_DAY = 86400;
+    
+    const principal = parseFloat(amount);
+    const aprBasisPoints = parseFloat(apr) * 100; // Convert percentage to basis points
+    
+    const dailyInterest = (principal * aprBasisPoints * SECONDS_PER_DAY) / (SECONDS_IN_YEAR * BASIS_POINTS);
+    return dailyInterest.toFixed(6);
   };
 
   const calculateOriginationFee = (amount: string, credit: any) => {
     if (!amount || !credit || parseFloat(amount) === 0) return '0.00';
-    const fee = (parseFloat(amount) * parseFloat(credit.originationFeePercent)) / 100;
+    // Contract calculation: (amount * originationFee) / BASIS_POINTS
+    // where originationFee is in basis points (e.g., 500 = 5%)
+    const originationFeeBasisPoints = parseFloat(credit.originationFeePercent) * 100; // Convert percentage to basis points
+    const fee = (parseFloat(amount) * originationFeeBasisPoints) / 10000;
     return fee.toFixed(6);
   };
 
@@ -480,13 +497,21 @@ export function Borrow() {
                   <div className="flex justify-between">
                     <span className="text-slate-400">Daily Interest:</span>
                     <span className="font-mono text-yellow-400">
-                      {borrowAmount && selectedCredit ? calculateDailyInterest(borrowAmount, currentAPR) : '0.000000'} {selectedCredit?.tokenSymbol || ''}
+                      {borrowAmount && selectedCredit ? 
+                        calculateDailyInterest(
+                          (parseFloat(borrowAmount) + parseFloat(calculateOriginationFee(borrowAmount, selectedCredit))).toString(), 
+                          currentAPR
+                        ) : '0.000000'} {selectedCredit?.tokenSymbol || ''}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Monthly Interest:</span>
                     <span className="font-mono text-yellow-400">
-                      {borrowAmount && selectedCredit ? (parseFloat(calculateDailyInterest(borrowAmount, currentAPR)) * 30).toFixed(6) : '0.000000'} {selectedCredit?.tokenSymbol || ''}
+                      {borrowAmount && selectedCredit ? 
+                        (parseFloat(calculateDailyInterest(
+                          (parseFloat(borrowAmount) + parseFloat(calculateOriginationFee(borrowAmount, selectedCredit))).toString(), 
+                          currentAPR
+                        )) * 30).toFixed(6) : '0.000000'} {selectedCredit?.tokenSymbol || ''}
                     </span>
                   </div>
                 </CardContent>
