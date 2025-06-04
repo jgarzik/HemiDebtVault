@@ -120,6 +120,12 @@ export function Borrow() {
     return daily.toFixed(6);
   };
 
+  const calculateOriginationFee = (amount: string, credit: any) => {
+    if (!amount || !credit || parseFloat(amount) === 0) return '0.00';
+    const fee = (parseFloat(amount) * parseFloat(credit.originationFeePercent)) / 100;
+    return fee.toFixed(6);
+  };
+
   // Get current calculated APR and set default maxAPR from credit line
   const currentAPR = selectedCredit ? calculateAPR(borrowAmount, selectedCredit) : '0.00';
   
@@ -267,7 +273,7 @@ export function Borrow() {
                     </span>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
                     <div>
                       <span className="text-slate-400">Lender:</span>
                       <p className="font-mono text-slate-200 mt-1">
@@ -293,6 +299,13 @@ export function Borrow() {
                       <span className="text-slate-400">APR Range:</span>
                       <p className="text-yellow-400 font-semibold mt-1">
                         {credit.minAPRPercent}% - {credit.maxAPRPercent}%
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-slate-400">Origination Fee:</span>
+                      <p className="text-orange-400 font-semibold mt-1">
+                        {credit.originationFeePercent}%
                       </p>
                     </div>
                   </div>
@@ -443,7 +456,22 @@ export function Borrow() {
                 <CardContent className="p-4 space-y-3">
                   <div className="flex justify-between">
                     <span className="text-slate-400">Loan Amount:</span>
-                    <span className="font-mono">{borrowAmount ? `$${borrowAmount}` : '$0.00'}</span>
+                    <span className="font-mono">{borrowAmount ? `${borrowAmount} ${selectedCredit?.tokenSymbol || ''}` : '$0.00'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Origination Fee:</span>
+                    <span className="font-mono text-orange-400">
+                      {borrowAmount && selectedCredit ? calculateOriginationFee(borrowAmount, selectedCredit) : '0.000000'} {selectedCredit?.tokenSymbol || ''} ({selectedCredit?.originationFeePercent || '0'}%)
+                    </span>
+                  </div>
+                  <div className="flex justify-between font-semibold border-t border-slate-600 pt-3">
+                    <span className="text-slate-300">Total Principal:</span>
+                    <span className="font-mono text-white">
+                      {borrowAmount && selectedCredit ? 
+                        (parseFloat(borrowAmount) + parseFloat(calculateOriginationFee(borrowAmount, selectedCredit))).toFixed(6) : 
+                        '0.000000'
+                      } {selectedCredit?.tokenSymbol || ''}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Current APR:</span>
@@ -468,7 +496,7 @@ export function Borrow() {
                 <CardContent className="p-3">
                   <p className="text-yellow-400 text-sm flex items-start">
                     <Info className="w-4 h-4 mr-1 mt-0.5 flex-shrink-0" />
-                    Interest accrues continuously. Make regular payments to maintain good standing.
+                    The origination fee is added to your principal balance. Interest accrues continuously on the total principal amount. Make regular payments to maintain good standing.
                   </p>
                 </CardContent>
               </Card>
