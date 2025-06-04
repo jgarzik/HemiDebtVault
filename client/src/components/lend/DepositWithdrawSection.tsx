@@ -141,6 +141,8 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                     amount: depositAmount,
                     spenderAddress: DEBT_VAULT_ADDRESS
                   } : undefined}
+                  actionLabel="Deposit to Liquidity Pool"
+                  transactionAmount={selectedToken && depositAmount ? `${depositAmount} ${selectedToken.symbol}` : undefined}
                   className="w-full bg-blue-600 hover:bg-blue-700"
                   onSuccess={onSuccess}
                 >
@@ -189,7 +191,7 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                   onExecute={handleWithdraw}
                   disabled={!selectedWithdrawToken || !withdrawAmount || parseFloat(withdrawAmount) <= 0}
                   className="w-full bg-red-600 hover:bg-red-700"
-                  actionLabel="Withdraw"
+                  actionLabel="Withdraw from Liquidity Pool"
                   transactionAmount={selectedWithdrawToken && withdrawAmount ? `${withdrawAmount} ${selectedWithdrawToken.symbol}` : undefined}
                   onSuccess={onSuccess}
                 >
