@@ -41,9 +41,10 @@ interface TokenSelectorProps {
   availableTokens?: Token[];
   showImportOption?: boolean;
   tokenBalances?: { token: Token; formattedBalance: string }[];
+  disabled?: boolean;
 }
 
-export function TokenSelector({ selectedToken, onTokenSelect, className, availableTokens, showImportOption = true, tokenBalances }: TokenSelectorProps) {
+export function TokenSelector({ selectedToken, onTokenSelect, className, availableTokens, showImportOption = true, tokenBalances, disabled = false }: TokenSelectorProps) {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [customAddress, setCustomAddress] = useState('');
   const [isImporting, setIsImporting] = useState(false);
@@ -143,7 +144,7 @@ export function TokenSelector({ selectedToken, onTokenSelect, className, availab
 
   return (
     <>
-      <Select value={selectedToken} onValueChange={handleTokenSelect}>
+      <Select value={selectedToken} onValueChange={handleTokenSelect} disabled={disabled}>
         <SelectTrigger className={className}>
           {selectedTokenObj ? (
             <div className="flex items-center space-x-2">

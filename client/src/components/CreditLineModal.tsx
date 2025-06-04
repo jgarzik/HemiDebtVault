@@ -174,6 +174,7 @@ export function CreditLineModal({ isOpen, onClose, onSuccess, editingCreditLine 
               availableTokens={tokenBalances.map(tb => tb.token)}
               showImportOption={false}
               tokenBalances={tokenBalances}
+              disabled={!!editingCreditLine}
             />
           </div>
           
@@ -254,11 +255,11 @@ export function CreditLineModal({ isOpen, onClose, onSuccess, editingCreditLine 
               onExecute={handleCreateCreditLine}
               disabled={!validateForm()}
               className="flex-1 bg-blue-600 hover:bg-blue-700"
-              actionLabel="Create Credit Line"
+              actionLabel={editingCreditLine ? "Update Credit Line" : "Create Credit Line"}
               transactionAmount={selectedToken && creditLimit ? `${creditLimit} ${selectedToken.symbol} limit` : undefined}
               onSuccess={onSuccess}
             >
-              Create
+              {editingCreditLine ? 'Update' : 'Create'}
             </TransactionButton>
           </div>
         </div>
