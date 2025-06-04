@@ -48,6 +48,16 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
   const { balance: withdrawBalance, formattedBalance: formattedWithdrawBalance } = getDepositedBalance(selectedWithdrawToken);
   const isWithdrawBalanceLoading = false; // Already loaded via tokenBalances
 
+  // Cleanup timeout on component unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
+
   const handleDeposit = async () => {
     if (!selectedToken || !depositAmount) return '';
     
