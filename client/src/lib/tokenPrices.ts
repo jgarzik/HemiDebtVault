@@ -14,7 +14,7 @@ const PRICE_CACHE_DURATION = 5 * 60 * 1000;
 const priceCache = new Map<string, TokenPrice>();
 
 // Known stablecoin mappings (always $1)
-const STABLECOINS = new Set(['USDC', 'USDC.e', 'USDT', 'DAI', 'BUSD', 'VUSD']);
+const STABLECOINS = new Set(['USDC.e', 'USDT', 'VUSD', 'VCRED']);
 
 // Sushi V2 Router ABI for price queries
 const SUSHI_V2_ROUTER_ABI = [
@@ -43,7 +43,7 @@ const publicClient = createPublicClient({
 });
 
 /**
- * Get USD price for a token using Sushi DEX on Hemi network
+ * Get USD price for a token
  * Returns null if price cannot be determined
  */
 export async function getTokenUSDPrice(token: Token): Promise<number | null> {
@@ -52,83 +52,9 @@ export async function getTokenUSDPrice(token: Token): Promise<number | null> {
     return 1.0;
   }
 
-  // USDC is our reference, always $1
-  if (token.address.toLowerCase() === USDC_ADDRESS.toLowerCase()) {
-    return 1.0;
-  }
-
-  // Check cache first
-  const cached = priceCache.get(token.symbol);
-  if (cached && Date.now() - cached.lastUpdated < PRICE_CACHE_DURATION) {
-    return cached.price;
-  }
-
-  try {
-    // Query Sushi router for token/USDC price
-    // We'll swap 1 token unit to see how much USDC we get
-    const amountIn = BigInt(10 ** token.decimals); // 1 token unit
-    const path = [token.address as `0x${string}`, USDC_ADDRESS];
-
-    const result = await publicClient.readContract({
-      address: SUSHI_V2_ROUTER_ADDRESS,
-      abi: SUSHI_V2_ROUTER_ABI,
-      functionName: 'getAmountsOut',
-      args: [amountIn, path],
-    });
-
-    if (result && result.length >= 2) {
-      const usdcOut = result[1]; // Amount of USDC we'd get
-      
-      // Ensure we got a meaningful amount (not zero)
-      if (usdcOut > BigInt(0)) {
-        const price = parseFloat(formatUnits(usdcOut, 6)); // USDC.e has 6 decimals
-        
-        // Cache the price
-        priceCache.set(token.symbol, {
-          symbol: token.symbol,
-          price,
-          lastUpdated: Date.now(),
-        });
-        
-        return price;
-      }
-    }
-
-    // Try reverse path if direct path fails (USDC -> Token)
-    const reversePath = [USDC_ADDRESS, token.address as `0x${string}`];
-    const reverseAmountIn = BigInt(10 ** 6); // 1 USDC
-    
-    const reverseResult = await publicClient.readContract({
-      address: SUSHI_V2_ROUTER_ADDRESS,
-      abi: SUSHI_V2_ROUTER_ABI,
-      functionName: 'getAmountsOut',
-      args: [reverseAmountIn, reversePath],
-    });
-
-    if (reverseResult && reverseResult.length >= 2) {
-      const tokenOut = reverseResult[1];
-      
-      if (tokenOut > BigInt(0)) {
-        // Calculate price as 1 / (tokens per USDC)
-        const tokensPerUSDC = parseFloat(formatUnits(tokenOut, token.decimals));
-        const price = 1 / tokensPerUSDC;
-        
-        // Cache the price
-        priceCache.set(token.symbol, {
-          symbol: token.symbol,
-          price,
-          lastUpdated: Date.now(),
-        });
-        
-        return price;
-      }
-    }
-
-    return null;
-  } catch (error) {
-    console.warn(`Failed to fetch price for ${token.symbol} from Sushi:`, error);
-    return null;
-  }
+  // For non-stablecoin tokens, return null to indicate unknown price
+  // This prevents incorrect USD calculations while being transparent
+  return null;
 }
 
 /**
