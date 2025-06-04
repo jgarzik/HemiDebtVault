@@ -31,13 +31,60 @@ export async function getTokenUSDPrice(token: Token): Promise<number | null> {
   }
 
   try {
-    // For now, return null for non-stablecoins until price oracle is configured
-    // This will prevent incorrect USD calculations
+    // Use CoinGecko API to fetch token prices
+    // This is a free API that provides reliable cryptocurrency price data
+    const response = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${getCoingeckoId(token.symbol)}&vs_currencies=usd`,
+      {
+        headers: {
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Price API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const coingeckoId = getCoingeckoId(token.symbol);
+    
+    if (data[coingeckoId]?.usd) {
+      const price = data[coingeckoId].usd;
+      
+      // Cache the price
+      priceCache.set(token.symbol, {
+        symbol: token.symbol,
+        price,
+        lastUpdated: Date.now(),
+      });
+      
+      return price;
+    }
+
     return null;
   } catch (error) {
     console.warn(`Failed to fetch price for ${token.symbol}:`, error);
     return null;
   }
+}
+
+/**
+ * Map token symbols to CoinGecko IDs
+ */
+function getCoingeckoId(symbol: string): string {
+  const symbolMap: Record<string, string> = {
+    'BTC': 'bitcoin',
+    'ETH': 'ethereum',
+    'USDC': 'usd-coin',
+    'USDT': 'tether',
+    'DAI': 'dai',
+    'WBTC': 'wrapped-bitcoin',
+    'WETH': 'weth',
+    'MAX': 'maxi-protocol', // Update this with correct CoinGecko ID for MAX token
+  };
+
+  return symbolMap[symbol] || symbol.toLowerCase();
 }
 
 /**
