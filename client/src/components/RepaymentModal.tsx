@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TransactionButton } from "@/components/TransactionButton";
 import { Loader2, ArrowRight } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { parseUnits, formatUnits, createPublicClient, http, isAddress } from "viem";
 import { type Token, getAllTokens } from "@/lib/tokens";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
@@ -57,6 +57,7 @@ export function RepaymentModal({
   const [currentInterest, setCurrentInterest] = useState<string>('0');
   const [isLoadingBalance, setIsLoadingBalance] = useState(true);
   const queryClient = useQueryClient();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Get the token info and user's wallet balance
   const tokens = getAllTokens();

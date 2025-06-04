@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ export function CreditLineModal({ isOpen, onClose, onSuccess, editingCreditLine 
   const { updateCreditLine } = useDebtVault();
   const { tokenBalances } = usePoolPosition();
   const queryClient = useQueryClient();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [borrowerAddress, setBorrowerAddress] = useState('');
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
@@ -64,6 +65,16 @@ export function CreditLineModal({ isOpen, onClose, onSuccess, editingCreditLine 
     resetForm();
     onClose();
   };
+
+  // Cleanup timeout on component unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const validateNumericInput = (value: string): boolean => {
     if (!value || value.trim() === '') return false;
@@ -261,10 +272,16 @@ export function CreditLineModal({ isOpen, onClose, onSuccess, editingCreditLine 
               actionLabel={editingCreditLine ? "Update Credit Line" : "Create Credit Line"}
               transactionAmount={selectedToken && creditLimit ? `${creditLimit} ${selectedToken.symbol} limit` : undefined}
               onSuccess={() => {
+                // Clear any existing timeout
+                if (timeoutRef.current) {
+                  clearTimeout(timeoutRef.current);
+                }
+                
                 // Invalidate credit lines cache after transaction confirmation
-                setTimeout(() => {
+                timeoutRef.current = setTimeout(() => {
                   queryClient.invalidateQueries({ queryKey: ['creditLines'] });
                   queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
+                  timeoutRef.current = null;
                 }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
                 
                 // Call the parent onSuccess callback
