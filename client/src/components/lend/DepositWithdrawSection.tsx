@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
   const { deposit, withdraw } = useDebtVault();
   const { tokenBalances } = usePoolPosition();
   const queryClient = useQueryClient();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [selectedWithdrawToken, setSelectedWithdrawToken] = useState<Token | null>(null);
@@ -148,11 +149,17 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                   transactionAmount={selectedToken && depositAmount ? `${depositAmount} ${selectedToken.symbol}` : undefined}
                   className="w-full bg-blue-600 hover:bg-blue-700"
                   onSuccess={() => {
+                    // Clear any existing timeout
+                    if (timeoutRef.current) {
+                      clearTimeout(timeoutRef.current);
+                    }
+                    
                     // Invalidate pool position and token balance queries to refresh data
-                    setTimeout(() => {
+                    timeoutRef.current = setTimeout(() => {
                       queryClient.invalidateQueries({ queryKey: ['poolPosition'] });
                       queryClient.invalidateQueries({ queryKey: ['tokenBalance'] });
                       queryClient.invalidateQueries({ queryKey: ['creditLines'] });
+                      timeoutRef.current = null;
                     }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
                     
                     onSuccess?.();
@@ -206,11 +213,17 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                   actionLabel="Withdraw from Liquidity Pool"
                   transactionAmount={selectedWithdrawToken && withdrawAmount ? `${withdrawAmount} ${selectedWithdrawToken.symbol}` : undefined}
                   onSuccess={() => {
+                    // Clear any existing timeout
+                    if (timeoutRef.current) {
+                      clearTimeout(timeoutRef.current);
+                    }
+                    
                     // Invalidate pool position and token balance queries to refresh data
-                    setTimeout(() => {
+                    timeoutRef.current = setTimeout(() => {
                       queryClient.invalidateQueries({ queryKey: ['poolPosition'] });
                       queryClient.invalidateQueries({ queryKey: ['tokenBalance'] });
                       queryClient.invalidateQueries({ queryKey: ['creditLines'] });
+                      timeoutRef.current = null;
                     }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
                     
                     onSuccess?.();

@@ -104,6 +104,16 @@ export function RepaymentModal({
     fetchOutstandingBalance();
   }, [isOpen, repaymentDetails.loanId, tokenInfo, publicClient]);
   
+  // Cleanup timeout on component unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
+  
   // Calculate payment breakdown as user types
   const paymentBreakdown: PaymentBreakdown = useMemo(() => {
     if (!paymentAmount || parseFloat(paymentAmount) === 0) {
@@ -335,12 +345,18 @@ export function RepaymentModal({
               // Close modal and invalidate loan-related queries
               onClose();
               
+              // Clear any existing timeout
+              if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+              }
+              
               // Invalidate all loan and credit line queries to refresh data
-              setTimeout(() => {
+              timeoutRef.current = setTimeout(() => {
                 queryClient.invalidateQueries({ queryKey: ['borrowedLoans'] });
                 queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
                 queryClient.invalidateQueries({ queryKey: ['loans'] });
                 queryClient.invalidateQueries({ queryKey: ['creditLines'] });
+                timeoutRef.current = null;
               }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
             }}
           >
