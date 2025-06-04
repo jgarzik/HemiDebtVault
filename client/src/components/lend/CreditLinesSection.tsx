@@ -71,7 +71,7 @@ export function CreditLinesSection() {
                     </Button>
                   </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
                     <div>
                       <p className="text-slate-400">Credit Limit</p>
                       <p className="font-medium">{creditLine.formattedCreditLimit} {creditLine.tokenSymbol}</p>
@@ -91,6 +91,10 @@ export function CreditLinesSection() {
                     <div>
                       <p className="text-slate-400">APR Range</p>
                       <p className="font-medium">{creditLine.minAPRPercent}% - {creditLine.maxAPRPercent}%</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-400">Origination Fee</p>
+                      <p className="font-medium text-orange-400">{creditLine.originationFeePercent}%</p>
                     </div>
                   </div>
                 </div>

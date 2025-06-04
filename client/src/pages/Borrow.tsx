@@ -343,7 +343,7 @@ export function Borrow() {
                               {credit.tokenSymbol} from {credit.lender.slice(0, 6)}...{credit.lender.slice(-4)}
                             </span>
                             <span className="text-xs text-slate-400">
-                              Available: {parseFloat(credit.formattedAvailableCredit).toLocaleString()} {credit.tokenSymbol} at {credit.minAPRPercent}%-{credit.maxAPRPercent}% APR
+                              Available: {parseFloat(credit.formattedAvailableCredit).toLocaleString()} {credit.tokenSymbol} at {credit.minAPRPercent}%-{credit.maxAPRPercent}% APR + {credit.originationFeePercent}% fee
                             </span>
                           </div>
                         </SelectItem>

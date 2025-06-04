@@ -21,6 +21,8 @@ interface AvailableCredit {
   maxAPR: bigint;
   minAPRPercent: string;
   maxAPRPercent: string;
+  originationFee: bigint;
+  originationFeePercent: string;
   isActive: boolean;
 }
 
@@ -68,7 +70,7 @@ export function useBorrowerCreditLines() {
           });
 
           const result = creditLineData as readonly [bigint, bigint, bigint, bigint];
-          const [creditLimit, minAPR, maxAPR] = result;
+          const [creditLimit, minAPR, maxAPR, originationFee] = result;
           
           // Skip inactive credit lines (creditLimit = 0)
           if (creditLimit === BigInt(0)) continue;
@@ -122,6 +124,8 @@ export function useBorrowerCreditLines() {
             maxAPR,
             minAPRPercent: (Number(minAPR) / 100).toFixed(2),
             maxAPRPercent: (Number(maxAPR) / 100).toFixed(2),
+            originationFee,
+            originationFeePercent: (Number(originationFee) / 100).toFixed(2),
             isActive: availableCredit > BigInt(0), // Only show as active if there's actually available credit
           };
 
