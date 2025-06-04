@@ -23,3 +23,7 @@ export const hemiNetwork = defineChain({
 });
 
 export const DEBT_VAULT_ADDRESS = '0xB4ED059A662073381e64c1eDE861bC6aBE655FB0' as const;
+
+// DebtVaultV2 contract deployment block on Hemi network
+// Block: 1919961, Hash: 0x050fe38aa50ba9fcd757ab7df313856e3f764855fb6188fa4aad6e29b388adc9
+export const DEBT_VAULT_DEPLOYMENT_BLOCK = BigInt(1919961);

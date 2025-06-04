@@ -1,7 +1,7 @@
 import { useAccount, usePublicClient } from 'wagmi';
 import { useQuery } from '@tanstack/react-query';
 import { formatUnits } from 'viem';
-import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
+import { DEBT_VAULT_ADDRESS, DEBT_VAULT_DEPLOYMENT_BLOCK } from '@/lib/hemi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { getAllTokens, findTokenByAddress } from '@/lib/tokens';
 import { QUERY_CACHE_CONFIG } from '@/lib/constants';

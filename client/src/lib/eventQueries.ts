@@ -1,5 +1,5 @@
 import { PublicClient } from 'viem';
-import { DEBT_VAULT_ADDRESS } from './hemi';
+import { DEBT_VAULT_ADDRESS, DEBT_VAULT_DEPLOYMENT_BLOCK } from './hemi';
 import { DEBT_VAULT_EVENTS } from './contract';
 
 // Shared interface for event query results
@@ -24,7 +24,7 @@ export async function queryContractEvents(
   options: EventQueryOptions = {}
 ): Promise<EventQueryResult[]> {
   try {
-    const { fromBlock = 'earliest', toBlock = 'latest' } = options;
+    const { fromBlock = DEBT_VAULT_DEPLOYMENT_BLOCK, toBlock = 'latest' } = options;
     
     console.log(`DEBUG: Querying ${eventName} events with args:`, args);
     
