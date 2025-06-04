@@ -1,7 +1,7 @@
 import { useAccount, usePublicClient } from 'wagmi';
 import { useQuery } from '@tanstack/react-query';
 import { formatUnits } from 'viem';
-import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
+import { DEBT_VAULT_ADDRESS, DEBT_VAULT_DEPLOYMENT_BLOCK } from '@/lib/hemi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { getAllTokens, findTokenByAddress } from '@/lib/tokens';
 import { QUERY_CACHE_CONFIG } from '@/lib/constants';
@@ -35,8 +35,8 @@ export function useBorrowerCreditLines() {
     if (!address || !publicClient) return [];
 
     try {
-      // Use shared event querying system
-      const events = await queryCreditLineUpdatedEvents(publicClient, { borrower: address });
+      // Use shared event querying system starting from deployment block
+      const events = await queryCreditLineUpdatedEvents(publicClient, { borrower: address }, { fromBlock: DEBT_VAULT_DEPLOYMENT_BLOCK });
       console.log('DEBUG: useBorrowerCreditLines found events:', events.length);
 
       // Process unique lender-token combinations to avoid duplicates

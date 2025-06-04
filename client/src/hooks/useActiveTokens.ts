@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAccount, usePublicClient } from 'wagmi';
 import { findTokenByAddress } from '@/lib/tokens';
+import { DEBT_VAULT_DEPLOYMENT_BLOCK } from '@/lib/hemi';
 import { QUERY_CACHE_CONFIG } from '@/lib/constants';
 import { queryDepositedEvents, extractUniqueTokens } from '@/lib/eventQueries';
 
@@ -21,8 +22,8 @@ export function useActiveTokens() {
     if (!address || !publicClient) return [];
 
     try {
-      // Use shared event querying system
-      const depositEvents = await queryDepositedEvents(publicClient, address);
+      // Use shared event querying system starting from deployment block
+      const depositEvents = await queryDepositedEvents(publicClient, address, { fromBlock: DEBT_VAULT_DEPLOYMENT_BLOCK });
       
       // Extract unique tokens using shared utility
       const uniqueTokens = extractUniqueTokens(depositEvents);

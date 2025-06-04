@@ -36,8 +36,8 @@ export function useCreditLines() {
     if (!address || !publicClient) return [];
 
     try {
-      // Use shared event querying system
-      const events = await queryCreditLineUpdatedEvents(publicClient, { lender: address });
+      // Use shared event querying system starting from deployment block
+      const events = await queryCreditLineUpdatedEvents(publicClient, { lender: address }, { fromBlock: DEBT_VAULT_DEPLOYMENT_BLOCK });
       console.log('DEBUG: useCreditLines found events:', events.length);
 
       // For each unique borrower-token combination, get the latest credit line data
