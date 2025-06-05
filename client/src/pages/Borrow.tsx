@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
 import { TRANSACTION_CONFIG } from '@/lib/constants';
+import { useCacheInvalidation } from '@/lib/cacheInvalidation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ export function Borrow() {
   const { address } = useAccount();
   const { borrow, repay } = useDebtVault();
   const queryClient = useQueryClient();
+  const cacheManager = useCacheInvalidation(queryClient);
   const { availableCredits, isLoading: isCreditsLoading } = useBorrowerCreditLines();
   const { loans: borrowedLoans, isLoading: isLoansLoading } = useBorrowerLoans();
   
@@ -453,18 +455,8 @@ export function Borrow() {
                   dailyInterest: calculateDailyInterest(borrowAmount, currentAPR)
                 } : undefined}
                 onSuccess={() => {
-                  // Immediate invalidation for faster feedback
-                  queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
-                  queryClient.invalidateQueries({ queryKey: ['borrowerLoans'] });
-                  
-                  // Delayed comprehensive refresh
-                  setTimeout(() => {
-                    queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
-                    queryClient.invalidateQueries({ queryKey: ['borrowerLoans'] });
-                    queryClient.invalidateQueries({ queryKey: ['loans'] });
-                    queryClient.invalidateQueries({ queryKey: ['creditLines'] });
-                    queryClient.invalidateQueries({ queryKey: ['portfolioMetrics'] });
-                  }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
+                  // Use centralized cache invalidation for new loans
+                  cacheManager.invalidateAfterBorrow(address);
                 }}
               >
                 {borrowAmount && selectedCredit 

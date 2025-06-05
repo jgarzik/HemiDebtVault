@@ -15,6 +15,7 @@ import { TransactionButton } from "@/components/TransactionButton";
 import { Loader2, ArrowRight } from "lucide-react";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { parseUnits, formatUnits, createPublicClient, http, isAddress } from "viem";
+import { useAccount } from "wagmi";
 import { type Token, getAllTokens } from "@/lib/tokens";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { useDebtVault } from "@/hooks/useDebtVault";
@@ -52,6 +53,7 @@ export function RepaymentModal({
   repaymentDetails,
   isLoading = false
 }: RepaymentModalProps) {
+  const { address } = useAccount();
   const { repay } = useDebtVault();
   const [paymentAmount, setPaymentAmount] = useState('');
   const [currentPrincipal, setCurrentPrincipal] = useState<string>('0');
@@ -344,7 +346,7 @@ export function RepaymentModal({
             actionLabel="Repay Loan"
             transactionAmount={paymentAmount ? `${paymentAmount} ${repaymentDetails.tokenSymbol}` : undefined}
             onSuccess={() => {
-              // Close modal and invalidate loan-related queries
+              // Close modal
               onClose();
               
               // Clear any existing timeout
@@ -352,19 +354,8 @@ export function RepaymentModal({
                 clearTimeout(timeoutRef.current);
               }
               
-              // Immediate invalidation for faster UI feedback
-              queryClient.invalidateQueries({ queryKey: ['borrowerLoans'] });
-              queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
-              
-              // Delayed invalidation for thorough refresh
-              timeoutRef.current = setTimeout(() => {
-                queryClient.invalidateQueries({ queryKey: ['borrowerLoans'] });
-                queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
-                queryClient.invalidateQueries({ queryKey: ['loans'] });
-                queryClient.invalidateQueries({ queryKey: ['creditLines'] });
-                queryClient.invalidateQueries({ queryKey: ['loanNFTs'] });
-                timeoutRef.current = null;
-              }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
+              // Use centralized cache invalidation for repayment
+              cacheManager.invalidateAfterRepayment(address);
             }}
           >
             {paymentAmount ? `Pay ${paymentAmount} ${repaymentDetails.tokenSymbol}` : 'Enter amount'}
