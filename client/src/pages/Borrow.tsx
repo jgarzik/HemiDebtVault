@@ -453,10 +453,18 @@ export function Borrow() {
                   dailyInterest: calculateDailyInterest(borrowAmount, currentAPR)
                 } : undefined}
                 onSuccess={() => {
+                  // Immediate invalidation for faster feedback
                   queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
-                  queryClient.invalidateQueries({ queryKey: ['loans'] });
                   queryClient.invalidateQueries({ queryKey: ['borrowerLoans'] });
-                  queryClient.invalidateQueries({ queryKey: ['loanNFTs'] });
+                  
+                  // Delayed comprehensive refresh
+                  setTimeout(() => {
+                    queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
+                    queryClient.invalidateQueries({ queryKey: ['borrowerLoans'] });
+                    queryClient.invalidateQueries({ queryKey: ['loans'] });
+                    queryClient.invalidateQueries({ queryKey: ['creditLines'] });
+                    queryClient.invalidateQueries({ queryKey: ['portfolioMetrics'] });
+                  }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
                 }}
               >
                 {borrowAmount && selectedCredit 

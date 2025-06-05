@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from '@tanstack/react-query';
 import { TRANSACTION_CONFIG } from '@/lib/constants';
+import { useCacheInvalidation } from '@/lib/cacheInvalidation';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TransactionButton } from "@/components/TransactionButton";
@@ -57,6 +58,7 @@ export function RepaymentModal({
   const [currentInterest, setCurrentInterest] = useState<string>('0');
   const [isLoadingBalance, setIsLoadingBalance] = useState(true);
   const queryClient = useQueryClient();
+  const cacheManager = useCacheInvalidation(queryClient);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Get the token info and user's wallet balance
