@@ -350,12 +350,17 @@ export function RepaymentModal({
                 clearTimeout(timeoutRef.current);
               }
               
-              // Invalidate all loan and credit line queries to refresh data
+              // Immediate invalidation for faster UI feedback
+              queryClient.invalidateQueries({ queryKey: ['borrowerLoans'] });
+              queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
+              
+              // Delayed invalidation for thorough refresh
               timeoutRef.current = setTimeout(() => {
-                queryClient.invalidateQueries({ queryKey: ['borrowedLoans'] });
+                queryClient.invalidateQueries({ queryKey: ['borrowerLoans'] });
                 queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
                 queryClient.invalidateQueries({ queryKey: ['loans'] });
                 queryClient.invalidateQueries({ queryKey: ['creditLines'] });
+                queryClient.invalidateQueries({ queryKey: ['loanNFTs'] });
                 timeoutRef.current = null;
               }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
             }}
