@@ -1,0 +1,71 @@
+api.web3modal.org/getAnalyticsConfig?projectId=default_project_id&st=appkit&sv=html-core-1.7.3:1 
+            
+            
+           Failed to load resource: the server responded with a status of 403 ()Understand this error
+index-BfdPycXG.js:1827 DEBUG: Processing loan ID: 4
+index-BfdPycXG.js:1827 DEBUG: Loan contract data: Object
+index-BfdPycXG.js:1827 DEBUG: Processing loan ID: 5
+index-BfdPycXG.js:1834 Transaction status: Object
+index-BfdPycXG.js:1827 DEBUG: Querying CreditLineUpdated events with args: Object
+index-BfdPycXG.js:1827 DEBUG: Loan contract data: Object
+index-BfdPycXG.js:1827 DEBUG: Found 5 CreditLineUpdated events
+index-BfdPycXG.js:1834 DEBUG: useBorrowerCreditLines found events: 5
+index-BfdPycXG.js:1834 Transaction status: Object
+index-BfdPycXG.js:1834 DEBUG Credit calculation: Object
+index-BfdPycXG.js:1827 DEBUG: Successfully processed loan: 5
+index-BfdPycXG.js:1827 DEBUG: useBorrowerLoans successfully added loan: 5
+index-BfdPycXG.js:1827 DEBUG: Processing loan ID: 6
+index-BfdPycXG.js:1827 DEBUG: Loan contract data: Object
+index-BfdPycXG.js:1834 DEBUG Credit calculation: Object
+index-BfdPycXG.js:1827 DEBUG: Successfully processed loan: 6
+index-BfdPycXG.js:1827 DEBUG: useBorrowerLoans successfully added loan: 6
+index-BfdPycXG.js:1827 DEBUG: useBorrowerLoans returning 2 loans
+index-BfdPycXG.js:1834 Transaction status: Object
+index-BfdPycXG.js:1834 DEBUG Credit calculation: Object
+index-BfdPycXG.js:1834 Transaction status: Object
+index-BfdPycXG.js:1834 Transaction status: Object
+index-BfdPycXG.js:1834 Transaction status: Object
+index-BfdPycXG.js:1834 Transaction status: Object
+index-BfdPycXG.js:1834 Transaction status: Object
+index-BfdPycXG.js:1834 Transaction status: Object
+index-BfdPycXG.js:1834 Starting transaction execution...
+index-BfdPycXG.js:1834 Executing enhanced repay transaction: Object
+index-BfdPycXG.js:1834 Starting repay transaction with enhanced gas estimation and query suspension...
+index-BfdPycXG.js:1834 Suspended queries during transaction: Array(3)
+index-BfdPycXG.js:1834 Preparing transaction for repay...
+index-BfdPycXG.js:1834 Estimating gas for repay...
+index-BfdPycXG.js:1834 Transaction status: Object
+index-BfdPycXG.js:1834 Gas estimation completed for repay
+index-BfdPycXG.js:1834 Executing repay with gas limit: 240000
+index-BfdPycXG.js:1834 Transaction status: Object
+index-BfdPycXG.js:1834 Transaction submitted successfully: 0x30c318a60df0e6c6fc9619a24a0a968cb0a14c6560d67da8d1a6a7a0c132ed4c
+index-BfdPycXG.js:1834 Enhanced repay transaction hash: 0x30c318a60df0e6c6fc9619a24a0a968cb0a14c6560d67da8d1a6a7a0c132ed4c
+index-BfdPycXG.js:1834 Transaction executed successfully, hash: 0x30c318a60df0e6c6fc9619a24a0a968cb0a14c6560d67da8d1a6a7a0c132ed4c
+index-BfdPycXG.js:1834 Transaction status: Object
+index-BfdPycXG.js:1834 Transaction status: Object
+index-BfdPycXG.js:1827 DEBUG: Querying LoanCreated events with args: Object
+index-BfdPycXG.js:1827 DEBUG: Querying CreditLineUpdated events with args: Object
+index-BfdPycXG.js:1834 Resumed queries after transaction: Array(3)
+index-BfdPycXG.js:1827 DEBUG: Found 5 LoanCreated events
+index-BfdPycXG.js:1827 DEBUG: useBorrowerLoans found loan events: 5
+index-BfdPycXG.js:1827 DEBUG: Processing loan ID: 0
+index-BfdPycXG.js:1827 DEBUG: Found 5 CreditLineUpdated events
+index-BfdPycXG.js:1834 DEBUG: useBorrowerCreditLines found events: 5
+index-BfdPycXG.js:1827 DEBUG: Loan contract data: Object
+index-BfdPycXG.js:1834 DEBUG Credit calculation: Object
+index-BfdPycXG.js:1827 DEBUG: Processing loan ID: 3
+index-BfdPycXG.js:1827 DEBUG: Loan contract data: Object
+index-BfdPycXG.js:1834 DEBUG Credit calculation: Object
+index-BfdPycXG.js:1827 DEBUG: Processing loan ID: 4
+index-BfdPycXG.js:1834 DEBUG Credit calculation: Object
+index-BfdPycXG.js:1827 DEBUG: Loan contract data: Object
+index-BfdPycXG.js:1827 DEBUG: Processing loan ID: 5
+index-BfdPycXG.js:1827 DEBUG: Loan contract data: Object
+index-BfdPycXG.js:1827 DEBUG: Successfully processed loan: 5
+index-BfdPycXG.js:1827 DEBUG: useBorrowerLoans successfully added loan: 5
+index-BfdPycXG.js:1827 DEBUG: Processing loan ID: 6
+index-BfdPycXG.js:1827 DEBUG: Loan contract data: Object
+index-BfdPycXG.js:1827 DEBUG: Successfully processed loan: 6
+index-BfdPycXG.js:1827 DEBUG: useBorrowerLoans successfully added loan: 6
+index-BfdPycXG.js:1827 DEBUG: useBorrowerLoans returning 2 loans
+index-BfdPycXG.js:1834 Transact

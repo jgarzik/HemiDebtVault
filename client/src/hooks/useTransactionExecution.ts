@@ -8,10 +8,22 @@ export function useTransactionExecution() {
   const [txHash, setTxHash] = useState<string | null>(null);
   const { isSuspended } = useQuerySuspension();
 
-  // Wait for transaction confirmation (suspended during other wallet operations)
+  // Wait for transaction confirmation (allow confirmation watching even when queries are suspended)
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-    hash: !isSuspended ? (txHash as `0x${string}` | undefined) : undefined,
+    hash: txHash as `0x${string}` | undefined,
   });
+
+  // Debug transaction confirmation status
+  useEffect(() => {
+    if (txHash) {
+      console.log('Transaction receipt status:', {
+        txHash,
+        isConfirming,
+        isConfirmed,
+        isSuspended
+      });
+    }
+  }, [txHash, isConfirming, isConfirmed, isSuspended]);
 
   const execute = async (transactionFn: () => Promise<string>) => {
     setIsExecuting(true);
