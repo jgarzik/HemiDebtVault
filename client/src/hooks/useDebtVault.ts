@@ -2,6 +2,9 @@ import { useAccount } from 'wagmi';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { useTransactionBuilder } from './useTransactionBuilder';
+import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
+import { DEBT_VAULT_ABI } from '@/lib/contract';
+import { publicRpcClient } from '@/lib/rpcHelpers';
 import type { PortfolioStats } from '@/types';
 
 export function useDebtVault() {
