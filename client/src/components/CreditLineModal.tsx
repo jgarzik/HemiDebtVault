@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,9 @@ import { TokenSelector } from './TokenSelector';
 import { TransactionButton } from './TransactionButton';
 import { useDebtVault } from '@/hooks/useDebtVault';
 import { usePoolPosition } from '@/hooks/usePoolPosition';
+import { useCacheInvalidation } from '@/lib/cacheInvalidation';
+import { useAccount } from 'wagmi';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
-import { TRANSACTION_CONFIG } from '@/lib/constants';
 import { parseUnits, isAddress } from 'viem';
 import { type Token, findTokenByAddress } from '@/lib/tokens';
 
@@ -24,7 +25,8 @@ export function CreditLineModal({ isOpen, onClose, onSuccess, editingCreditLine 
   const { updateCreditLine } = useDebtVault();
   const { tokenBalances } = usePoolPosition();
   const queryClient = useQueryClient();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { address } = useAccount();
+  const cacheManager = useCacheInvalidation(queryClient);
   
   const [borrowerAddress, setBorrowerAddress] = useState('');
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
@@ -66,15 +68,7 @@ export function CreditLineModal({ isOpen, onClose, onSuccess, editingCreditLine 
     onClose();
   };
 
-  // Cleanup timeout on component unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    };
-  }, []);
+  // Component cleanup (no longer needed with centralized cache management)
 
   const validateNumericInput = (value: string): boolean => {
     if (!value || value.trim() === '') return false;
@@ -276,17 +270,8 @@ export function CreditLineModal({ isOpen, onClose, onSuccess, editingCreditLine 
                 onClose();
               }}
               onSuccess={() => {
-                // Clear any existing timeout
-                if (timeoutRef.current) {
-                  clearTimeout(timeoutRef.current);
-                }
-                
-                // Use optimized cache invalidation for credit line operations
-                timeoutRef.current = setTimeout(() => {
-                  queryClient.invalidateQueries({ queryKey: ['creditLines'] });
-                  queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
-                  timeoutRef.current = null;
-                }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
+                // Use centralized cache invalidation for credit line operations
+                cacheManager.invalidateAfterCreditLineUpdate(address);
                 
                 // Call the parent onSuccess callback
                 onSuccess?.();

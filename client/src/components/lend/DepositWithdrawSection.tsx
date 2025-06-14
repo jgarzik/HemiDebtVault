@@ -50,15 +50,7 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
   const { balance: withdrawBalance, formattedBalance: formattedWithdrawBalance } = getDepositedBalance(selectedWithdrawToken);
   const isWithdrawBalanceLoading = false; // Already loaded via tokenBalances
 
-  // Cleanup timeout on component unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    };
-  }, []);
+  // Component cleanup (no longer needed with centralized cache management)
 
   const handleDeposit = async () => {
     if (!selectedToken || !depositAmount) return '';
@@ -69,7 +61,6 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
     // Reset form
     setDepositAmount('');
     setSelectedToken(null);
-    onSuccess?.();
     
     return txHash;
   };
@@ -83,7 +74,6 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
     // Reset form
     setWithdrawAmount('');
     setSelectedWithdrawToken(null);
-    onSuccess?.();
     
     return txHash;
   };
