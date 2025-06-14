@@ -32,7 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TransactionButton } from "@/components/TransactionButton";
 import { Loader2, ArrowRight } from "lucide-react";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { parseUnits, formatUnits, isAddress } from "viem";
 import { useAccount } from "wagmi";
 import { type Token, getAllTokens } from "@/lib/tokens";
@@ -80,7 +80,6 @@ export function RepaymentModal({
   const [isLoadingBalance, setIsLoadingBalance] = useState(true);
   const queryClient = useQueryClient();
   const cacheManager = useCacheInvalidation(queryClient);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Get the token info and fetch balance via centralized RPC helpers
   const tokens = getAllTokens();
@@ -128,15 +127,7 @@ export function RepaymentModal({
     fetchDataDirectly();
   }, [isOpen, address, tokenInfo, repaymentDetails.loanId]);
   
-  // Cleanup timeout on component unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    };
-  }, []);
+  // Component cleanup (no longer needed with centralized cache management)
   
   // Calculate payment breakdown as user types
   const paymentBreakdown: PaymentBreakdown = useMemo(() => {
