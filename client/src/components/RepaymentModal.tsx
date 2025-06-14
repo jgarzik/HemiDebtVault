@@ -365,10 +365,11 @@ export function RepaymentModal({
             } : undefined}
             actionLabel="Repay Loan"
             transactionAmount={paymentAmount ? `${paymentAmount} ${repaymentDetails.tokenSymbol}` : undefined}
-            onSuccess={() => {
-              // Close modal
+            onBeforeConfirm={() => {
+              // Close this modal before opening transaction confirmation
               onClose();
-              
+            }}
+            onSuccess={() => {
               // Clear any existing timeout
               if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
