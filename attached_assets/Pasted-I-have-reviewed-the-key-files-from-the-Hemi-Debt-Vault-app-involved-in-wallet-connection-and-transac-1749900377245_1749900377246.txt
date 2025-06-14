@@ -1,0 +1,92 @@
+I have reviewed the key files from the Hemi Debt Vault app involved in wallet connection and transaction submission, especially around the Repayment flow. Here’s what I found, and why MetaMask might lock up:
+
+🔍 Root Cause Analysis: Why MetaMask Locks Up
+🔧 Repayment Flow: RepaymentModal.tsx
+You invoke onConfirm, which internally calls:
+
+tsx
+Copy
+Edit
+await executeTransaction({ ...repayArgs })
+This goes through useTransactionExecution.ts → sendTransaction.
+
+⚠️ Problematic Pattern: Redundant Calls to Wallet in Parallel
+Inside useTransactionExecution.ts:
+
+ts
+Copy
+Edit
+const tx = await contract[functionName](...args)
+This call directly invokes the contract method, which immediately triggers MetaMask.
+
+But you do this without first estimating gas, populating the transaction, or checking if the signer is valid or fresh. SushiSwap always pre-estimates and builds the transaction before submission.
+
+🚨 Potential MetaMask Crash Triggers:
+Parallel Wallet Queries during render or execution:
+
+useTransactionFlow.ts listens to many states and refetches (react-query style).
+
+Wallet balance, loan state, and approval status may all be fetched while MetaMask prompt is up.
+
+This leads to:
+
+Stale signer or provider object being reused.
+
+New transaction requests arriving during existing MetaMask prompt.
+
+No populateTransaction step
+
+SushiSwap separates: build tx → estimate gas → show MetaMask.
+
+Your code jumps straight to contract.method(...), possibly sending incomplete calldata or malformed requests.
+
+Signer re-creation across renders
+
+useWalletConnection.ts might re-initialize providers or signers, especially if wallet/account state changes.
+
+If this happens between click and MetaMask interaction, MetaMask sees inconsistent signer context → can hang.
+
+✅ What SushiSwap Does Differently
+SushiSwap	Hemi Debt Vault
+Builds calldata separately via populateTransaction	Directly calls contract.method(...)
+Pre-estimates gas	No gas estimation
+Single, memoized signer	Possibly re-created signer in hooks
+Never re-renders TX component mid-flight	Possible re-renders from refetches
+Await + error wrap per TX	Some calls lack proper .catch()
+
+🛠️ Fix Recommendations
+✅ Use populateTransaction and estimateGas
+Instead of:
+
+ts
+Copy
+Edit
+const tx = await contract.repay(...args)
+Do:
+
+ts
+Copy
+Edit
+const calldata = await contract.populateTransaction.repay(...args)
+const gasLimit = await signer.estimateGas(calldata)
+const tx = await signer.sendTransaction({ ...calldata, gasLimit })
+✅ Avoid Parallel Wallet Requests During TX Prompt
+On repay button click, suspend all hooks or queries that access signer/wallet.
+
+Disable refetching or set enabled: false temporarily.
+
+✅ Memoize signer and contract correctly
+Avoid recreating new signer/provider instances within hooks or components.
+
+Use useMemo or a React context provider.
+
+🧪 Test Suggestion
+Before and after each sendTransaction call:
+
+ts
+Copy
+Edit
+console.log('signer address:', await signer.getAddress())
+console.log('nonce:', await provider.getTransactionCount(signerAddress))
+See if MetaMask is confused due to multiple signer references or in-flight RPC calls.
+

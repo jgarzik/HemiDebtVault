@@ -1,55 +1,32 @@
-import { useAccount, useWatchContractEvent, useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useWatchContractEvent, useReadContract } from 'wagmi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { useToast } from '@/hooks/use-toast';
 import { useRef } from 'react';
 import { useState, useEffect } from 'react';
+import { useTransactionBuilder } from './useTransactionBuilder';
 import type { CreditLine, Loan, PortfolioStats } from '@/types';
 
 export function useDebtVault() {
   const { address, isConnected } = useAccount();
   const { toast } = useToast();
   const [portfolioStats, setPortfolioStats] = useState<PortfolioStats | null>(null);
+  const txBuilder = useTransactionBuilder();
 
   // Event watching disabled to avoid Hemi RPC filter errors
   // Toast notifications will be handled by transaction success states instead
 
-  // Contract write hook
-  const { writeContractAsync, isPending: isWritePending } = useWriteContract();
-
-  // Helper functions for contract interactions
+  // Enhanced transaction methods using the transaction builder
   const deposit = async (token: string, amount: bigint) => {
-
-    const hash = await writeContractAsync({
-      address: DEBT_VAULT_ADDRESS,
-      abi: DEBT_VAULT_ABI,
-      functionName: 'deposit',
-      args: [token as `0x${string}`, amount],
-    });
-
-    return hash;
+    return txBuilder.deposit(token, amount);
   };
 
   const withdraw = async (token: string, amount: bigint) => {
-
-    const hash = await writeContractAsync({
-      address: DEBT_VAULT_ADDRESS,
-      abi: DEBT_VAULT_ABI,
-      functionName: 'withdraw',
-      args: [token as `0x${string}`, amount],
-    });
-
-    return hash;
+    return txBuilder.withdraw(token, amount);
   };
 
   const borrow = async (lender: string, token: string, amount: bigint, maxAPR: bigint) => {
-    const hash = await writeContractAsync({
-      address: DEBT_VAULT_ADDRESS,
-      abi: DEBT_VAULT_ABI,
-      functionName: 'borrow',
-      args: [lender as `0x${string}`, token as `0x${string}`, amount, maxAPR],
-    });
-    return hash;
+    return txBuilder.borrow(lender, token, amount, maxAPR);
   };
 
   const repay = async (loanId: bigint, amount: bigint) => {
@@ -57,47 +34,34 @@ export function useDebtVault() {
       throw new Error('Wallet not connected');
     }
 
-    console.log('Executing repay transaction:', { loanId: loanId.toString(), amount: amount.toString() });
-    
-    const hash = await writeContractAsync({
-      address: DEBT_VAULT_ADDRESS,
-      abi: DEBT_VAULT_ABI,
-      functionName: 'repay',
-      args: [loanId, amount],
+    console.log('Executing enhanced repay transaction:', { 
+      loanId: loanId.toString(), 
+      amount: amount.toString() 
     });
     
-    console.log('Repay transaction hash:', hash);
+    const hash = await txBuilder.repay(loanId, amount);
+    
+    console.log('Enhanced repay transaction hash:', hash);
     return hash;
   };
 
-  const updateCreditLine = async (borrower: string, token: string, creditLimit: bigint, minAPR: bigint, maxAPR: bigint, originationFee: bigint) => {
-    const hash = await writeContractAsync({
-      address: DEBT_VAULT_ADDRESS,
-      abi: DEBT_VAULT_ABI,
-      functionName: 'updateCreditLine',
-      args: [borrower as `0x${string}`, token as `0x${string}`, creditLimit, minAPR, maxAPR, originationFee],
-    });
-    return hash;
+  const updateCreditLine = async (
+    borrower: string, 
+    token: string, 
+    creditLimit: bigint, 
+    minAPR: bigint, 
+    maxAPR: bigint, 
+    originationFee: bigint
+  ) => {
+    return txBuilder.updateCreditLine(borrower, token, creditLimit, minAPR, maxAPR, originationFee);
   };
 
   const forgivePrincipal = async (loanId: bigint, amount: bigint) => {
-    const hash = await writeContractAsync({
-      address: DEBT_VAULT_ADDRESS,
-      abi: DEBT_VAULT_ABI,
-      functionName: 'forgivePrincipal',
-      args: [loanId, amount],
-    });
-    return hash;
+    return txBuilder.forgivePrincipal(loanId, amount);
   };
 
   const forgiveInterest = async (loanId: bigint) => {
-    const hash = await writeContractAsync({
-      address: DEBT_VAULT_ADDRESS,
-      abi: DEBT_VAULT_ABI,
-      functionName: 'forgiveInterest',
-      args: [loanId],
-    });
-    return hash;
+    return txBuilder.forgiveInterest(loanId);
   };
 
   // Get loan details by ID
@@ -190,12 +154,12 @@ export function useDebtVault() {
     forgiveInterest,
     
     // Loading states
-    isDepositLoading: isWritePending,
-    isWithdrawLoading: isWritePending,
-    isBorrowLoading: isWritePending,
-    isRepayLoading: isWritePending,
-    isUpdateCreditLoading: isWritePending,
-    isForgiveLoading: isWritePending,
+    isDepositLoading: txBuilder.isExecuting,
+    isWithdrawLoading: txBuilder.isExecuting,
+    isBorrowLoading: txBuilder.isExecuting,
+    isRepayLoading: txBuilder.isExecuting,
+    isUpdateCreditLoading: txBuilder.isExecuting,
+    isForgiveLoading: txBuilder.isExecuting,
     
     // Read functions
     getLoanById,
