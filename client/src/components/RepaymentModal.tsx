@@ -356,13 +356,12 @@ export function RepaymentModal({
             } : undefined}
             actionLabel="Repay Loan"
             transactionAmount={paymentAmount ? `${paymentAmount} ${repaymentDetails.tokenSymbol}` : undefined}
-            onBeforeConfirm={() => {
-              // Close this modal before opening transaction confirmation
-              onClose();
-            }}
+
             onSuccess={() => {
               // Use centralized cache invalidation for repayment
               cacheManager.invalidateAfterRepayment(address);
+              // Close modal after successful transaction
+              onClose();
             }}
           >
             {paymentAmount ? `Pay ${paymentAmount} ${repaymentDetails.tokenSymbol}` : 'Enter amount'}

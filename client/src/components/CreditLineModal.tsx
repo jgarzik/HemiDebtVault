@@ -265,13 +265,12 @@ export function CreditLineModal({ isOpen, onClose, onSuccess, editingCreditLine 
               className="flex-1 bg-blue-600 hover:bg-blue-700"
               actionLabel={editingCreditLine ? "Update Credit Line" : "Create Credit Line"}
               transactionAmount={selectedToken && creditLimit ? `${creditLimit} ${selectedToken.symbol} limit` : undefined}
-              onBeforeConfirm={() => {
-                // Close this modal before opening transaction confirmation
-                onClose();
-              }}
               onSuccess={() => {
                 // Use centralized cache invalidation for credit line operations
                 cacheManager.invalidateAfterCreditLineUpdate(address);
+                
+                // Close modal after successful transaction
+                onClose();
                 
                 // Call the parent onSuccess callback
                 onSuccess?.();
