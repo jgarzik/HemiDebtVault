@@ -1,3 +1,22 @@
+/**
+ * Token Balance Query System
+ * 
+ * This module provides real-time token balance queries using direct RPC calls
+ * to prevent MetaMask conflicts while maintaining efficient caching patterns.
+ * 
+ * Key Features:
+ * - Direct RPC balance queries for individual and multiple tokens
+ * - Automatic balance formatting with proper decimal handling
+ * - Efficient caching with optimized refresh intervals
+ * - Error handling with retry logic for network failures
+ * - Support for batch balance queries across token portfolios
+ * 
+ * Architecture:
+ * - Uses direct RPC calls instead of wagmi hooks to prevent wallet conflicts
+ * - Integrates with TanStack Query for intelligent caching
+ * - Provides formatted balances ready for UI display
+ * - Handles edge cases like zero balances and invalid tokens
+ */
 import { useAccount } from 'wagmi';
 import { useQuery } from '@tanstack/react-query';
 import { type Token } from '@/lib/tokens';

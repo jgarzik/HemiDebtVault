@@ -1,3 +1,22 @@
+/**
+ * Loan NFT Management System
+ * 
+ * This module fetches and manages loan NFT data for users, providing comprehensive
+ * loan information including ownership, borrower status, and financial details.
+ * 
+ * Key Features:
+ * - Direct RPC queries for loan NFT enumeration and metadata
+ * - Real-time loan status and outstanding balance calculations
+ * - Owner vs original borrower distinction for transferred loans
+ * - Comprehensive loan data with formatted currency displays
+ * - Efficient batch loading of loan portfolio data
+ * 
+ * Architecture:
+ * - Uses direct RPC calls to prevent MetaMask conflicts during queries
+ * - Provides helper functions for loan lookup and balance retrieval
+ * - Handles loan transfers and ownership changes automatically
+ * - Formats all monetary values for consistent UI display
+ */
 import { useAccount } from 'wagmi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';

@@ -1,3 +1,22 @@
+/**
+ * Debt Vault Operations Hub
+ * 
+ * This module provides the primary interface for all debt vault contract interactions,
+ * coordinating transaction execution, RPC queries, and portfolio management.
+ * 
+ * Key Features:
+ * - Complete debt vault operation suite (deposit, withdraw, borrow, repay)
+ * - Credit line management for lenders
+ * - Direct RPC contract queries for real-time data
+ * - Enhanced transaction execution with gas optimization
+ * - Portfolio statistics and user metrics
+ * 
+ * Architecture:
+ * - Wraps transaction builder for consistent execution patterns
+ * - Uses direct RPC calls for all read operations
+ * - Provides unified interface for both borrower and lender operations
+ * - Integrates with toast notifications for user feedback
+ */
 import { useAccount } from 'wagmi';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';

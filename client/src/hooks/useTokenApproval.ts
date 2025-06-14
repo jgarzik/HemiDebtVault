@@ -1,3 +1,22 @@
+/**
+ * Token Approval Management System
+ * 
+ * This module handles ERC-20 token approval detection and execution for debt vault
+ * operations, using direct RPC calls to prevent MetaMask conflicts during transactions.
+ * 
+ * Key Features:
+ * - Real-time allowance checking via direct RPC calls
+ * - Automatic approval detection with sufficient balance validation
+ * - Integration with transaction builder for consistent approval execution
+ * - Query suspension awareness to prevent wallet conflicts
+ * - Optimized refresh patterns for immediate UI updates
+ * 
+ * Architecture:
+ * - Uses direct RPC for allowance queries to avoid wallet conflicts
+ * - Integrates with transaction builder for approval execution
+ * - Provides boolean flags for approval status and requirements
+ * - Handles approval transaction confirmation and cache updates
+ */
 import { useState, useEffect } from 'react';
 import { useAccount, useWaitForTransactionReceipt } from 'wagmi';
 import { parseUnits } from 'viem';

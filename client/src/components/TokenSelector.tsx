@@ -1,3 +1,22 @@
+/**
+ * Dynamic Token Selection Component
+ * 
+ * This component provides comprehensive token selection with custom token import
+ * capabilities, real-time metadata fetching, and balance display integration.
+ * 
+ * Key Features:
+ * - Token selection from predefined and custom token lists
+ * - Real-time token metadata fetching via direct RPC calls
+ * - Custom token import with automatic metadata validation
+ * - Balance display integration for informed user decisions
+ * - Input validation and error handling for token addresses
+ * 
+ * Architecture:
+ * - Uses direct RPC calls for token metadata fetching
+ * - Integrates with local storage for custom token persistence
+ * - Provides flexible configuration for different use cases
+ * - Handles edge cases like invalid addresses and missing metadata
+ */
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
