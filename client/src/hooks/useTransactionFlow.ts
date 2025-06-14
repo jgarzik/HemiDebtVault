@@ -68,9 +68,6 @@ export function useTransactionFlow({
   const approval = useTokenApproval(requiresApproval);
   // Create a combined success handler that includes toast and callback
   const handleTransactionSuccess = () => {
-    console.log('Transaction confirmed! Showing success toast');
-    console.log('onSuccess callback exists:', !!onSuccess);
-    
     toast({
       title: `${actionLabel || 'Transaction'} Successful`,
       description: transactionAmount 
@@ -80,10 +77,7 @@ export function useTransactionFlow({
     
     // Call success callback for data refresh
     if (onSuccess) {
-      console.log('Calling onSuccess callback...');
       onSuccess();
-    } else {
-      console.log('No onSuccess callback provided');
     }
     
     // Trigger global data refresh event
@@ -201,14 +195,7 @@ export function useTransactionFlow({
     }
   };
 
-  // Debug transaction status for monitoring
-  useEffect(() => {
-    console.log('useTransactionFlow - Transaction status:', { 
-      isConfirmed: execution.isConfirmed, 
-      txHash: execution.txHash,
-      isExecuting: execution.isExecuting
-    });
-  }, [execution.isConfirmed, execution.txHash, execution.isExecuting]);
+
 
   return {
     currentState,
