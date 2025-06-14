@@ -73,18 +73,12 @@ export function useTransactionExecution() {
     }
   };
 
-  // Reset when transaction is confirmed with proper cleanup
+  // Reset execution state when transaction is confirmed
   useEffect(() => {
     if (isConfirmed && txHash) {
-      const timeoutId = setTimeout(() => {
-        setIsExecuting(false);
-        setTxHash(null);
-      }, 1000);
-
-      // Cleanup timeout on unmount or dependency change
-      return () => {
-        clearTimeout(timeoutId);
-      };
+      console.log('Transaction confirmed, stopping execution state');
+      setIsExecuting(false);
+      // Keep txHash available for reference, only clear on explicit reset
     }
   }, [isConfirmed, txHash]);
 
@@ -92,6 +86,7 @@ export function useTransactionExecution() {
     setIsExecuting(false);
     setError(null);
     setTxHash(null);
+    setIsConfirmed(false);
   };
 
   return {
