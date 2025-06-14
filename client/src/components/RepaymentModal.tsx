@@ -361,11 +361,6 @@ export function RepaymentModal({
               onClose();
             }}
             onSuccess={() => {
-              // Clear any existing timeout
-              if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-              }
-              
               // Use centralized cache invalidation for repayment
               cacheManager.invalidateAfterRepayment(address);
             }}
