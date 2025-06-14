@@ -1,3 +1,21 @@
+/**
+ * Data Consistency Management System
+ * 
+ * This module provides centralized cache invalidation to ensure UI data consistency
+ * across all loan, credit line, and portfolio operations after blockchain state changes.
+ * 
+ * Key Features:
+ * - Hierarchical cache invalidation based on data relationships
+ * - Immediate and delayed refresh strategies for optimal UX
+ * - Transaction-specific invalidation patterns
+ * - Coordinated updates across related data queries
+ * 
+ * Architecture:
+ * - Uses TanStack Query's invalidation system
+ * - Groups related queries for atomic cache updates
+ * - Prevents stale data display after successful transactions
+ * - Optimizes refresh timing to balance UX and performance
+ */
 import { QueryClient } from '@tanstack/react-query';
 import { TRANSACTION_CONFIG } from './constants';
 

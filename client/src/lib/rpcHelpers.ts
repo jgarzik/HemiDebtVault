@@ -1,3 +1,21 @@
+/**
+ * Direct RPC Communication Layer
+ * 
+ * This module provides centralized RPC helpers for blockchain queries that bypass
+ * wagmi hooks to prevent MetaMask conflicts during transaction execution.
+ * 
+ * Key Features:
+ * - Direct viem RPC client for read-only blockchain operations
+ * - ERC-20 token interaction helpers with automatic decimals handling
+ * - Balance formatting utilities for consistent UI display
+ * - Error handling for network failures and invalid addresses
+ * 
+ * Architecture:
+ * - Uses viem's createPublicClient for direct RPC calls
+ * - Eliminates parallel wallet queries that crash MetaMask
+ * - Provides consistent interface for all blockchain reads
+ * - Supports token metadata fetching and balance checking
+ */
 import { createPublicClient, http, formatUnits } from 'viem';
 import { hemiNetwork } from '@/lib/hemi';
 import { type Token } from '@/lib/tokens';

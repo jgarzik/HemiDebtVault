@@ -1,3 +1,22 @@
+/**
+ * Loan Repayment Interface
+ * 
+ * This component provides a comprehensive loan repayment interface with real-time
+ * interest calculations, payment breakdowns, and MetaMask-stable transaction execution.
+ * 
+ * Key Features:
+ * - Real-time outstanding balance calculation using direct RPC calls
+ * - Dynamic payment breakdown showing interest vs principal allocation
+ * - Flexible repayment amounts with full payoff detection
+ * - Token balance validation and approval handling
+ * - MetaMask conflict prevention during transaction execution
+ * 
+ * Architecture:
+ * - Uses direct RPC calls for all balance and interest queries
+ * - Integrates with TransactionButton for consistent transaction flow
+ * - Provides detailed payment preview before transaction execution
+ * - Handles partial and full loan repayments seamlessly
+ */
 import {
   Dialog,
   DialogContent,

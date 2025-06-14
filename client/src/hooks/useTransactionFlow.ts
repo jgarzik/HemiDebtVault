@@ -1,3 +1,22 @@
+/**
+ * Transaction State Management System
+ * 
+ * This module orchestrates the complete transaction lifecycle from wallet connection
+ * through execution, managing state transitions and user feedback throughout.
+ * 
+ * Key Features:
+ * - Comprehensive transaction state machine with clear progression
+ * - Automatic wallet connection and network validation
+ * - Token approval detection and execution
+ * - Error handling with user-friendly feedback
+ * - Integration with toast notifications for status updates
+ * 
+ * Architecture:
+ * - State-driven transaction flow with clear transitions
+ * - Coordinates multiple hooks for wallet, network, and approval management
+ * - Provides unified interface for all transaction types
+ * - Handles edge cases and error recovery automatically
+ */
 import { useState, useEffect } from 'react';
 import { useWalletConnection } from './useWalletConnection';
 import { useNetworkSwitching } from './useNetworkSwitching';

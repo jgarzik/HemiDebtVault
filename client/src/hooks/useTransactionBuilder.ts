@@ -6,8 +6,22 @@ import { useQuerySuspension } from './useQuerySuspension';
 import { publicRpcClient } from '@/lib/rpcHelpers';
 
 /**
- * Enhanced transaction system following SushiSwap patterns
- * Separates gas estimation, transaction preparation, and execution
+ * Enhanced Transaction Builder System
+ * 
+ * This module provides a centralized transaction builder that handles gas estimation,
+ * transaction preparation, and execution with MetaMask conflict prevention.
+ * 
+ * Key Features:
+ * - Direct RPC gas estimation to avoid wallet query conflicts
+ * - Automatic gas buffer calculation for reliable execution
+ * - Query suspension during transaction execution
+ * - Consistent transaction patterns across all contract operations
+ * 
+ * Architecture:
+ * - Uses direct RPC for simulation and gas estimation
+ * - Leverages wagmi for actual wallet transaction signing
+ * - Implements query suspension to prevent MetaMask crashes
+ * - Provides unified interface for all debt vault operations
  */
 export function useTransactionBuilder() {
   const { address, isConnected } = useAccount();

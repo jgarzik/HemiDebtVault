@@ -2,8 +2,22 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 
 /**
- * Query suspension hook to prevent parallel wallet requests during transactions
- * Following SushiSwap's pattern of suspending queries during MetaMask interactions
+ * MetaMask Conflict Prevention System
+ * 
+ * This module prevents MetaMask crashes by suspending wallet-dependent queries
+ * during transaction execution, eliminating parallel request conflicts.
+ * 
+ * Key Features:
+ * - Temporarily disables queries that access wallet/signer during transactions
+ * - Automatic query resumption after transaction completion
+ * - Selective suspension based on query types and patterns
+ * - Transaction isolation to prevent resource conflicts
+ * 
+ * Architecture:
+ * - Uses TanStack Query's state management for suspension
+ * - Wraps transaction execution with query suspension logic
+ * - Follows SushiSwap's proven pattern for MetaMask stability
+ * - Provides callback-based suspension control for flexibility
  */
 export function useQuerySuspension() {
   const queryClient = useQueryClient();

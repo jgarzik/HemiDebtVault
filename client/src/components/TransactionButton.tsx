@@ -1,3 +1,23 @@
+/**
+ * Universal Transaction Interface
+ * 
+ * This component provides a unified transaction interface that handles wallet connection,
+ * network validation, token approvals, and transaction execution with comprehensive
+ * error handling and user feedback.
+ * 
+ * Key Features:
+ * - Automatic wallet connection and network switching
+ * - Token approval detection and execution
+ * - Transaction confirmation modals with detailed breakdowns
+ * - Loading states and error handling
+ * - Loan-specific confirmation flows with APR and terms display
+ * 
+ * Architecture:
+ * - Uses useTransactionFlow for state management
+ * - Integrates approval flows before transaction execution
+ * - Provides context-aware confirmation modals
+ * - Handles all transaction types through unified interface
+ */
 import { Button } from '@/components/ui/button';
 import { useTransactionFlow } from '@/hooks/useTransactionFlow';
 import { TransactionModal } from './TransactionModal';
