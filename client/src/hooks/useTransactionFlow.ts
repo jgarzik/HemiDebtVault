@@ -45,6 +45,7 @@ interface TransactionFlowParams {
   transactionAmount?: string;
   disabled?: boolean;
   onSuccess?: () => void;
+  onBeforeConfirm?: () => void;
 }
 
 export function useTransactionFlow({
@@ -53,7 +54,8 @@ export function useTransactionFlow({
   actionLabel,
   transactionAmount,
   disabled = false,
-  onSuccess
+  onSuccess,
+  onBeforeConfirm
 }: TransactionFlowParams) {
   const { toast } = useToast();
   const [showModal, setShowModal] = useState(false);
@@ -122,6 +124,13 @@ export function useTransactionFlow({
           break;
           
         case 'ready_to_execute':
+          // Call onBeforeConfirm to allow parent modal to close first
+          if (onBeforeConfirm) {
+            onBeforeConfirm();
+            // Small delay to allow parent modal to close before opening transaction modal
+            await new Promise(resolve => setTimeout(resolve, 150));
+          }
+          
           setModalData({
             title: actionLabel || 'Execute Transaction',
             description: transactionAmount 
