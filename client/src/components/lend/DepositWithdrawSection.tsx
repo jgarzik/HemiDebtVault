@@ -155,7 +155,7 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                     amount: depositAmount,
                     spenderAddress: DEBT_VAULT_ADDRESS
                   } : undefined}
-                  actionLabel="Deposit to Liquidity Pool"
+                  actionLabel="Deposit to Pool"
                   transactionAmount={selectedToken && depositAmount ? `${depositAmount} ${selectedToken.symbol}` : undefined}
                   className="w-full bg-blue-600 hover:bg-blue-700"
                   onSuccess={() => {
@@ -164,7 +164,7 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                       clearTimeout(timeoutRef.current);
                     }
                     
-                    // Invalidate pool position and token balance queries to refresh data
+                    // Use optimized cache invalidation for pool operations
                     timeoutRef.current = setTimeout(() => {
                       queryClient.invalidateQueries({ queryKey: ['poolPosition'] });
                       queryClient.invalidateQueries({ queryKey: ['tokenBalance'] });
@@ -220,7 +220,7 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                   onExecute={handleWithdraw}
                   disabled={!selectedWithdrawToken || !withdrawAmount || parseFloat(withdrawAmount) <= 0}
                   className="w-full bg-red-600 hover:bg-red-700"
-                  actionLabel="Withdraw from Liquidity Pool"
+                  actionLabel="Withdraw from Pool"
                   transactionAmount={selectedWithdrawToken && withdrawAmount ? `${withdrawAmount} ${selectedWithdrawToken.symbol}` : undefined}
                   onSuccess={() => {
                     // Clear any existing timeout
@@ -228,7 +228,7 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                       clearTimeout(timeoutRef.current);
                     }
                     
-                    // Invalidate pool position and token balance queries to refresh data
+                    // Use optimized cache invalidation for pool operations
                     timeoutRef.current = setTimeout(() => {
                       queryClient.invalidateQueries({ queryKey: ['poolPosition'] });
                       queryClient.invalidateQueries({ queryKey: ['tokenBalance'] });
