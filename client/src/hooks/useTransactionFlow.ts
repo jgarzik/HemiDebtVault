@@ -46,6 +46,7 @@ interface TransactionFlowParams {
   disabled?: boolean;
   onSuccess?: () => void;
   onBeforeConfirm?: () => void;
+  onTransactionSent?: () => void;
 }
 
 export function useTransactionFlow({
@@ -55,7 +56,8 @@ export function useTransactionFlow({
   transactionAmount,
   disabled = false,
   onSuccess,
-  onBeforeConfirm
+  onBeforeConfirm,
+  onTransactionSent
 }: TransactionFlowParams) {
   const { toast } = useToast();
   const [showModal, setShowModal] = useState(false);
@@ -157,6 +159,8 @@ export function useTransactionFlow({
       } else if (currentState === 'ready_to_execute') {
         await execution.execute(onExecute);
         setShowModal(false);
+        // Call onTransactionSent immediately when transaction is sent to wallet
+        onTransactionSent?.();
         // Success handling moved to useEffect when transaction is actually confirmed
       }
     } catch (error) {

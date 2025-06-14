@@ -46,6 +46,7 @@ interface TransactionButtonProps {
   };
   onSuccess?: () => void;
   onBeforeConfirm?: () => void;
+  onTransactionSent?: () => void;
 }
 
 export function TransactionButton({ 
@@ -58,7 +59,8 @@ export function TransactionButton({
   transactionAmount,
   loanDetails,
   onSuccess,
-  onBeforeConfirm
+  onBeforeConfirm,
+  onTransactionSent
 }: TransactionButtonProps) {
   const {
     buttonLabel,
@@ -77,7 +79,8 @@ export function TransactionButton({
     transactionAmount,
     disabled,
     onSuccess,
-    onBeforeConfirm
+    onBeforeConfirm,
+    onTransactionSent
   });
 
   return (
