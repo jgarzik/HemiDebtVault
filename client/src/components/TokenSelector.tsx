@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -37,17 +37,6 @@ export function TokenSelector({ selectedToken, onTokenSelect, className, availab
   const [tokenName, setTokenName] = useState<string>('');
   const [tokenSymbol, setTokenSymbol] = useState<string>('');
   const [tokenDecimals, setTokenDecimals] = useState<number | undefined>();
-
-  // Fetch token metadata via direct RPC when address changes
-  useState(() => {
-    if (isValidAddress(customAddress)) {
-      fetchTokenMetadata();
-    } else {
-      setTokenName('');
-      setTokenSymbol('');
-      setTokenDecimals(undefined);
-    }
-  }, [customAddress]);
 
   const fetchTokenMetadata = async () => {
     if (!isValidAddress(customAddress)) return;
@@ -92,23 +81,27 @@ export function TokenSelector({ selectedToken, onTokenSelect, className, availab
       return;
     }
 
+    setIsImporting(true);
+    
+    // Fetch token metadata first
+    await fetchTokenMetadata();
+
     if (!tokenName || !tokenSymbol || tokenDecimals === undefined) {
       toast({
         title: "Token Not Found",
         description: "Unable to fetch token metadata. Please verify the address.",
         variant: "destructive",
       });
+      setIsImporting(false);
       return;
     }
 
-    setIsImporting(true);
-
     try {
       const newToken: Token = {
-        symbol: tokenSymbol as string,
+        symbol: tokenSymbol,
         address: customAddress as `0x${string}`,
-        decimals: Number(tokenDecimals),
-        name: tokenName as string,
+        decimals: tokenDecimals,
+        name: tokenName,
         isCustom: true,
       };
 
@@ -122,6 +115,9 @@ export function TokenSelector({ selectedToken, onTokenSelect, className, availab
 
       setIsImportOpen(false);
       setCustomAddress('');
+      setTokenName('');
+      setTokenSymbol('');
+      setTokenDecimals(undefined);
     } catch (error) {
       toast({
         title: "Import Failed",

@@ -1,9 +1,10 @@
-import { useAccount, useReadContract, usePublicClient } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { useState, useEffect } from 'react';
 import { formatUnits } from 'viem';
 import { findTokenByAddress } from '@/lib/tokens';
+import { publicRpcClient } from '@/lib/rpcHelpers';
 
 interface LoanNFT {
   loanId: bigint;
@@ -31,20 +32,9 @@ interface LoanNFT {
 
 export function useLoanNFTs() {
   const { address } = useAccount();
-  const publicClient = usePublicClient();
   const [loanNFTs, setLoanNFTs] = useState<LoanNFT[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Get user's NFT balance
-  const { data: balance } = useReadContract({
-    address: DEBT_VAULT_ADDRESS,
-    abi: DEBT_VAULT_ABI,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: {
-      enabled: !!address,
-    },
-  });
+  const [balance, setBalance] = useState<bigint>(BigInt(0));
 
   // Function to get token ID by index for the user
   const getTokenOfOwnerByIndex = (index: number) => {

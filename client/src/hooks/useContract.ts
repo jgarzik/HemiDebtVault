@@ -1,9 +1,11 @@
-import { useReadContract, useWriteContract } from 'wagmi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
+import { publicRpcClient } from '@/lib/rpcHelpers';
+import { useTransactionBuilder } from './useTransactionBuilder';
 
-export function useContractRead(functionName: string, args?: any[]) {
-  return useReadContract({
+// Direct RPC contract read helper
+export async function contractRead(functionName: string, args?: any[]) {
+  return await publicRpcClient.readContract({
     address: DEBT_VAULT_ADDRESS,
     abi: DEBT_VAULT_ABI,
     functionName: functionName as any,
@@ -11,6 +13,7 @@ export function useContractRead(functionName: string, args?: any[]) {
   });
 }
 
+// Use centralized transaction builder for writes
 export function useContractWrite() {
-  return useWriteContract();
+  return useTransactionBuilder();
 }
