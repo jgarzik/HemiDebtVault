@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useWaitForTransactionReceipt, usePublicClient } from 'wagmi';
 import { useQuerySuspension } from './useQuerySuspension';
 
-export function useTransactionExecution() {
+export function useTransactionExecution(onConfirmed?: () => void) {
   const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
@@ -39,6 +39,12 @@ export function useTransactionExecution() {
       console.log('Transaction confirmed via manual polling:', receipt);
       setIsConfirmed(true);
       console.log('Set isConfirmed to true for hash:', hash);
+      
+      // Call the confirmation callback immediately
+      if (onConfirmed) {
+        console.log('Calling onConfirmed callback directly from useTransactionExecution');
+        onConfirmed();
+      }
     } catch (error) {
       console.error('Error polling for transaction confirmation:', error);
       console.error('Error details:', {

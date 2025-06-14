@@ -66,7 +66,33 @@ export function useTransactionFlow({
   const wallet = useWalletConnection();
   const network = useNetworkSwitching();
   const approval = useTokenApproval(requiresApproval);
-  const execution = useTransactionExecution();
+  // Create a combined success handler that includes toast and callback
+  const handleTransactionSuccess = () => {
+    console.log('Transaction confirmed! Showing success toast');
+    console.log('onSuccess callback exists:', !!onSuccess);
+    
+    toast({
+      title: `${actionLabel || 'Transaction'} Successful`,
+      description: transactionAmount 
+        ? `Successfully processed ${transactionAmount}`
+        : `${actionLabel || 'Transaction'} completed successfully`,
+    });
+    
+    // Call success callback for data refresh
+    if (onSuccess) {
+      console.log('Calling onSuccess callback...');
+      onSuccess();
+    } else {
+      console.log('No onSuccess callback provided');
+    }
+    
+    // Trigger global data refresh event
+    window.dispatchEvent(new CustomEvent('transactionSuccess', { 
+      detail: { txHash: 'confirmed', actionLabel } 
+    }));
+  };
+
+  const execution = useTransactionExecution(handleTransactionSuccess);
 
   // Determine current state
   const getCurrentState = (): TransactionState => {
@@ -175,41 +201,14 @@ export function useTransactionFlow({
     }
   };
 
-  // Show success toast when transaction is confirmed
+  // Debug transaction status for monitoring
   useEffect(() => {
     console.log('useTransactionFlow - Transaction status:', { 
       isConfirmed: execution.isConfirmed, 
       txHash: execution.txHash,
-      isExecuting: execution.isExecuting,
-      bothConditionsMet: execution.isConfirmed && execution.txHash
+      isExecuting: execution.isExecuting
     });
-    
-    // Trigger success when transaction is confirmed (txHash may be null due to state sync issues)
-    if (execution.isConfirmed) {
-      console.log('Transaction confirmed! Showing success toast');
-      console.log('onSuccess callback exists:', !!onSuccess);
-      
-      toast({
-        title: `${actionLabel || 'Transaction'} Successful`,
-        description: transactionAmount 
-          ? `Successfully processed ${transactionAmount}`
-          : `${actionLabel || 'Transaction'} completed successfully`,
-      });
-      
-      // Call success callback for data refresh
-      if (onSuccess) {
-        console.log('Calling onSuccess callback...');
-        onSuccess();
-      } else {
-        console.log('No onSuccess callback provided');
-      }
-      
-      // Trigger global data refresh event
-      window.dispatchEvent(new CustomEvent('transactionSuccess', { 
-        detail: { txHash: execution.txHash || 'confirmed', actionLabel } 
-      }));
-    }
-  }, [execution.isConfirmed, execution.txHash, execution.isExecuting, toast, actionLabel, transactionAmount, onSuccess]);
+  }, [execution.isConfirmed, execution.txHash, execution.isExecuting]);
 
   return {
     currentState,
