@@ -14,14 +14,13 @@ import { Label } from "@/components/ui/label";
 import { TransactionButton } from "@/components/TransactionButton";
 import { Loader2, ArrowRight } from "lucide-react";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { parseUnits, formatUnits, createPublicClient, http, isAddress } from "viem";
+import { parseUnits, formatUnits, isAddress } from "viem";
 import { useAccount } from "wagmi";
 import { type Token, getAllTokens } from "@/lib/tokens";
-import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { useDebtVault } from "@/hooks/useDebtVault";
-import { useQuerySuspension } from "@/hooks/useQuerySuspension";
-import { DEBT_VAULT_ADDRESS, hemiNetwork } from "@/lib/hemi";
+import { DEBT_VAULT_ADDRESS } from "@/lib/hemi";
 import { DEBT_VAULT_ABI } from "@/lib/contract";
+import { publicRpcClient, getTokenBalance } from "@/lib/rpcHelpers";
 
 interface RepaymentDetails {
   loanId: bigint;
@@ -63,19 +62,12 @@ export function RepaymentModal({
   const queryClient = useQueryClient();
   const cacheManager = useCacheInvalidation(queryClient);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const { isSuspended } = useQuerySuspension();
   
-  // Get the token info and fetch balance via direct RPC (no wallet queries)
+  // Get the token info and fetch balance via centralized RPC helpers
   const tokens = getAllTokens();
   const tokenInfo = tokens.find(t => t.address.toLowerCase() === repaymentDetails.token.toLowerCase());
   const [walletBalance, setWalletBalance] = useState<bigint | null>(null);
   const [formattedWalletBalance, setFormattedWalletBalance] = useState<string>('0');
-
-  // Create public client for contract calls
-  const publicClient = createPublicClient({
-    chain: hemiNetwork,
-    transport: http(),
-  });
 
   // Fetch data via direct RPC calls (no wallet involvement)
   useEffect(() => {
@@ -85,8 +77,8 @@ export function RepaymentModal({
       try {
         setIsLoadingBalance(true);
         
-        // Fetch outstanding balance via direct RPC
-        const outstandingBalance = await publicClient.readContract({
+        // Fetch outstanding balance via centralized RPC
+        const outstandingBalance = await publicRpcClient.readContract({
           address: DEBT_VAULT_ADDRESS,
           abi: DEBT_VAULT_ABI,
           functionName: 'getOutstandingBalance',
@@ -97,24 +89,10 @@ export function RepaymentModal({
         setCurrentPrincipal(formatUnits(principal, tokenInfo.decimals));
         setCurrentInterest(formatUnits(interest, tokenInfo.decimals));
 
-        // Fetch wallet balance via direct RPC (no wallet query)
-        const balance = await publicClient.readContract({
-          address: tokenInfo.address as `0x${string}`,
-          abi: [
-            {
-              name: 'balanceOf',
-              type: 'function',
-              stateMutability: 'view',
-              inputs: [{ name: 'account', type: 'address' }],
-              outputs: [{ name: '', type: 'uint256' }]
-            }
-          ],
-          functionName: 'balanceOf',
-          args: [address],
-        });
-
-        setWalletBalance(balance as bigint);
-        setFormattedWalletBalance(formatUnits(balance as bigint, tokenInfo.decimals));
+        // Fetch wallet balance via centralized RPC helper
+        const balance = await getTokenBalance(tokenInfo.address, address);
+        setWalletBalance(balance);
+        setFormattedWalletBalance(formatUnits(balance, tokenInfo.decimals));
         
       } catch (error) {
         console.error('Error fetching data via RPC:', error);
@@ -129,7 +107,7 @@ export function RepaymentModal({
     };
 
     fetchDataDirectly();
-  }, [isOpen, address, tokenInfo, repaymentDetails.loanId, publicClient]);
+  }, [isOpen, address, tokenInfo, repaymentDetails.loanId]);
   
   // Cleanup timeout on component unmount
   useEffect(() => {

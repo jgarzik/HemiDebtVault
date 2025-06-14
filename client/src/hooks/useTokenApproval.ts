@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useWaitForTransactionReceipt } from 'wagmi';
-import { parseUnits, createPublicClient, http } from 'viem';
+import { parseUnits } from 'viem';
 import { useQuery } from '@tanstack/react-query';
 import { Token } from '@/lib/tokens';
 import { useTransactionBuilder } from './useTransactionBuilder';
 import { useQuerySuspension } from './useQuerySuspension';
-import { hemiNetwork } from '@/lib/hemi';
 import { QUERY_CACHE_CONFIG } from '@/lib/constants';
+import { getTokenAllowance } from '@/lib/rpcHelpers';
 
 const ERC20_ABI = [
   {
@@ -44,23 +44,12 @@ export function useTokenApproval(params?: ApprovalParams) {
   const [isApproving, setIsApproving] = useState(false);
   const { isSuspended } = useQuerySuspension();
 
-  // Check current allowance via direct RPC (no wallet dependency)
+  // Check current allowance via centralized RPC helper
   const { data: currentAllowance, refetch: refetchAllowance } = useQuery({
     queryKey: ['tokenAllowance', params?.token.address, address, params?.spenderAddress],
     queryFn: async () => {
-      if (!params || !address || !approveToken) return BigInt(0);
-      
-      const publicClient = createPublicClient({
-        chain: hemiNetwork,
-        transport: http(),
-      });
-      
-      return await publicClient.readContract({
-        address: params.token.address as `0x${string}`,
-        abi: ERC20_ABI,
-        functionName: 'allowance',
-        args: [address, params.spenderAddress],
-      }) as bigint;
+      if (!params || !address) return BigInt(0);
+      return await getTokenAllowance(params.token.address, address, params.spenderAddress);
     },
     enabled: !!(address && params) && !isSuspended,
     staleTime: QUERY_CACHE_CONFIG.STALE_TIME,

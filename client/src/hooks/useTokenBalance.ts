@@ -6,39 +6,22 @@ import { getTokenBalance, getMultipleTokenBalances, formatTokenBalance } from '@
 
 export function useTokenBalance(token?: Token) {
   const { address } = useAccount();
-  const publicClient = usePublicClient();
 
   const { data: rawBalance, isLoading, error, refetch } = useQuery({
     queryKey: ['tokenBalance', token?.address, address],
     queryFn: async () => {
-      if (!token || !address || !publicClient) return BigInt(0);
-      
-      return await publicClient.readContract({
-        address: token.address as `0x${string}`,
-        abi: ERC20_ABI,
-        functionName: 'balanceOf',
-        args: [address],
-      }) as bigint;
+      if (!token || !address) return BigInt(0);
+      return await getTokenBalance(token.address, address);
     },
-    enabled: !!(token && address && publicClient),
+    enabled: !!(token && address),
     staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
     gcTime: QUERY_CACHE_CONFIG.GC_TIME,
     retry: 1,
     retryDelay: 2000,
   });
 
-
-
   const formattedBalance = token && rawBalance 
-    ? (() => {
-        const formatted = formatUnits(rawBalance, token.decimals);
-        const num = parseFloat(formatted);
-        // Show more decimals for very small amounts
-        if (num > 0 && num < 0.0001) {
-          return num.toFixed(12);
-        }
-        return formatted;
-      })()
+    ? formatTokenBalance(rawBalance, token.decimals)
     : '0';
 
   return {
@@ -50,45 +33,17 @@ export function useTokenBalance(token?: Token) {
   };
 }
 
-// Hook for fetching multiple token balances using direct RPC
+// Hook for fetching multiple token balances using centralized RPC helper
 export function useTokenBalances(tokens: Token[]) {
   const { address } = useAccount();
-  const publicClient = usePublicClient();
 
   const { data: balances = [], isLoading } = useQuery({
     queryKey: ['tokenBalances', tokens.map(t => t.address), address],
     queryFn: async () => {
-      if (!address || !publicClient || tokens.length === 0) return [];
-      
-      const balancePromises = tokens.map(async (token) => {
-        try {
-          const balance = await publicClient.readContract({
-            address: token.address as `0x${string}`,
-            abi: ERC20_ABI,
-            functionName: 'balanceOf',
-            args: [address],
-          }) as bigint;
-
-          return {
-            token,
-            balance,
-            formattedBalance: formatUnits(balance, token.decimals),
-            isLoading: false,
-          };
-        } catch (error) {
-          console.error(`Error fetching balance for ${token.symbol}:`, error);
-          return {
-            token,
-            balance: BigInt(0),
-            formattedBalance: '0',
-            isLoading: false,
-          };
-        }
-      });
-
-      return Promise.all(balancePromises);
+      if (!address || tokens.length === 0) return [];
+      return await getMultipleTokenBalances(tokens, address);
     },
-    enabled: !!(address && publicClient && tokens.length > 0),
+    enabled: !!(address && tokens.length > 0),
     staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
     gcTime: QUERY_CACHE_CONFIG.GC_TIME,
   });
