@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useAccount, useWaitForTransactionReceipt, useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { parseUnits } from 'viem';
 import { Token } from '@/lib/tokens';
-import { useQuerySuspension } from './useQuerySuspension';
+import { useTransactionBuilder } from './useTransactionBuilder';
 
 const ERC20_ABI = [
   {
@@ -35,8 +35,7 @@ interface ApprovalParams {
 
 export function useTokenApproval(params?: ApprovalParams) {
   const { address } = useAccount();
-  const { writeContractAsync } = useWriteContract();
-  const { withSuspension } = useQuerySuspension();
+  const { approveToken, isExecuting } = useTransactionBuilder();
   const [approvalHash, setApprovalHash] = useState<string | null>(null);
   const [isApproving, setIsApproving] = useState(false);
 
@@ -68,14 +67,11 @@ export function useTokenApproval(params?: ApprovalParams) {
     try {
       const approvalAmount = parseUnits(params.amount, params.token.decimals);
       
-      const hash = await withSuspension(async () => {
-        return writeContractAsync({
-          address: params.token.address,
-          abi: ERC20_ABI,
-          functionName: 'approve',
-          args: [params.spenderAddress, approvalAmount],
-        });
-      }, ['tokenBalance']);
+      const hash = await approveToken(
+        params.token.address,
+        params.spenderAddress,
+        approvalAmount
+      );
       
       setApprovalHash(hash);
       

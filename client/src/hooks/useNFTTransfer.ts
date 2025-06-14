@@ -1,10 +1,8 @@
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { useQuery } from '@tanstack/react-query';
-import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
-import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { useLoans, useBorrowerLoans } from './useLoans';
 import { QUERY_CACHE_CONFIG } from '@/lib/constants';
-import { useQuerySuspension } from './useQuerySuspension';
+import { useTransactionBuilder } from './useTransactionBuilder';
 
 interface TransferableLoan {
   loanId: bigint;

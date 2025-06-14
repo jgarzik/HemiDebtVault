@@ -145,6 +145,47 @@ export function useTransactionBuilder() {
     return executeTransaction('forgiveInterest', [loanId]);
   };
 
+  // Generic ERC-20 token approval
+  const approveToken = async (tokenAddress: string, spenderAddress: string, amount: bigint) => {
+    console.log('Starting token approval with enhanced system...');
+    
+    return withSuspension(async () => {
+      const hash = await writeContractAsync({
+        address: tokenAddress as `0x${string}`,
+        abi: [
+          {
+            name: 'approve',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [
+              { name: 'spender', type: 'address' },
+              { name: 'amount', type: 'uint256' }
+            ],
+            outputs: [{ name: '', type: 'bool' }]
+          }
+        ],
+        functionName: 'approve',
+        args: [spenderAddress as `0x${string}`, amount],
+      });
+      return hash;
+    }, ['tokenBalance']);
+  };
+
+  // NFT transfer function
+  const transferNFT = async (from: string, to: string, tokenId: bigint) => {
+    console.log('Starting NFT transfer with enhanced system...');
+    
+    return withSuspension(async () => {
+      const hash = await writeContractAsync({
+        address: DEBT_VAULT_ADDRESS,
+        abi: DEBT_VAULT_ABI,
+        functionName: 'transferFrom',
+        args: [from as `0x${string}`, to as `0x${string}`, tokenId],
+      });
+      return hash;
+    }, ['loans', 'borrowerLoans', 'loanNFTs']);
+  };
+
   return {
     // Enhanced transaction methods
     deposit,
@@ -154,6 +195,10 @@ export function useTransactionBuilder() {
     updateCreditLine,
     forgivePrincipal,
     forgiveInterest,
+    
+    // Generic transaction methods
+    approveToken,
+    transferNFT,
     
     // Utilities
     estimateGas,
