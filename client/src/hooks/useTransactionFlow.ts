@@ -184,7 +184,9 @@ export function useTransactionFlow({
     });
     
     if (execution.isConfirmed && execution.txHash) {
-      console.log('Showing success toast for transaction:', execution.txHash);
+      console.log('Transaction confirmed! Showing success toast for:', execution.txHash);
+      console.log('onSuccess callback exists:', !!onSuccess);
+      
       toast({
         title: `${actionLabel || 'Transaction'} Successful`,
         description: transactionAmount 
@@ -194,7 +196,10 @@ export function useTransactionFlow({
       
       // Call success callback for data refresh
       if (onSuccess) {
+        console.log('Calling onSuccess callback...');
         onSuccess();
+      } else {
+        console.log('No onSuccess callback provided');
       }
       
       // Trigger global data refresh event
@@ -202,7 +207,7 @@ export function useTransactionFlow({
         detail: { txHash: execution.txHash, actionLabel } 
       }));
     }
-  }, [execution.isConfirmed, execution.txHash, execution.isExecuting, toast, actionLabel, transactionAmount]);
+  }, [execution.isConfirmed, execution.txHash, execution.isExecuting, toast, actionLabel, transactionAmount, onSuccess]);
 
   return {
     currentState,
