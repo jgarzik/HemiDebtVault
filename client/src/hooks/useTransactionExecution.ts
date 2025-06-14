@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useWaitForTransactionReceipt } from 'wagmi';
+import { useQuerySuspension } from './useQuerySuspension';
 
 export function useTransactionExecution() {
   const [isExecuting, setIsExecuting] = useState(false);

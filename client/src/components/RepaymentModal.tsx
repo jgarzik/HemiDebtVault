@@ -19,6 +19,7 @@ import { useAccount } from "wagmi";
 import { type Token, getAllTokens } from "@/lib/tokens";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { useDebtVault } from "@/hooks/useDebtVault";
+import { useQuerySuspension } from "@/hooks/useQuerySuspension";
 import { DEBT_VAULT_ADDRESS, hemiNetwork } from "@/lib/hemi";
 import { DEBT_VAULT_ABI } from "@/lib/contract";
 
@@ -62,11 +63,14 @@ export function RepaymentModal({
   const queryClient = useQueryClient();
   const cacheManager = useCacheInvalidation(queryClient);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { isSuspended } = useQuerySuspension();
   
-  // Get the token info and user's wallet balance
+  // Get the token info and user's wallet balance (suspended during transactions)
   const tokens = getAllTokens();
   const tokenInfo = tokens.find(t => t.address.toLowerCase() === repaymentDetails.token.toLowerCase());
-  const { balance: walletBalance, formattedBalance: formattedWalletBalance } = useTokenBalance(tokenInfo);
+  const { balance: walletBalance, formattedBalance: formattedWalletBalance } = useTokenBalance(
+    isSuspended ? undefined : tokenInfo
+  );
 
   // Create public client for contract calls
   const publicClient = createPublicClient({
@@ -74,9 +78,9 @@ export function RepaymentModal({
     transport: http(),
   });
 
-  // Fetch accurate outstanding balance when modal opens
+  // Fetch accurate outstanding balance when modal opens (suspended during transactions)
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || isSuspended) return;
     
     const fetchOutstandingBalance = async () => {
       try {
@@ -106,7 +110,7 @@ export function RepaymentModal({
     };
 
     fetchOutstandingBalance();
-  }, [isOpen, repaymentDetails.loanId, tokenInfo, publicClient]);
+  }, [isOpen, isSuspended, repaymentDetails.loanId, tokenInfo, publicClient]);
   
   // Cleanup timeout on component unmount
   useEffect(() => {
