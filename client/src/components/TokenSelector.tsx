@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useReadContract } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,31 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, AlertCircle } from 'lucide-react';
 import { getAllTokens, saveCustomToken, isValidAddress, type Token } from '@/lib/tokens';
-
-// Standard ERC-20 ABI for token metadata
-const ERC20_ABI = [
-  {
-    "inputs": [],
-    "name": "name",
-    "outputs": [{"internalType": "string", "name": "", "type": "string"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "symbol",
-    "outputs": [{"internalType": "string", "name": "", "type": "string"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "decimals",
-    "outputs": [{"internalType": "uint8", "name": "", "type": "uint8"}],
-    "stateMutability": "view",
-    "type": "function"
-  }
-] as const;
+import { publicRpcClient } from '@/lib/rpcHelpers';
 
 interface TokenSelectorProps {
   selectedToken?: string;
@@ -59,23 +34,53 @@ export function TokenSelector({ selectedToken, onTokenSelect, className, availab
   };
 
   // Fetch token metadata for custom import
-  const { data: tokenName } = useReadContract({
-    address: isValidAddress(customAddress) ? customAddress as `0x${string}` : undefined,
-    abi: ERC20_ABI,
-    functionName: 'name',
-  });
+  const [tokenName, setTokenName] = useState<string>('');
+  const [tokenSymbol, setTokenSymbol] = useState<string>('');
+  const [tokenDecimals, setTokenDecimals] = useState<number | undefined>();
 
-  const { data: tokenSymbol } = useReadContract({
-    address: isValidAddress(customAddress) ? customAddress as `0x${string}` : undefined,
-    abi: ERC20_ABI,
-    functionName: 'symbol',
-  });
+  // Fetch token metadata via direct RPC when address changes
+  useState(() => {
+    if (isValidAddress(customAddress)) {
+      fetchTokenMetadata();
+    } else {
+      setTokenName('');
+      setTokenSymbol('');
+      setTokenDecimals(undefined);
+    }
+  }, [customAddress]);
 
-  const { data: tokenDecimals } = useReadContract({
-    address: isValidAddress(customAddress) ? customAddress as `0x${string}` : undefined,
-    abi: ERC20_ABI,
-    functionName: 'decimals',
-  });
+  const fetchTokenMetadata = async () => {
+    if (!isValidAddress(customAddress)) return;
+
+    try {
+      const [name, symbol, decimals] = await Promise.all([
+        publicRpcClient.readContract({
+          address: customAddress as `0x${string}`,
+          abi: [{ name: 'name', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'string' }] }],
+          functionName: 'name',
+        }),
+        publicRpcClient.readContract({
+          address: customAddress as `0x${string}`,
+          abi: [{ name: 'symbol', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'string' }] }],
+          functionName: 'symbol',
+        }),
+        publicRpcClient.readContract({
+          address: customAddress as `0x${string}`,
+          abi: [{ name: 'decimals', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint8' }] }],
+          functionName: 'decimals',
+        })
+      ]);
+
+      setTokenName(name as string);
+      setTokenSymbol(symbol as string);
+      setTokenDecimals(Number(decimals));
+    } catch (error) {
+      console.error('Error fetching token metadata:', error);
+      setTokenName('');
+      setTokenSymbol('');
+      setTokenDecimals(undefined);
+    }
+  };
 
   const handleImportToken = async () => {
     if (!isValidAddress(customAddress)) {

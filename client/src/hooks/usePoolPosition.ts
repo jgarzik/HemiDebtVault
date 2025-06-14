@@ -1,5 +1,5 @@
-import { useAccount, useReadContracts } from 'wagmi';
-import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useAccount } from 'wagmi';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { findTokenByAddress, Token } from '@/lib/tokens';
@@ -7,6 +7,7 @@ import { formatUnits } from 'viem';
 import { QUERY_CACHE_CONFIG } from '@/lib/constants';
 import { useActiveTokens } from './useActiveTokens';
 import { calculateUSDValue, formatUSDValue } from '@/lib/tokenPrices';
+import { publicRpcClient } from '@/lib/rpcHelpers';
 
 export function usePoolPosition() {
   const { address } = useAccount();
@@ -18,20 +19,32 @@ export function usePoolPosition() {
     return token;
   }).filter((token): token is Token => token !== undefined);
 
-  // Use multicall to batch all balance queries in a single RPC call
-  const { data: balanceResults } = useReadContracts({
-    contracts: tokensToQuery.map(token => ({
-      address: DEBT_VAULT_ADDRESS,
-      abi: DEBT_VAULT_ABI,
-      functionName: 'lenderDeposits',
-      args: [address, token.address],
-    })),
-    query: {
-      enabled: !!address && tokensToQuery.length > 0,
-      refetchInterval: false,
-      staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
-      gcTime: QUERY_CACHE_CONFIG.GC_TIME,
+  // Use direct RPC calls to batch all balance queries
+  const { data: balanceResults } = useQuery({
+    queryKey: ['poolPositions', address, tokensToQuery.map(t => t.address)],
+    queryFn: async () => {
+      if (!address || tokensToQuery.length === 0) return [];
+      
+      const balancePromises = tokensToQuery.map(async (token) => {
+        try {
+          const balance = await publicRpcClient.readContract({
+            address: DEBT_VAULT_ADDRESS,
+            abi: DEBT_VAULT_ABI,
+            functionName: 'lenderDeposits',
+            args: [address as `0x${string}`, token.address as `0x${string}`],
+          });
+          return { status: 'success' as const, result: balance as bigint };
+        } catch (error) {
+          console.error(`Error fetching deposit for ${token.symbol}:`, error);
+          return { status: 'failure' as const, result: BigInt(0) };
+        }
+      });
+
+      return Promise.all(balancePromises);
     },
+    enabled: !!address && tokensToQuery.length > 0,
+    staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
+    gcTime: QUERY_CACHE_CONFIG.GC_TIME,
   });
 
   // Process the multicall results and filter for non-zero balances
