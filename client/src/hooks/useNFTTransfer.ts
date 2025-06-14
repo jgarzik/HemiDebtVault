@@ -4,6 +4,7 @@ import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { useLoans, useBorrowerLoans } from './useLoans';
 import { QUERY_CACHE_CONFIG } from '@/lib/constants';
+import { useQuerySuspension } from './useQuerySuspension';
 
 interface TransferableLoan {
   loanId: bigint;
@@ -17,7 +18,8 @@ interface TransferableLoan {
 export function useNFTTransfer() {
   const { address } = useAccount();
   const { loans: lenderLoans } = useLoans();
-  const { borrowedLoans } = useBorrowerLoans();
+  const { loans: borrowedLoans } = useBorrowerLoans();
+  const { withSuspension } = useQuerySuspension();
   
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   
@@ -42,7 +44,7 @@ export function useNFTTransfer() {
     });
 
     // Add borrower loans (user owns these NFTs as current borrower)
-    borrowedLoans.forEach(loan => {
+    borrowedLoans.forEach((loan: any) => {
       transferableLoans.push({
         loanId: loan.loanId,
         tokenSymbol: loan.tokenSymbol,
@@ -59,17 +61,14 @@ export function useNFTTransfer() {
   const transferLoanNFT = async (loanId: bigint, to: string) => {
     if (!address) throw new Error('Wallet not connected');
 
-    try {
+    return withSuspension(async () => {
       await writeContract({
         address: DEBT_VAULT_ADDRESS,
         abi: DEBT_VAULT_ABI,
         functionName: 'transferFrom',
         args: [address, to as `0x${string}`, loanId],
       });
-    } catch (error) {
-      console.error('Transfer failed:', error);
-      throw error;
-    }
+    }, ['loans', 'borrowerLoans', 'loanNFTs']);
   };
 
   const { data: transferableLoans = [], isLoading } = useQuery({
