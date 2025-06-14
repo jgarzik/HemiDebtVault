@@ -17,8 +17,7 @@ export function useQuerySuspension() {
       queryClient.getQueryCache().findAll({ queryKey: [key] }).forEach(query => {
         query.setState({ 
           ...query.state, 
-          fetchStatus: 'idle',
-          status: 'loading'
+          fetchStatus: 'idle'
         });
       });
     });

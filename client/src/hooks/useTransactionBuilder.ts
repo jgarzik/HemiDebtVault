@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { getContract } from 'viem';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
+import { useQuerySuspension } from './useQuerySuspension';
 
 /**
  * Enhanced transaction system following SushiSwap patterns
@@ -14,6 +15,7 @@ export function useTransactionBuilder() {
   const { data: walletClient } = useWalletClient();
   const { writeContractAsync } = useWriteContract();
   const [isExecuting, setIsExecuting] = useState(false);
+  const { withSuspension } = useQuerySuspension();
 
   // Memoized contract instance for reads/simulations
   const contract = useMemo(() => {
@@ -115,8 +117,11 @@ export function useTransactionBuilder() {
   };
 
   const repay = async (loanId: bigint, amount: bigint) => {
-    console.log('Starting repay transaction with enhanced gas estimation...');
-    return executeTransaction('repay', [loanId, amount]);
+    console.log('Starting repay transaction with enhanced gas estimation and query suspension...');
+    
+    return withSuspension(async () => {
+      return executeTransaction('repay', [loanId, amount]);
+    }, ['borrowerLoans', 'borrowerCreditLines', 'loanNFTs']);
   };
 
   const updateCreditLine = async (
