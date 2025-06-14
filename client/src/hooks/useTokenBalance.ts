@@ -1,32 +1,30 @@
-import { useReadContract, useAccount } from 'wagmi';
-import { formatUnits } from 'viem';
+import { useAccount } from 'wagmi';
+import { useQuery } from '@tanstack/react-query';
 import { type Token } from '@/lib/tokens';
-
-// Standard ERC-20 ABI for balance checking
-const ERC20_ABI = [
-  {
-    "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
-    "name": "balanceOf",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  }
-] as const;
+import { QUERY_CACHE_CONFIG } from '@/lib/constants';
+import { getTokenBalance, getMultipleTokenBalances, formatTokenBalance } from '@/lib/rpcHelpers';
 
 export function useTokenBalance(token?: Token) {
   const { address } = useAccount();
+  const publicClient = usePublicClient();
 
-  const { data: rawBalance, isLoading, error, refetch } = useReadContract({
-    address: token?.address,
-    abi: ERC20_ABI,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: {
-      enabled: !!(token && address),
-      refetchInterval: false, // Disable automatic refetching to avoid filter errors
-      retry: 1,
-      retryDelay: 2000,
+  const { data: rawBalance, isLoading, error, refetch } = useQuery({
+    queryKey: ['tokenBalance', token?.address, address],
+    queryFn: async () => {
+      if (!token || !address || !publicClient) return BigInt(0);
+      
+      return await publicClient.readContract({
+        address: token.address as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: 'balanceOf',
+        args: [address],
+      }) as bigint;
     },
+    enabled: !!(token && address && publicClient),
+    staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
+    gcTime: QUERY_CACHE_CONFIG.GC_TIME,
+    retry: 1,
+    retryDelay: 2000,
   });
 
 
@@ -52,37 +50,51 @@ export function useTokenBalance(token?: Token) {
   };
 }
 
-// Hook for fetching multiple token balances
+// Hook for fetching multiple token balances using direct RPC
 export function useTokenBalances(tokens: Token[]) {
   const { address } = useAccount();
+  const publicClient = usePublicClient();
 
-  const balanceQueries = tokens.map(token => ({
-    address: token.address,
-    abi: ERC20_ABI,
-    functionName: 'balanceOf' as const,
-    args: address ? [address] : undefined,
-  }));
+  const { data: balances = [], isLoading } = useQuery({
+    queryKey: ['tokenBalances', tokens.map(t => t.address), address],
+    queryFn: async () => {
+      if (!address || !publicClient || tokens.length === 0) return [];
+      
+      const balancePromises = tokens.map(async (token) => {
+        try {
+          const balance = await publicClient.readContract({
+            address: token.address as `0x${string}`,
+            abi: ERC20_ABI,
+            functionName: 'balanceOf',
+            args: [address],
+          }) as bigint;
 
-  // Note: This would need to be implemented with useReadContracts in Wagmi v2
-  // For now, we'll return a structure that can be used with individual calls
-  return {
-    balances: tokens.map(token => {
-      const { data: balance, isLoading } = useReadContract({
-        address: token.address,
-        abi: ERC20_ABI,
-        functionName: 'balanceOf',
-        args: address ? [address] : undefined,
-        query: {
-          enabled: !!(token && address),
-        },
+          return {
+            token,
+            balance,
+            formattedBalance: formatUnits(balance, token.decimals),
+            isLoading: false,
+          };
+        } catch (error) {
+          console.error(`Error fetching balance for ${token.symbol}:`, error);
+          return {
+            token,
+            balance: BigInt(0),
+            formattedBalance: '0',
+            isLoading: false,
+          };
+        }
       });
 
-      return {
-        token,
-        balance: balance || BigInt(0),
-        formattedBalance: balance ? formatUnits(balance, token.decimals) : '0',
-        isLoading,
-      };
-    }),
+      return Promise.all(balancePromises);
+    },
+    enabled: !!(address && publicClient && tokens.length > 0),
+    staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
+    gcTime: QUERY_CACHE_CONFIG.GC_TIME,
+  });
+
+  return {
+    balances,
+    isLoading,
   };
 }

@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useAccount, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
-import { parseUnits } from 'viem';
+import { useAccount, useWaitForTransactionReceipt } from 'wagmi';
+import { parseUnits, createPublicClient, http } from 'viem';
+import { useQuery } from '@tanstack/react-query';
 import { Token } from '@/lib/tokens';
 import { useTransactionBuilder } from './useTransactionBuilder';
 import { useQuerySuspension } from './useQuerySuspension';
+import { hemiNetwork } from '@/lib/hemi';
+import { QUERY_CACHE_CONFIG } from '@/lib/constants';
 
 const ERC20_ABI = [
   {
@@ -41,15 +44,27 @@ export function useTokenApproval(params?: ApprovalParams) {
   const [isApproving, setIsApproving] = useState(false);
   const { isSuspended } = useQuerySuspension();
 
-  // Check current allowance (suspended during transactions to prevent MetaMask conflicts)
-  const { data: currentAllowance, refetch: refetchAllowance } = useReadContract({
-    address: params?.token.address,
-    abi: ERC20_ABI,
-    functionName: 'allowance',
-    args: address && params ? [address, params.spenderAddress] : undefined,
-    query: {
-      enabled: !!(address && params) && !isSuspended,
-    }
+  // Check current allowance via direct RPC (no wallet dependency)
+  const { data: currentAllowance, refetch: refetchAllowance } = useQuery({
+    queryKey: ['tokenAllowance', params?.token.address, address, params?.spenderAddress],
+    queryFn: async () => {
+      if (!params || !address || !approveToken) return BigInt(0);
+      
+      const publicClient = createPublicClient({
+        chain: hemiNetwork,
+        transport: http(),
+      });
+      
+      return await publicClient.readContract({
+        address: params.token.address as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: 'allowance',
+        args: [address, params.spenderAddress],
+      }) as bigint;
+    },
+    enabled: !!(address && params) && !isSuspended,
+    staleTime: QUERY_CACHE_CONFIG.STALE_TIME,
+    gcTime: QUERY_CACHE_CONFIG.GC_TIME,
   });
 
   // Wait for approval transaction receipt (suspended during other transactions)
