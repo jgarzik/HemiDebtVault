@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,9 @@ import { useTokenBalance } from '@/hooks/useTokenBalance';
 import { useDebtVault } from '@/hooks/useDebtVault';
 import { usePoolPosition } from '@/hooks/usePoolPosition';
 import { useQueryClient } from '@tanstack/react-query';
+import { useCacheInvalidation } from '@/lib/cacheInvalidation';
+import { useAccount } from 'wagmi';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
-import { TRANSACTION_CONFIG } from '@/lib/constants';
 import { parseUnits } from 'viem';
 import { type Token } from '@/lib/tokens';
 
@@ -22,7 +23,8 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
   const { deposit, withdraw } = useDebtVault();
   const { tokenBalances } = usePoolPosition();
   const queryClient = useQueryClient();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { address } = useAccount();
+  const cacheManager = useCacheInvalidation(queryClient);
   
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [selectedWithdrawToken, setSelectedWithdrawToken] = useState<Token | null>(null);
@@ -159,19 +161,8 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                   transactionAmount={selectedToken && depositAmount ? `${depositAmount} ${selectedToken.symbol}` : undefined}
                   className="w-full bg-blue-600 hover:bg-blue-700"
                   onSuccess={() => {
-                    // Clear any existing timeout
-                    if (timeoutRef.current) {
-                      clearTimeout(timeoutRef.current);
-                    }
-                    
-                    // Use optimized cache invalidation for pool operations
-                    timeoutRef.current = setTimeout(() => {
-                      queryClient.invalidateQueries({ queryKey: ['poolPosition'] });
-                      queryClient.invalidateQueries({ queryKey: ['tokenBalance'] });
-                      queryClient.invalidateQueries({ queryKey: ['creditLines'] });
-                      timeoutRef.current = null;
-                    }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
-                    
+                    // Use centralized cache invalidation for pool deposits
+                    cacheManager.invalidateAfterPoolOperation(address);
                     onSuccess?.();
                   }}
                 >
@@ -223,19 +214,8 @@ export function DepositWithdrawSection({ onSuccess }: DepositWithdrawSectionProp
                   actionLabel="Withdraw from Pool"
                   transactionAmount={selectedWithdrawToken && withdrawAmount ? `${withdrawAmount} ${selectedWithdrawToken.symbol}` : undefined}
                   onSuccess={() => {
-                    // Clear any existing timeout
-                    if (timeoutRef.current) {
-                      clearTimeout(timeoutRef.current);
-                    }
-                    
-                    // Use optimized cache invalidation for pool operations
-                    timeoutRef.current = setTimeout(() => {
-                      queryClient.invalidateQueries({ queryKey: ['poolPosition'] });
-                      queryClient.invalidateQueries({ queryKey: ['tokenBalance'] });
-                      queryClient.invalidateQueries({ queryKey: ['creditLines'] });
-                      timeoutRef.current = null;
-                    }, TRANSACTION_CONFIG.CONFIRMATION_DELAY);
-                    
+                    // Use centralized cache invalidation for pool withdrawals
+                    cacheManager.invalidateAfterPoolOperation(address);
                     onSuccess?.();
                   }}
                 >

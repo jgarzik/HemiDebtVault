@@ -271,13 +271,17 @@ export function CreditLineModal({ isOpen, onClose, onSuccess, editingCreditLine 
               className="flex-1 bg-blue-600 hover:bg-blue-700"
               actionLabel={editingCreditLine ? "Update Credit Line" : "Create Credit Line"}
               transactionAmount={selectedToken && creditLimit ? `${creditLimit} ${selectedToken.symbol} limit` : undefined}
+              onBeforeConfirm={() => {
+                // Close this modal before opening transaction confirmation
+                onClose();
+              }}
               onSuccess={() => {
                 // Clear any existing timeout
                 if (timeoutRef.current) {
                   clearTimeout(timeoutRef.current);
                 }
                 
-                // Invalidate credit lines cache after transaction confirmation
+                // Use optimized cache invalidation for credit line operations
                 timeoutRef.current = setTimeout(() => {
                   queryClient.invalidateQueries({ queryKey: ['creditLines'] });
                   queryClient.invalidateQueries({ queryKey: ['borrowerCreditLines'] });
@@ -288,7 +292,7 @@ export function CreditLineModal({ isOpen, onClose, onSuccess, editingCreditLine 
                 onSuccess?.();
               }}
             >
-              {editingCreditLine ? 'Update' : 'Create'}
+              {editingCreditLine ? 'Update Credit Line' : 'Create Credit Line'}
             </TransactionButton>
           </div>
         </div>
