@@ -1,0 +1,42 @@
+Starting transaction execution...
+index-D2X3cLsB.js:1834 Executing enhanced repay transaction: Objectamount: "1000000"loanId: "6"[[Prototype]]: Object
+index-D2X3cLsB.js:1834 Starting repay transaction with enhanced gas estimation and query suspension...
+index-D2X3cLsB.js:1834 Suspended queries during transaction: Array(3)
+index-D2X3cLsB.js:1834 Preparing transaction for repay...
+index-D2X3cLsB.js:1834 Estimating gas for repay...
+index-D2X3cLsB.js:1834 Transaction status: ObjectisConfirmed: falseisExecuting: truetxHash: null[[Prototype]]: Object
+index-D2X3cLsB.js:1834 Gas estimation completed for repay
+index-D2X3cLsB.js:1834 Executing repay with gas limit: 240000
+index-D2X3cLsB.js:1834 Transaction status: ObjectisConfirmed: falseisExecuting: truetxHash: null[[Prototype]]: Object
+index-D2X3cLsB.js:1834 Transaction submitted successfully: 0x4414f0485d02668fdafd1be96c24eae873a43fb72ad504439f75daf3b3969aa3
+index-D2X3cLsB.js:1834 Enhanced repay transaction hash: 0x4414f0485d02668fdafd1be96c24eae873a43fb72ad504439f75daf3b3969aa3
+index-D2X3cLsB.js:1834 Transaction executed successfully, hash: 0x4414f0485d02668fdafd1be96c24eae873a43fb72ad504439f75daf3b3969aa3
+index-D2X3cLsB.js:1834 Set transaction hash for manual confirmation polling: 0x4414f0485d02668fdafd1be96c24eae873a43fb72ad504439f75daf3b3969aa3
+index-D2X3cLsB.js:1834 Transaction status: ObjectisConfirmed: falseisExecuting: truetxHash: null[[Prototype]]: Object
+index-D2X3cLsB.js:1834 Transaction status: ObjectisConfirmed: falseisExecuting: falsetxHash: null[[Prototype]]: Object
+index-D2X3cLsB.js:1827 DEBUG: Querying LoanCreated events with args: Object
+index-D2X3cLsB.js:1827 DEBUG: Querying CreditLineUpdated events with args: Object
+index-D2X3cLsB.js:1834 Resumed queries after transaction: Array(3)
+index-D2X3cLsB.js:1827 DEBUG: Found 5 LoanCreated events
+index-D2X3cLsB.js:1827 DEBUG: useBorrowerLoans found loan events: 5
+index-D2X3cLsB.js:1827 DEBUG: Processing loan ID: 0
+index-D2X3cLsB.js:1827 DEBUG: Found 5 CreditLineUpdated events
+index-D2X3cLsB.js:1834 DEBUG: useBorrowerCreditLines found events: 5
+index-D2X3cLsB.js:1827 DEBUG: Loan contract data: Object
+index-D2X3cLsB.js:1834 DEBUG Credit calculation: Object
+index-D2X3cLsB.js:1827 DEBUG: Processing loan ID: 3
+index-D2X3cLsB.js:1827 DEBUG: Loan contract data: Object
+index-D2X3cLsB.js:1834 DEBUG Credit calculation: Object
+index-D2X3cLsB.js:1827 DEBUG: Processing loan ID: 4
+index-D2X3cLsB.js:1834 DEBUG Credit calculation: Object
+index-D2X3cLsB.js:1827 DEBUG: Loan contract data: Object
+index-D2X3cLsB.js:1827 DEBUG: Processing loan ID: 5
+index-D2X3cLsB.js:1827 DEBUG: Loan contract data: Object
+index-D2X3cLsB.js:1827 DEBUG: Successfully processed loan: 5
+index-D2X3cLsB.js:1827 DEBUG: useBorrowerLoans successfully added loan: 5
+index-D2X3cLsB.js:1827 DEBUG: Processing loan ID: 6
+index-D2X3cLsB.js:1827 DEBUG: Loan contract data: Object
+index-D2X3cLsB.js:1827 DEBUG: Successfully processed loan: 6
+index-D2X3cLsB.js:1827 DEBUG: useBorrowerLoans successfully added loan: 6
+index-D2X3cLsB.js:1827 DEBUG: useBorrowerLoans returning 2 loans
+index-D2X3cLsB.js:1834 Transaction status: ObjectisConfirmed: falseisExecuting: falsetxHash: null[[Prototype]]: Object

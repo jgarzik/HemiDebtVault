@@ -6,6 +6,16 @@ export function useTransactionExecution() {
   const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+
+  // Debug wrapper for setTxHash to track when it's being cleared
+  const setTxHashWithLogging = (hash: string | null) => {
+    if (hash === null && txHash !== null) {
+      console.log('TRANSACTION HASH CLEARED!', new Error().stack);
+    } else if (hash !== null) {
+      console.log('Setting transaction hash:', hash);
+    }
+    setTxHash(hash);
+  };
   const [isConfirmed, setIsConfirmed] = useState(false);
   const { isSuspended } = useQuerySuspension();
   const publicClient = usePublicClient();
@@ -57,7 +67,7 @@ export function useTransactionExecution() {
       const hash = await transactionFn();
       console.log('Transaction executed successfully, hash:', hash);
       
-      setTxHash(hash);
+      setTxHashWithLogging(hash);
       setIsConfirmed(false); // Reset confirmation state for new transaction
       console.log('Set transaction hash for manual confirmation polling:', hash);
       
@@ -85,7 +95,7 @@ export function useTransactionExecution() {
   const reset = () => {
     setIsExecuting(false);
     setError(null);
-    setTxHash(null);
+    setTxHashWithLogging(null);
     setIsConfirmed(false);
   };
 
