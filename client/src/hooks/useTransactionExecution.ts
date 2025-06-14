@@ -1,29 +1,37 @@
 import { useState, useEffect } from 'react';
-import { useWaitForTransactionReceipt } from 'wagmi';
+import { useWaitForTransactionReceipt, usePublicClient } from 'wagmi';
 import { useQuerySuspension } from './useQuerySuspension';
 
 export function useTransactionExecution() {
   const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [isConfirmed, setIsConfirmed] = useState(false);
   const { isSuspended } = useQuerySuspension();
+  const publicClient = usePublicClient();
 
-  // Wait for transaction confirmation (allow confirmation watching even when queries are suspended)
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-    hash: txHash as `0x${string}` | undefined,
-  });
-
-  // Debug transaction confirmation status
+  // Manual transaction confirmation polling as wagmi receipt hook isn't working reliably
   useEffect(() => {
-    if (txHash) {
-      console.log('Transaction receipt status:', {
-        txHash,
-        isConfirming,
-        isConfirmed,
-        isSuspended
-      });
+    if (txHash && publicClient && !isConfirmed) {
+      console.log('Starting manual transaction confirmation polling for:', txHash);
+      
+      const pollForConfirmation = async () => {
+        try {
+          const receipt = await publicClient.waitForTransactionReceipt({
+            hash: txHash as `0x${string}`,
+            timeout: 60000, // 60 second timeout
+          });
+          
+          console.log('Transaction confirmed via manual polling:', receipt);
+          setIsConfirmed(true);
+        } catch (error) {
+          console.error('Error polling for transaction confirmation:', error);
+        }
+      };
+
+      pollForConfirmation();
     }
-  }, [txHash, isConfirming, isConfirmed, isSuspended]);
+  }, [txHash, publicClient, isConfirmed]);
 
   const execute = async (transactionFn: () => Promise<string>) => {
     setIsExecuting(true);
@@ -37,6 +45,8 @@ export function useTransactionExecution() {
       console.log('Transaction executed successfully, hash:', hash);
       
       setTxHash(hash);
+      setIsConfirmed(false); // Reset confirmation state for new transaction
+      console.log('Set transaction hash for manual confirmation polling:', hash);
       
       // Wait for confirmation by setting up the receipt watcher
       // The confirmation will be handled by the useWaitForTransactionReceipt hook
@@ -72,8 +82,7 @@ export function useTransactionExecution() {
   };
 
   return {
-    isExecuting: isExecuting || isConfirming,
-    isConfirming,
+    isExecuting,
     isConfirmed,
     error,
     execute,
