@@ -19,7 +19,7 @@ import {
 import { usePortfolioMetrics } from '@/hooks/usePortfolioMetrics';
 import { useQuery } from '@tanstack/react-query';
 import { createPublicClient, http, parseAbiItem } from 'viem';
-import { DEBT_VAULT_ADDRESS, hemiNetwork } from '@/lib/hemi';
+import { DEBT_VAULT_ADDRESS, DEBT_VAULT_DEPLOYMENT_BLOCK, hemiNetwork } from '@/lib/hemi';
 import { getAllTokens } from '@/lib/tokens';
 import { QUERY_CACHE_CONFIG } from '@/lib/constants';
 
@@ -58,7 +58,7 @@ export function Dashboard() {
           args: {
             lender: address,
           },
-          fromBlock: 'earliest',
+          fromBlock: DEBT_VAULT_DEPLOYMENT_BLOCK,
           toBlock: 'latest',
         });
 
@@ -83,7 +83,7 @@ export function Dashboard() {
           args: {
             borrower: address,
           },
-          fromBlock: 'earliest',
+          fromBlock: DEBT_VAULT_DEPLOYMENT_BLOCK,
           toBlock: 'latest',
         });
 
