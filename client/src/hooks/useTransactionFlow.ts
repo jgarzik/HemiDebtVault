@@ -177,14 +177,16 @@ export function useTransactionFlow({
 
   // Show success toast when transaction is confirmed
   useEffect(() => {
-    console.log('Transaction status:', { 
+    console.log('useTransactionFlow - Transaction status:', { 
       isConfirmed: execution.isConfirmed, 
       txHash: execution.txHash,
-      isExecuting: execution.isExecuting 
+      isExecuting: execution.isExecuting,
+      bothConditionsMet: execution.isConfirmed && execution.txHash
     });
     
-    if (execution.isConfirmed && execution.txHash) {
-      console.log('Transaction confirmed! Showing success toast for:', execution.txHash);
+    // Trigger success when transaction is confirmed (txHash may be null due to state sync issues)
+    if (execution.isConfirmed) {
+      console.log('Transaction confirmed! Showing success toast');
       console.log('onSuccess callback exists:', !!onSuccess);
       
       toast({
@@ -204,7 +206,7 @@ export function useTransactionFlow({
       
       // Trigger global data refresh event
       window.dispatchEvent(new CustomEvent('transactionSuccess', { 
-        detail: { txHash: execution.txHash, actionLabel } 
+        detail: { txHash: execution.txHash || 'confirmed', actionLabel } 
       }));
     }
   }, [execution.isConfirmed, execution.txHash, execution.isExecuting, toast, actionLabel, transactionAmount, onSuccess]);

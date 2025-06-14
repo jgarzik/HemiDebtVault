@@ -38,6 +38,7 @@ export function useTransactionExecution() {
       
       console.log('Transaction confirmed via manual polling:', receipt);
       setIsConfirmed(true);
+      console.log('Set isConfirmed to true for hash:', hash);
     } catch (error) {
       console.error('Error polling for transaction confirmation:', error);
       console.error('Error details:', {
