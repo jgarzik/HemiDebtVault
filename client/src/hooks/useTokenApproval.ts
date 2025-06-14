@@ -3,6 +3,7 @@ import { useAccount, useWaitForTransactionReceipt, useReadContract } from 'wagmi
 import { parseUnits } from 'viem';
 import { Token } from '@/lib/tokens';
 import { useTransactionBuilder } from './useTransactionBuilder';
+import { useQuerySuspension } from './useQuerySuspension';
 
 const ERC20_ABI = [
   {
@@ -38,21 +39,22 @@ export function useTokenApproval(params?: ApprovalParams) {
   const { approveToken, isExecuting } = useTransactionBuilder();
   const [approvalHash, setApprovalHash] = useState<string | null>(null);
   const [isApproving, setIsApproving] = useState(false);
+  const { isSuspended } = useQuerySuspension();
 
-  // Check current allowance
+  // Check current allowance (suspended during transactions to prevent MetaMask conflicts)
   const { data: currentAllowance, refetch: refetchAllowance } = useReadContract({
     address: params?.token.address,
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: address && params ? [address, params.spenderAddress] : undefined,
     query: {
-      enabled: !!(address && params),
+      enabled: !!(address && params) && !isSuspended,
     }
   });
 
-  // Wait for approval transaction receipt
+  // Wait for approval transaction receipt (suspended during other transactions)
   const { isLoading: isApprovalLoading, isSuccess: isApprovalSuccess } = useWaitForTransactionReceipt({
-    hash: approvalHash as `0x${string}` | undefined,
+    hash: !isSuspended ? (approvalHash as `0x${string}` | undefined) : undefined,
   });
 
   // Check if approval is needed

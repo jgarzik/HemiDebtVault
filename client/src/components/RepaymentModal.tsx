@@ -65,12 +65,11 @@ export function RepaymentModal({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { isSuspended } = useQuerySuspension();
   
-  // Get the token info and user's wallet balance (suspended during transactions)
+  // Get the token info and fetch balance via direct RPC (no wallet queries)
   const tokens = getAllTokens();
   const tokenInfo = tokens.find(t => t.address.toLowerCase() === repaymentDetails.token.toLowerCase());
-  const { balance: walletBalance, formattedBalance: formattedWalletBalance } = useTokenBalance(
-    isSuspended ? undefined : tokenInfo
-  );
+  const [walletBalance, setWalletBalance] = useState<bigint | null>(null);
+  const [formattedWalletBalance, setFormattedWalletBalance] = useState<string>('0');
 
   // Create public client for contract calls
   const publicClient = createPublicClient({
@@ -78,14 +77,15 @@ export function RepaymentModal({
     transport: http(),
   });
 
-  // Fetch accurate outstanding balance when modal opens (suspended during transactions)
+  // Fetch data via direct RPC calls (no wallet involvement)
   useEffect(() => {
-    if (!isOpen || isSuspended) return;
+    if (!isOpen || !address || !tokenInfo) return;
     
-    const fetchOutstandingBalance = async () => {
+    const fetchDataDirectly = async () => {
       try {
         setIsLoadingBalance(true);
         
+        // Fetch outstanding balance via direct RPC
         const outstandingBalance = await publicClient.readContract({
           address: DEBT_VAULT_ADDRESS,
           abi: DEBT_VAULT_ABI,
@@ -94,23 +94,42 @@ export function RepaymentModal({
         });
 
         const [principal, interest] = outstandingBalance as [bigint, bigint];
+        setCurrentPrincipal(formatUnits(principal, tokenInfo.decimals));
+        setCurrentInterest(formatUnits(interest, tokenInfo.decimals));
+
+        // Fetch wallet balance via direct RPC (no wallet query)
+        const balance = await publicClient.readContract({
+          address: tokenInfo.address as `0x${string}`,
+          abi: [
+            {
+              name: 'balanceOf',
+              type: 'function',
+              stateMutability: 'view',
+              inputs: [{ name: 'account', type: 'address' }],
+              outputs: [{ name: '', type: 'uint256' }]
+            }
+          ],
+          functionName: 'balanceOf',
+          args: [address],
+        });
+
+        setWalletBalance(balance as bigint);
+        setFormattedWalletBalance(formatUnits(balance as bigint, tokenInfo.decimals));
         
-        if (tokenInfo) {
-          setCurrentPrincipal(formatUnits(principal, tokenInfo.decimals));
-          setCurrentInterest(formatUnits(interest, tokenInfo.decimals));
-        }
       } catch (error) {
-        console.error('Error fetching outstanding balance:', error);
+        console.error('Error fetching data via RPC:', error);
         // Fallback to passed values
         setCurrentPrincipal(repaymentDetails.currentPrincipal);
         setCurrentInterest(repaymentDetails.currentInterest);
+        setWalletBalance(BigInt(0));
+        setFormattedWalletBalance('0');
       } finally {
         setIsLoadingBalance(false);
       }
     };
 
-    fetchOutstandingBalance();
-  }, [isOpen, isSuspended, repaymentDetails.loanId, tokenInfo, publicClient]);
+    fetchDataDirectly();
+  }, [isOpen, address, tokenInfo, repaymentDetails.loanId, publicClient]);
   
   // Cleanup timeout on component unmount
   useEffect(() => {

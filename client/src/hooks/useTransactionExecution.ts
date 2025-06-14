@@ -6,10 +6,11 @@ export function useTransactionExecution() {
   const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const { isSuspended } = useQuerySuspension();
 
-  // Wait for transaction confirmation
+  // Wait for transaction confirmation (suspended during other wallet operations)
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-    hash: txHash as `0x${string}` | undefined,
+    hash: !isSuspended ? (txHash as `0x${string}` | undefined) : undefined,
   });
 
   const execute = async (transactionFn: () => Promise<string>) => {
