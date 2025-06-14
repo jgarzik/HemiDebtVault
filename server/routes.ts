@@ -1,3 +1,32 @@
+/**
+ * API Route Registration and Blockchain Query Endpoints
+ * 
+ * This module defines the server-side API endpoints for the DeFi debt vault platform,
+ * providing blockchain data aggregation and user-specific loan information retrieval.
+ * 
+ * Key Features:
+ * - RESTful API endpoints for loan data queries
+ * - Direct blockchain integration via Hemi network RPC
+ * - NFT ownership verification for loan position tracking
+ * - Event log processing for comprehensive loan history
+ * - Token metadata resolution and formatting utilities
+ * 
+ * Architecture:
+ * - Express route handlers with async blockchain queries
+ * - Viem client integration for type-safe contract interactions
+ * - Error handling with proper HTTP status codes
+ * - User-centric data filtering based on NFT ownership
+ * - Efficient batch processing of blockchain events
+ * 
+ * Theory of Operation:
+ * The API serves as a backend aggregation layer that processes raw blockchain
+ * data into user-friendly formats. For loan queries, it fetches all LoanCreated
+ * events, filters by NFT ownership to determine current loan holders, and
+ * enriches the data with token metadata and formatted values. This approach
+ * ensures accurate loan position tracking even when NFTs are transferred
+ * between users, providing a reliable server-side data source for frontend
+ * applications that need consistent loan state information.
+ */
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";

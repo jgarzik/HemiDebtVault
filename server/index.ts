@@ -1,3 +1,30 @@
+/**
+ * Express Server Entry Point
+ * 
+ * This module serves as the main application server for the DeFi debt vault platform,
+ * coordinating both API endpoints and frontend asset delivery in a unified process.
+ * 
+ * Key Features:
+ * - Unified server architecture serving both API and frontend assets
+ * - Development/production environment handling with Vite integration
+ * - Comprehensive request logging and error handling middleware
+ * - Performance monitoring with request timing and response capture
+ * - Single-port deployment optimized for Replit hosting constraints
+ * 
+ * Architecture:
+ * - Uses Express.js for HTTP server foundation
+ * - Integrates Vite dev server in development for hot reloading
+ * - Serves static assets in production builds
+ * - Implements centralized error handling with proper status codes
+ * - Captures and logs API responses for debugging and monitoring
+ * 
+ * Theory of Operation:
+ * The server follows a layered architecture where middleware processes requests
+ * in sequence: logging setup → JSON parsing → route handling → error handling.
+ * In development, Vite middleware is registered last to catch unhandled routes
+ * and serve frontend assets with hot module replacement. Production mode
+ * serves pre-built static assets directly.
+ */
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
