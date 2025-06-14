@@ -17,13 +17,7 @@ export function useNFTTransfer() {
   const { address } = useAccount();
   const { loans: lenderLoans } = useLoans();
   const { loans: borrowedLoans } = useBorrowerLoans();
-  const { withSuspension } = useQuerySuspension();
-  
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
-  
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
-  });
+  const { transferNFT, isExecuting } = useTransactionBuilder();
 
   // Get transferable loans (loans where user is current NFT owner)
   const getTransferableLoans = (): TransferableLoan[] => {
@@ -59,14 +53,7 @@ export function useNFTTransfer() {
   const transferLoanNFT = async (loanId: bigint, to: string) => {
     if (!address) throw new Error('Wallet not connected');
 
-    return withSuspension(async () => {
-      await writeContract({
-        address: DEBT_VAULT_ADDRESS,
-        abi: DEBT_VAULT_ABI,
-        functionName: 'transferFrom',
-        args: [address, to as `0x${string}`, loanId],
-      });
-    }, ['loans', 'borrowerLoans', 'loanNFTs']);
+    return transferNFT(address, to, loanId);
   };
 
   const { data: transferableLoans = [], isLoading } = useQuery({
@@ -82,10 +69,6 @@ export function useNFTTransfer() {
     transferableLoans,
     transferLoanNFT,
     isLoading,
-    isPending,
-    isConfirming,
-    isSuccess,
-    error,
-    hash,
+    isExecuting,
   };
 }
