@@ -1,11 +1,8 @@
-import { useAccount, useWatchContractEvent, useReadContract } from 'wagmi';
-import { DEBT_VAULT_ABI } from '@/lib/contract';
-import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
+import { useAccount } from 'wagmi';
 import { useToast } from '@/hooks/use-toast';
-import { useRef } from 'react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTransactionBuilder } from './useTransactionBuilder';
-import type { CreditLine, Loan, PortfolioStats } from '@/types';
+import type { PortfolioStats } from '@/types';
 
 export function useDebtVault() {
   const { address, isConnected } = useAccount();
@@ -64,9 +61,9 @@ export function useDebtVault() {
     return txBuilder.forgiveInterest(loanId);
   };
 
-  // Get loan details by ID
-  const getLoanById = (loanId: string) => {
-    return useReadContract({
+  // Direct RPC helper functions (no longer returning wagmi hooks)
+  const getLoanById = async (loanId: string) => {
+    return await publicRpcClient.readContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'loanById',
@@ -74,9 +71,8 @@ export function useDebtVault() {
     });
   };
 
-  // Get credit line configuration
-  const getCreditLine = (lender: string, borrower: string, token: string) => {
-    return useReadContract({
+  const getCreditLine = async (lender: string, borrower: string, token: string) => {
+    return await publicRpcClient.readContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'creditLines',
@@ -84,9 +80,8 @@ export function useDebtVault() {
     });
   };
 
-  // Get user's loan count
-  const getUserLoanCount = (user: string) => {
-    return useReadContract({
+  const getUserLoanCount = async (user: string) => {
+    return await publicRpcClient.readContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'userLoanCount',
@@ -94,9 +89,8 @@ export function useDebtVault() {
     });
   };
 
-  // Get user's total loan count (lifetime)
-  const getTotalUserLoans = (user: string) => {
-    return useReadContract({
+  const getTotalUserLoans = async (user: string) => {
+    return await publicRpcClient.readContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'totalUserLoans',
@@ -104,18 +98,16 @@ export function useDebtVault() {
     });
   };
 
-  // Get loan max limit
-  const getMaxLoansPerUser = () => {
-    return useReadContract({
+  const getMaxLoansPerUser = async () => {
+    return await publicRpcClient.readContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'MAX_LOANS_PER_USER',
     });
   };
 
-  // Get outstanding balance for a loan
-  const getOutstandingBalance = (loanId: string) => {
-    return useReadContract({
+  const getOutstandingBalance = async (loanId: string) => {
+    return await publicRpcClient.readContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'getOutstandingBalance',
@@ -123,9 +115,8 @@ export function useDebtVault() {
     });
   };
 
-  // Get available credit
-  const getAvailableCredit = (borrower: string, lender: string, token: string) => {
-    return useReadContract({
+  const getAvailableCredit = async (borrower: string, lender: string, token: string) => {
+    return await publicRpcClient.readContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'getAvailableCredit',
@@ -133,9 +124,8 @@ export function useDebtVault() {
     });
   };
 
-  // Get original borrower of a loan
-  const getOriginalBorrower = (loanId: string) => {
-    return useReadContract({
+  const getOriginalBorrower = async (loanId: string) => {
+    return await publicRpcClient.readContract({
       address: DEBT_VAULT_ADDRESS,
       abi: DEBT_VAULT_ABI,
       functionName: 'originalBorrower',

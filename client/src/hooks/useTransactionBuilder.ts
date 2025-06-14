@@ -1,9 +1,9 @@
-import { useAccount, usePublicClient, useWalletClient, useWriteContract } from 'wagmi';
-import { useMemo, useState } from 'react';
-import { getContract } from 'viem';
+import { useAccount, useWalletClient, useWriteContract } from 'wagmi';
+import { useState } from 'react';
 import { DEBT_VAULT_ADDRESS } from '@/lib/hemi';
 import { DEBT_VAULT_ABI } from '@/lib/contract';
 import { useQuerySuspension } from './useQuerySuspension';
+import { publicRpcClient } from '@/lib/rpcHelpers';
 
 /**
  * Enhanced transaction system following SushiSwap patterns
@@ -11,43 +11,32 @@ import { useQuerySuspension } from './useQuerySuspension';
  */
 export function useTransactionBuilder() {
   const { address, isConnected } = useAccount();
-  const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
   const { writeContractAsync } = useWriteContract();
   const [isExecuting, setIsExecuting] = useState(false);
   const { withSuspension } = useQuerySuspension();
-
-  // Memoized contract instance for reads/simulations
-  const contract = useMemo(() => {
-    if (!publicClient) return null;
-    
-    return getContract({
-      address: DEBT_VAULT_ADDRESS,
-      abi: DEBT_VAULT_ABI,
-      client: publicClient,
-    });
-  }, [publicClient]);
 
   const estimateGas = async (
     functionName: string,
     args: any[],
     overrides: any = {}
   ) => {
-    if (!contract || !address || !isConnected) {
-      throw new Error('Wallet not connected or contract not available');
+    if (!address || !isConnected) {
+      throw new Error('Wallet not connected');
     }
 
     try {
       console.log(`Estimating gas for ${functionName}...`);
       
       // Simulate the transaction to validate and get gas estimate
-      const simulation = await contract.simulate[functionName as keyof typeof contract.simulate](
-        args as any,
-        {
-          account: address,
-          ...overrides,
-        }
-      );
+      const simulation = await publicRpcClient.simulateContract({
+        address: DEBT_VAULT_ADDRESS,
+        abi: DEBT_VAULT_ABI,
+        functionName: functionName as any,
+        args: args as any,
+        account: address,
+        ...overrides,
+      });
 
       // Add 20% buffer to estimated gas to prevent out-of-gas errors
       const gasBuffer = BigInt(120);
@@ -206,7 +195,6 @@ export function useTransactionBuilder() {
     
     // State
     isExecuting,
-    isReady: !!contract && isConnected,
-    contract,
+    isReady: isConnected,
   };
 }
